@@ -77,14 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Conform Flow — Gestão de Conformidade Operacional" },
+      { name: "description", content: "Plataforma SaaS B2B para gestão de documentos, equipamentos, manutenções, alertas e auditoria em empresas reguladas." },
+      { name: "author", content: "Conform Flow" },
+      { property: "og:title", content: "Conform Flow — Gestão de Conformidade" },
+      { property: "og:description", content: "Centralize documentos, equipamentos, manutenções e auditorias em um único ambiente seguro." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
