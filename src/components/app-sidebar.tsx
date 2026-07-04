@@ -13,7 +13,14 @@ import {
   ShieldHalf,
 } from "lucide-react";
 
-const groups = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+};
+
+const groups: { label: string; items: NavItem[] }[] = [
   {
     label: "Visão Geral",
     items: [{ to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true }],
