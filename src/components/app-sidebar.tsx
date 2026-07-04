@@ -67,19 +67,19 @@ export function AppSidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-        {groups.map((g) => (
+      {groups.map((g: { label: string; items: NavItem[] }) => (
           <div key={g.label}>
             <div className="px-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 mb-2">
               {g.label}
             </div>
             <ul className="space-y-0.5">
-              {g.items.map((item) => {
+              {g.items.map((item: NavItem) => {
                 const active = item.exact ? pathname === item.to : pathname === item.to || pathname.startsWith(item.to + "/");
                 const Icon = item.icon;
                 return (
                   <li key={item.to}>
                     <Link
-                      to={item.to}
+                      to={item.to as string}
                       className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
                         active
                           ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
