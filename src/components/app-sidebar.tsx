@@ -79,7 +79,8 @@ export function AppSidebar() {
                 return (
                   <li key={item.to}>
                     <Link
-                      to={item.to as string}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      to={item.to as any}
                       className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
                         active
                           ? "bg-sidebar-primary text-sidebar-primary-foreground font-medium"
