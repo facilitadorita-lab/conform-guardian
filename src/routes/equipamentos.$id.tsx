@@ -8,7 +8,7 @@ export const Route = createFileRoute("/equipamentos/$id")({
   component: EquipamentoDetalhe,
 });
 
-const tabs = ["Dados gerais", "Calibrações", "Qualificações", "Manutenções", "Anexos", "Pendências", "Histórico"] as const;
+const tabs = ["Dados gerais", "Calibrações", "Qualificações", "Manutenções", "Anexos", "Histórico"] as const;
 type Tab = (typeof tabs)[number];
 
 function EquipamentoDetalhe() {
