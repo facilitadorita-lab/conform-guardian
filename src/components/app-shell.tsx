@@ -18,7 +18,7 @@ export function AppShell({
   actions?: ReactNode;
   children: ReactNode;
 }) {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, passwordRecovery } = useAuth();
   const navigate = useNavigate();
   const bypassAuth = shouldUseMocks();
   const { acessoLiberado, isMaster, empresaAtual, usuarioAtual, setIsMaster, setEmpresaStatus } = useSession();
@@ -28,7 +28,8 @@ export function AppShell({
   useEffect(() => {
     if (bypassAuth) return;
     if (!loading && !user) navigate({ to: "/login" });
-  }, [bypassAuth, loading, user, navigate]);
+    if (!loading && user && passwordRecovery) navigate({ to: "/definir-senha" });
+  }, [bypassAuth, loading, user, passwordRecovery, navigate]);
 
   if (!bypassAuth && (loading || !user)) {
     return (
