@@ -32,6 +32,7 @@ export function AppShell({
     trocarEmpresa,
     setIsMaster,
     setEmpresaStatus,
+    contextoCarregando,
   } = useSession();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isMasterRoute = pathname.startsWith("/master");
@@ -46,12 +47,13 @@ export function AppShell({
   // Redireciona Admin Master sem empresa selecionada para a tela de escolha.
   useEffect(() => {
     if (loading && !bypassAuth) return;
+    if (contextoCarregando) return;
     if (isMaster && !selectedCompanyId && !isMasterRoute && pathname !== "/login") {
       navigate({ to: "/master/empresas" });
     }
-  }, [loading, bypassAuth, isMaster, selectedCompanyId, isMasterRoute, pathname, navigate]);
+  }, [loading, bypassAuth, contextoCarregando, isMaster, selectedCompanyId, isMasterRoute, pathname, navigate]);
 
-  if (!bypassAuth && (loading || !user)) {
+  if (!bypassAuth && (loading || !user || contextoCarregando)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
         Carregando sessão…
