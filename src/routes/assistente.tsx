@@ -13,7 +13,7 @@ export const Route = createFileRoute("/assistente")({
 type Msg = { role: "user" | "assistant"; content: string };
 
 function AssistentePage() {
-  const { empresaAtual } = useSession();
+  const { selectedCompany, selectedCompanyId } = useSession();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,7 @@ function AssistentePage() {
     e.preventDefault();
     const pergunta = input.trim();
     if (!pergunta || loading) return;
-    if (!empresaAtual?.id) {
+    if (!selectedCompanyId) {
       setErro("Selecione uma empresa antes de consultar a IA.");
       return;
     }
@@ -35,7 +35,7 @@ function AssistentePage() {
     setLoading(true);
     try {
       const res = await edgeFunctionsService.assistantQuery({
-        empresa_id: empresaAtual.id,
+        empresa_id: selectedCompanyId,
         pergunta,
         contexto: "geral",
         historico,
@@ -57,10 +57,14 @@ function AssistentePage() {
     >
       <div className="rounded-md border border-border bg-muted/30 p-3 text-xs flex items-center gap-2">
         <Building2 className="h-4 w-4 text-accent" />
-        <span>
-          Consultando dados de <strong>{empresaAtual.nome_fantasia}</strong>{" "}
-          <span className="text-muted-foreground">({empresaAtual.cnpj})</span>
-        </span>
+        {selectedCompany ? (
+          <span>
+            Consultando dados de <strong>{selectedCompany.nome_fantasia}</strong>{" "}
+            <span className="text-muted-foreground">({selectedCompany.cnpj})</span>
+          </span>
+        ) : (
+          <span className="text-muted-foreground">Nenhuma empresa selecionada.</span>
+        )}
       </div>
       <div className="rounded-md border border-warning/40 bg-warning/5 p-3 text-xs flex items-start gap-2">
         <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0 text-warning" />
