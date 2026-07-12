@@ -1,8 +1,8 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AppSidebar } from "./app-sidebar";
-import { Bell, LogOut, Search } from "lucide-react";
+import { Bell, Building2, ChevronDown, LogOut, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { shouldUseMocks } from "@/lib/runtime-config";
 import { useSession } from "@/hooks/use-session";
 import { AccessBlocked } from "./access-blocked";
@@ -21,15 +21,35 @@ export function AppShell({
   const { user, loading, signOut, passwordRecovery } = useAuth();
   const navigate = useNavigate();
   const bypassAuth = shouldUseMocks();
-  const { acessoLiberado, isMaster, empresaAtual, usuarioAtual, setIsMaster, setEmpresaStatus } = useSession();
+  const {
+    acessoLiberado,
+    isMaster,
+    empresaAtual,
+    usuarioAtual,
+    selectedCompany,
+    selectedCompanyId,
+    empresasDisponiveis,
+    trocarEmpresa,
+    setIsMaster,
+    setEmpresaStatus,
+  } = useSession();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isMasterRoute = pathname.startsWith("/master");
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   useEffect(() => {
     if (bypassAuth) return;
     if (!loading && !user) navigate({ to: "/login" });
     if (!loading && user && passwordRecovery) navigate({ to: "/definir-senha" });
   }, [bypassAuth, loading, user, passwordRecovery, navigate]);
+
+  // Redireciona Admin Master sem empresa selecionada para a tela de escolha.
+  useEffect(() => {
+    if (loading && !bypassAuth) return;
+    if (isMaster && !selectedCompanyId && !isMasterRoute && pathname !== "/login") {
+      navigate({ to: "/master/empresas" });
+    }
+  }, [loading, bypassAuth, isMaster, selectedCompanyId, isMasterRoute, pathname, navigate]);
 
   if (!bypassAuth && (loading || !user)) {
     return (
@@ -59,6 +79,68 @@ export function AppShell({
             />
           </div>
           <div className="ml-auto flex items-center gap-3">
+            {/* Seletor de empresa (topbar) */}
+            {selectedCompany ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => isMaster && setSwitcherOpen((v) => !v)}
+                  disabled={!isMaster}
+                  className={`flex items-center gap-2 h-9 rounded-md border border-border px-3 text-xs ${
+                    isMaster ? "hover:bg-muted cursor-pointer" : "cursor-default"
+                  }`}
+                  title={isMaster ? "Trocar empresa" : selectedCompany.razao_social}
+                >
+                  <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="max-w-[160px] truncate font-medium">
+                    {selectedCompany.nome_fantasia}
+                  </span>
+                  {isMaster && <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+                </button>
+                {isMaster && switcherOpen && (
+                  <div className="absolute right-0 mt-2 w-72 rounded-md border border-border bg-card shadow-lg z-20 overflow-hidden">
+                    <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border">
+                      Trocar empresa
+                    </div>
+                    <ul className="max-h-72 overflow-y-auto">
+                      {empresasDisponiveis.map((e) => (
+                        <li key={e.id}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              trocarEmpresa(e.id);
+                              setSwitcherOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-xs hover:bg-muted ${
+                              e.id === selectedCompanyId ? "bg-muted/60" : ""
+                            }`}
+                          >
+                            <div className="font-medium">{e.nome_fantasia}</div>
+                            <div className="text-[11px] text-muted-foreground">{e.cnpj}</div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      to="/master/empresas"
+                      onClick={() => setSwitcherOpen(false)}
+                      className="block border-t border-border px-3 py-2 text-xs font-medium text-accent hover:bg-muted"
+                    >
+                      Ver todas as empresas →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            ) : isMaster ? (
+              <Link
+                to="/master/empresas"
+                className="flex items-center gap-2 h-9 rounded-md border border-border px-3 text-xs hover:bg-muted"
+              >
+                <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                Selecionar empresa
+              </Link>
+            ) : null}
+
             {/* Simulação (mock) — só aparece em modo mock para testar regras de acesso */}
             {bypassAuth && (
               <div className="hidden lg:flex items-center gap-2 text-[11px] text-muted-foreground">
