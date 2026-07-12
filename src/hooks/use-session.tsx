@@ -71,6 +71,7 @@ type SessionCtx = {
   isMaster: boolean;
   empresaAtiva: boolean;
   acessoLiberado: boolean;
+  contextoCarregando: boolean;
   trocarEmpresa: (id: string) => boolean;
   limparEmpresa: () => void;
   // Utilitários de simulação (mock).
@@ -89,6 +90,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       : { id: "", nome: "", email: "", perfil: "Colaborador", isMaster: false },
   );
   const [empresas, setEmpresas] = useState<EmpresaResumo[]>(useMocks ? empresasMock : []);
+  const [contextoCarregando, setContextoCarregando] = useState<boolean>(!useMocks);
 
   // Carrega contexto real do usuário via RPC api_contexto_usuario.
   useEffect(() => {
@@ -97,9 +99,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (!supabase || !user) {
       setEmpresas([]);
       setUsuario({ id: "", nome: "", email: "", perfil: "Colaborador", isMaster: false });
+      setContextoCarregando(false);
       return;
     }
     let cancelled = false;
+    setContextoCarregando(true);
     (async () => {
       const { data, error } = await supabase.rpc("api_contexto_usuario");
       if (cancelled) return;
@@ -113,6 +117,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           isMaster: false,
         });
         setEmpresas([]);
+        setContextoCarregando(false);
         return;
       }
       // Aceita shape { usuario, empresas } ou { data: {...} }.
@@ -145,6 +150,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         };
       });
       setEmpresas(list);
+      setContextoCarregando(false);
     })();
     return () => {
       cancelled = true;
@@ -240,6 +246,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       empresaAtiva,
       // Master sempre libera; usuário comum precisa de empresa ativa selecionada.
       acessoLiberado: usuario.isMaster || (!!selectedCompany && empresaAtiva),
+      contextoCarregando,
       trocarEmpresa,
       limparEmpresa,
       setEmpresaStatus,
@@ -250,6 +257,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     selectedId,
     empresasDisponiveis,
     usuario,
+    contextoCarregando,
     trocarEmpresa,
     limparEmpresa,
     setEmpresaStatus,
