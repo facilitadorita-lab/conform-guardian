@@ -1,0 +1,10 @@
+export { authService } from "./authService";
+export { dashboardService } from "./dashboardService";
+export { documentosService } from "./documentosService";
+export { equipamentosService } from "./equipamentosService";
+export { manutencoesService } from "./manutencoesService";
+export { pendenciasService } from "./pendenciasService";
+export { alertasService } from "./alertasService";
+export { auditoriaService } from "./auditoriaService";
+export { usuariosService } from "./usuariosService";
+export { adminMasterService } from "./adminMasterService";
