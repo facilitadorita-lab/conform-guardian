@@ -78,13 +78,12 @@ const masterGroup: { label: string; items: NavItem[] } = {
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { isMaster, acessoLiberado } = useSession();
+  const { isMaster, acessoLiberado, usuarioAtual } = useSession();
 
   // Se a empresa está bloqueada e o usuário não é master, o menu não é exibido.
   if (!acessoLiberado) return null;
 
   const groups = isMaster ? [...baseGroups, masterGroup] : baseGroups;
-  const { usuarioAtual } = useSession();
   const iniciais = usuarioAtual.nome
     .split(" ")
     .map((p) => p[0])
