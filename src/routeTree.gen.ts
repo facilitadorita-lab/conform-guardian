@@ -20,6 +20,15 @@ import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as AuditoriaRouteImport } from './routes/auditoria'
 import { Route as AlertasRouteImport } from './routes/alertas'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MasterValoresPlanosRouteImport } from './routes/master.valores-planos'
+import { Route as MasterUsuariosAtivosRouteImport } from './routes/master.usuarios-ativos'
+import { Route as MasterRecursosPlanosRouteImport } from './routes/master.recursos-planos'
+import { Route as MasterProximosPagamentosRouteImport } from './routes/master.proximos-pagamentos'
+import { Route as MasterPlanosRouteImport } from './routes/master.planos'
+import { Route as MasterInadimplentesRouteImport } from './routes/master.inadimplentes'
+import { Route as MasterFinanceiroRouteImport } from './routes/master.financeiro'
+import { Route as MasterEmpresasRouteImport } from './routes/master.empresas'
+import { Route as MasterAssinaturasRouteImport } from './routes/master.assinaturas'
 import { Route as EquipamentosIdRouteImport } from './routes/equipamentos.$id'
 
 const UsuariosRoute = UsuariosRouteImport.update({
@@ -77,6 +86,52 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MasterValoresPlanosRoute = MasterValoresPlanosRouteImport.update({
+  id: '/master/valores-planos',
+  path: '/master/valores-planos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterUsuariosAtivosRoute = MasterUsuariosAtivosRouteImport.update({
+  id: '/master/usuarios-ativos',
+  path: '/master/usuarios-ativos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterRecursosPlanosRoute = MasterRecursosPlanosRouteImport.update({
+  id: '/master/recursos-planos',
+  path: '/master/recursos-planos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterProximosPagamentosRoute =
+  MasterProximosPagamentosRouteImport.update({
+    id: '/master/proximos-pagamentos',
+    path: '/master/proximos-pagamentos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const MasterPlanosRoute = MasterPlanosRouteImport.update({
+  id: '/master/planos',
+  path: '/master/planos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterInadimplentesRoute = MasterInadimplentesRouteImport.update({
+  id: '/master/inadimplentes',
+  path: '/master/inadimplentes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterFinanceiroRoute = MasterFinanceiroRouteImport.update({
+  id: '/master/financeiro',
+  path: '/master/financeiro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterEmpresasRoute = MasterEmpresasRouteImport.update({
+  id: '/master/empresas',
+  path: '/master/empresas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterAssinaturasRoute = MasterAssinaturasRouteImport.update({
+  id: '/master/assinaturas',
+  path: '/master/assinaturas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EquipamentosIdRoute = EquipamentosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -96,6 +151,15 @@ export interface FileRoutesByFullPath {
   '/relatorios': typeof RelatoriosRoute
   '/usuarios': typeof UsuariosRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
+  '/master/assinaturas': typeof MasterAssinaturasRoute
+  '/master/empresas': typeof MasterEmpresasRoute
+  '/master/financeiro': typeof MasterFinanceiroRoute
+  '/master/inadimplentes': typeof MasterInadimplentesRoute
+  '/master/planos': typeof MasterPlanosRoute
+  '/master/proximos-pagamentos': typeof MasterProximosPagamentosRoute
+  '/master/recursos-planos': typeof MasterRecursosPlanosRoute
+  '/master/usuarios-ativos': typeof MasterUsuariosAtivosRoute
+  '/master/valores-planos': typeof MasterValoresPlanosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +174,15 @@ export interface FileRoutesByTo {
   '/relatorios': typeof RelatoriosRoute
   '/usuarios': typeof UsuariosRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
+  '/master/assinaturas': typeof MasterAssinaturasRoute
+  '/master/empresas': typeof MasterEmpresasRoute
+  '/master/financeiro': typeof MasterFinanceiroRoute
+  '/master/inadimplentes': typeof MasterInadimplentesRoute
+  '/master/planos': typeof MasterPlanosRoute
+  '/master/proximos-pagamentos': typeof MasterProximosPagamentosRoute
+  '/master/recursos-planos': typeof MasterRecursosPlanosRoute
+  '/master/usuarios-ativos': typeof MasterUsuariosAtivosRoute
+  '/master/valores-planos': typeof MasterValoresPlanosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +198,15 @@ export interface FileRoutesById {
   '/relatorios': typeof RelatoriosRoute
   '/usuarios': typeof UsuariosRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
+  '/master/assinaturas': typeof MasterAssinaturasRoute
+  '/master/empresas': typeof MasterEmpresasRoute
+  '/master/financeiro': typeof MasterFinanceiroRoute
+  '/master/inadimplentes': typeof MasterInadimplentesRoute
+  '/master/planos': typeof MasterPlanosRoute
+  '/master/proximos-pagamentos': typeof MasterProximosPagamentosRoute
+  '/master/recursos-planos': typeof MasterRecursosPlanosRoute
+  '/master/usuarios-ativos': typeof MasterUsuariosAtivosRoute
+  '/master/valores-planos': typeof MasterValoresPlanosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +223,15 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/usuarios'
     | '/equipamentos/$id'
+    | '/master/assinaturas'
+    | '/master/empresas'
+    | '/master/financeiro'
+    | '/master/inadimplentes'
+    | '/master/planos'
+    | '/master/proximos-pagamentos'
+    | '/master/recursos-planos'
+    | '/master/usuarios-ativos'
+    | '/master/valores-planos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +246,15 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/usuarios'
     | '/equipamentos/$id'
+    | '/master/assinaturas'
+    | '/master/empresas'
+    | '/master/financeiro'
+    | '/master/inadimplentes'
+    | '/master/planos'
+    | '/master/proximos-pagamentos'
+    | '/master/recursos-planos'
+    | '/master/usuarios-ativos'
+    | '/master/valores-planos'
   id:
     | '__root__'
     | '/'
@@ -169,6 +269,15 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/usuarios'
     | '/equipamentos/$id'
+    | '/master/assinaturas'
+    | '/master/empresas'
+    | '/master/financeiro'
+    | '/master/inadimplentes'
+    | '/master/planos'
+    | '/master/proximos-pagamentos'
+    | '/master/recursos-planos'
+    | '/master/usuarios-ativos'
+    | '/master/valores-planos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -183,6 +292,15 @@ export interface RootRouteChildren {
   PendenciasRoute: typeof PendenciasRoute
   RelatoriosRoute: typeof RelatoriosRoute
   UsuariosRoute: typeof UsuariosRoute
+  MasterAssinaturasRoute: typeof MasterAssinaturasRoute
+  MasterEmpresasRoute: typeof MasterEmpresasRoute
+  MasterFinanceiroRoute: typeof MasterFinanceiroRoute
+  MasterInadimplentesRoute: typeof MasterInadimplentesRoute
+  MasterPlanosRoute: typeof MasterPlanosRoute
+  MasterProximosPagamentosRoute: typeof MasterProximosPagamentosRoute
+  MasterRecursosPlanosRoute: typeof MasterRecursosPlanosRoute
+  MasterUsuariosAtivosRoute: typeof MasterUsuariosAtivosRoute
+  MasterValoresPlanosRoute: typeof MasterValoresPlanosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -264,6 +382,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/master/valores-planos': {
+      id: '/master/valores-planos'
+      path: '/master/valores-planos'
+      fullPath: '/master/valores-planos'
+      preLoaderRoute: typeof MasterValoresPlanosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/usuarios-ativos': {
+      id: '/master/usuarios-ativos'
+      path: '/master/usuarios-ativos'
+      fullPath: '/master/usuarios-ativos'
+      preLoaderRoute: typeof MasterUsuariosAtivosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/recursos-planos': {
+      id: '/master/recursos-planos'
+      path: '/master/recursos-planos'
+      fullPath: '/master/recursos-planos'
+      preLoaderRoute: typeof MasterRecursosPlanosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/proximos-pagamentos': {
+      id: '/master/proximos-pagamentos'
+      path: '/master/proximos-pagamentos'
+      fullPath: '/master/proximos-pagamentos'
+      preLoaderRoute: typeof MasterProximosPagamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/planos': {
+      id: '/master/planos'
+      path: '/master/planos'
+      fullPath: '/master/planos'
+      preLoaderRoute: typeof MasterPlanosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/inadimplentes': {
+      id: '/master/inadimplentes'
+      path: '/master/inadimplentes'
+      fullPath: '/master/inadimplentes'
+      preLoaderRoute: typeof MasterInadimplentesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/financeiro': {
+      id: '/master/financeiro'
+      path: '/master/financeiro'
+      fullPath: '/master/financeiro'
+      preLoaderRoute: typeof MasterFinanceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/empresas': {
+      id: '/master/empresas'
+      path: '/master/empresas'
+      fullPath: '/master/empresas'
+      preLoaderRoute: typeof MasterEmpresasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/assinaturas': {
+      id: '/master/assinaturas'
+      path: '/master/assinaturas'
+      fullPath: '/master/assinaturas'
+      preLoaderRoute: typeof MasterAssinaturasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/equipamentos/$id': {
       id: '/equipamentos/$id'
       path: '/$id'
@@ -298,6 +479,15 @@ const rootRouteChildren: RootRouteChildren = {
   PendenciasRoute: PendenciasRoute,
   RelatoriosRoute: RelatoriosRoute,
   UsuariosRoute: UsuariosRoute,
+  MasterAssinaturasRoute: MasterAssinaturasRoute,
+  MasterEmpresasRoute: MasterEmpresasRoute,
+  MasterFinanceiroRoute: MasterFinanceiroRoute,
+  MasterInadimplentesRoute: MasterInadimplentesRoute,
+  MasterPlanosRoute: MasterPlanosRoute,
+  MasterProximosPagamentosRoute: MasterProximosPagamentosRoute,
+  MasterRecursosPlanosRoute: MasterRecursosPlanosRoute,
+  MasterUsuariosAtivosRoute: MasterUsuariosAtivosRoute,
+  MasterValoresPlanosRoute: MasterValoresPlanosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
