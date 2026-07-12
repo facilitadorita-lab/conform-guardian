@@ -50,12 +50,12 @@ export const masterPlanos = [
 ] as const;
 
 export const masterEmpresas = [
-  { id: "EMP-001", razao: "Clínica Vitalis Ltda.", cnpj: "12.345.678/0001-90", plano: "Professional", status: "ativa" as EmpresaStatus, usuarios: 12, desde: "2024-05-11" },
-  { id: "EMP-002", razao: "LabAnalytics S.A.", cnpj: "22.981.221/0001-05", plano: "Enterprise", status: "ativa" as EmpresaStatus, usuarios: 48, desde: "2023-11-02" },
-  { id: "EMP-003", razao: "Farma+ Distribuidora", cnpj: "33.117.008/0001-71", plano: "Starter", status: "inadimplente" as EmpresaStatus, usuarios: 3, desde: "2025-01-19" },
-  { id: "EMP-004", razao: "Hospital São Bento", cnpj: "44.220.100/0001-33", plano: "Enterprise", status: "ativa" as EmpresaStatus, usuarios: 92, desde: "2022-08-30" },
-  { id: "EMP-005", razao: "Odonto Prime", cnpj: "55.802.441/0001-12", plano: "Starter", status: "suspensa" as EmpresaStatus, usuarios: 5, desde: "2025-03-05" },
-  { id: "EMP-006", razao: "BioQuímica Sul", cnpj: "66.311.980/0001-09", plano: "Professional", status: "ativa" as EmpresaStatus, usuarios: 22, desde: "2024-02-14" },
+  { id: "EMP-001", razao: "Clínica Vitalis Ltda.", fantasia: "Clínica Vitalis", cnpj: "12.345.678/0001-90", plano: "Professional", status: "ativa" as EmpresaStatus, usuarios: 12, documentos: 48, equipamentos: 22, assinatura: "ativa", desde: "2024-05-11" },
+  { id: "EMP-002", razao: "LabAnalytics S.A.", fantasia: "LabAnalytics", cnpj: "22.981.221/0001-05", plano: "Enterprise", status: "ativa" as EmpresaStatus, usuarios: 48, documentos: 132, equipamentos: 87, assinatura: "ativa", desde: "2023-11-02" },
+  { id: "EMP-003", razao: "Farma+ Distribuidora", fantasia: "Farma+", cnpj: "33.117.008/0001-71", plano: "Starter", status: "inadimplente" as EmpresaStatus, usuarios: 3, documentos: 14, equipamentos: 6, assinatura: "atrasada", desde: "2025-01-19" },
+  { id: "EMP-004", razao: "Hospital São Bento", fantasia: "Hosp. São Bento", cnpj: "44.220.100/0001-33", plano: "Enterprise", status: "ativa" as EmpresaStatus, usuarios: 92, documentos: 214, equipamentos: 158, assinatura: "ativa", desde: "2022-08-30" },
+  { id: "EMP-005", razao: "Odonto Prime", fantasia: "Odonto Prime", cnpj: "55.802.441/0001-12", plano: "Starter", status: "suspensa" as EmpresaStatus, usuarios: 5, documentos: 12, equipamentos: 4, assinatura: "suspensa", desde: "2025-03-05" },
+  { id: "EMP-006", razao: "BioQuímica Sul", fantasia: "BioQuímica Sul", cnpj: "66.311.980/0001-09", plano: "Professional", status: "ativa" as EmpresaStatus, usuarios: 22, documentos: 63, equipamentos: 41, assinatura: "ativa", desde: "2024-02-14" },
 ];
 
 export const masterAssinaturas = [
