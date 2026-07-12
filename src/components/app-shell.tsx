@@ -1,6 +1,9 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { AppSidebar } from "./app-sidebar";
-import { Bell, Search } from "lucide-react";
+import { Bell, LogOut, Search } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useNavigate } from "@tanstack/react-router";
+import { shouldUseMocks } from "@/lib/runtime-config";
 
 export function AppShell({
   title,
@@ -13,6 +16,23 @@ export function AppShell({
   actions?: ReactNode;
   children: ReactNode;
 }) {
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const bypassAuth = shouldUseMocks();
+
+  useEffect(() => {
+    if (bypassAuth) return;
+    if (!loading && !user) navigate({ to: "/login" });
+  }, [bypassAuth, loading, user, navigate]);
+
+  if (!bypassAuth && (loading || !user)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+        Carregando sessão…
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground">
       <AppSidebar />
@@ -31,9 +51,23 @@ export function AppShell({
               <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-danger text-[10px] font-semibold text-white flex items-center justify-center">7</span>
             </button>
             <div className="hidden sm:flex flex-col items-end leading-tight">
-              <span className="text-xs font-medium">Clínica Vitalis Ltda.</span>
-              <span className="text-[11px] text-muted-foreground">CNPJ 12.345.678/0001-90</span>
+              <span className="text-xs font-medium">{user?.email ?? "Clínica Vitalis Ltda."}</span>
+              <span className="text-[11px] text-muted-foreground">
+                {bypassAuth ? "Modo mock" : "Sessão ativa"}
+              </span>
             </div>
+            {!bypassAuth && (
+              <button
+                onClick={async () => {
+                  await signOut();
+                  navigate({ to: "/login" });
+                }}
+                title="Sair"
+                className="h-9 w-9 rounded-md border border-border hover:bg-muted flex items-center justify-center"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </header>
 

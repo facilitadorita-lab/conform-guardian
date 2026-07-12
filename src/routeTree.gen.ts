@@ -13,6 +13,7 @@ import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as PendenciasRouteImport } from './routes/pendencias'
 import { Route as ManutencoesRouteImport } from './routes/manutencoes'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as DocumentosRouteImport } from './routes/documentos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
@@ -39,6 +40,11 @@ const PendenciasRoute = PendenciasRouteImport.update({
 const ManutencoesRoute = ManutencoesRouteImport.update({
   id: '/manutencoes',
   path: '/manutencoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EquipamentosRoute = EquipamentosRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ConfiguracoesRoute
   '/documentos': typeof DocumentosRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
+  '/login': typeof LoginRoute
   '/manutencoes': typeof ManutencoesRoute
   '/pendencias': typeof PendenciasRoute
   '/relatorios': typeof RelatoriosRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ConfiguracoesRoute
   '/documentos': typeof DocumentosRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
+  '/login': typeof LoginRoute
   '/manutencoes': typeof ManutencoesRoute
   '/pendencias': typeof PendenciasRoute
   '/relatorios': typeof RelatoriosRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/configuracoes': typeof ConfiguracoesRoute
   '/documentos': typeof DocumentosRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
+  '/login': typeof LoginRoute
   '/manutencoes': typeof ManutencoesRoute
   '/pendencias': typeof PendenciasRoute
   '/relatorios': typeof RelatoriosRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/documentos'
     | '/equipamentos'
+    | '/login'
     | '/manutencoes'
     | '/pendencias'
     | '/relatorios'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/documentos'
     | '/equipamentos'
+    | '/login'
     | '/manutencoes'
     | '/pendencias'
     | '/relatorios'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/documentos'
     | '/equipamentos'
+    | '/login'
     | '/manutencoes'
     | '/pendencias'
     | '/relatorios'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   DocumentosRoute: typeof DocumentosRoute
   EquipamentosRoute: typeof EquipamentosRouteWithChildren
+  LoginRoute: typeof LoginRoute
   ManutencoesRoute: typeof ManutencoesRoute
   PendenciasRoute: typeof PendenciasRoute
   RelatoriosRoute: typeof RelatoriosRoute
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/manutencoes'
       fullPath: '/manutencoes'
       preLoaderRoute: typeof ManutencoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/equipamentos': {
@@ -273,6 +293,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesRoute: ConfiguracoesRoute,
   DocumentosRoute: DocumentosRoute,
   EquipamentosRoute: EquipamentosRouteWithChildren,
+  LoginRoute: LoginRoute,
   ManutencoesRoute: ManutencoesRoute,
   PendenciasRoute: PendenciasRoute,
   RelatoriosRoute: RelatoriosRoute,
