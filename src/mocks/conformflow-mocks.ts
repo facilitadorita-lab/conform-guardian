@@ -2,6 +2,109 @@
 // sempre acessar via services em src/services/*.
 export type StatusVenc = "vencido" | "critico" | "atencao" | "ok";
 
+// ---------- Sessão / contexto atual (mock) ----------
+export type EmpresaStatus = "ativa" | "inadimplente" | "suspensa" | "bloqueada" | "cancelada";
+
+export interface EmpresaAtualMock {
+  id: string;
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  status: EmpresaStatus;
+  plano: string;
+  proximo_vencimento: string;
+  motivo_bloqueio?: string;
+}
+
+export interface UsuarioAtualMock {
+  id: string;
+  nome: string;
+  email: string;
+  perfil: "Admin Master" | "Administrador" | "Responsável Técnico" | "Colaborador";
+  isMaster: boolean;
+}
+
+export const empresaAtualMock: EmpresaAtualMock = {
+  id: "EMP-001",
+  razao_social: "Clínica Vitalis Ltda.",
+  nome_fantasia: "Clínica Vitalis",
+  cnpj: "12.345.678/0001-90",
+  status: "ativa",
+  plano: "Professional",
+  proximo_vencimento: "2026-08-10",
+};
+
+export const usuarioAtualMock: UsuarioAtualMock = {
+  id: "U-01",
+  nome: "Marina Alves",
+  email: "marina.alves@empresa.com",
+  perfil: "Administrador",
+  isMaster: false,
+};
+
+// ---------- Dados de Admin Master ----------
+export const masterPlanos = [
+  { id: "PL-STARTER", nome: "Starter", valor: 149, ativo: true, empresas: 42, recursos: { documentos: true, equipamentos: true, manutencoes: false, auditoria: false, alertas: true, usuarios: 3 } },
+  { id: "PL-PRO", nome: "Professional", valor: 349, ativo: true, empresas: 118, recursos: { documentos: true, equipamentos: true, manutencoes: true, auditoria: true, alertas: true, usuarios: 15 } },
+  { id: "PL-ENT", nome: "Enterprise", valor: 899, ativo: true, empresas: 27, recursos: { documentos: true, equipamentos: true, manutencoes: true, auditoria: true, alertas: true, usuarios: 100 } },
+] as const;
+
+export const masterEmpresas = [
+  { id: "EMP-001", razao: "Clínica Vitalis Ltda.", cnpj: "12.345.678/0001-90", plano: "Professional", status: "ativa" as EmpresaStatus, usuarios: 12, desde: "2024-05-11" },
+  { id: "EMP-002", razao: "LabAnalytics S.A.", cnpj: "22.981.221/0001-05", plano: "Enterprise", status: "ativa" as EmpresaStatus, usuarios: 48, desde: "2023-11-02" },
+  { id: "EMP-003", razao: "Farma+ Distribuidora", cnpj: "33.117.008/0001-71", plano: "Starter", status: "inadimplente" as EmpresaStatus, usuarios: 3, desde: "2025-01-19" },
+  { id: "EMP-004", razao: "Hospital São Bento", cnpj: "44.220.100/0001-33", plano: "Enterprise", status: "ativa" as EmpresaStatus, usuarios: 92, desde: "2022-08-30" },
+  { id: "EMP-005", razao: "Odonto Prime", cnpj: "55.802.441/0001-12", plano: "Starter", status: "suspensa" as EmpresaStatus, usuarios: 5, desde: "2025-03-05" },
+  { id: "EMP-006", razao: "BioQuímica Sul", cnpj: "66.311.980/0001-09", plano: "Professional", status: "ativa" as EmpresaStatus, usuarios: 22, desde: "2024-02-14" },
+];
+
+export const masterAssinaturas = [
+  { id: "AS-9001", empresa: "Clínica Vitalis Ltda.", plano: "Professional", inicio: "2024-05-11", proximaCobranca: "2026-08-10", valor: 349, status: "ativa" },
+  { id: "AS-9002", empresa: "LabAnalytics S.A.", plano: "Enterprise", inicio: "2023-11-02", proximaCobranca: "2026-08-02", valor: 899, status: "ativa" },
+  { id: "AS-9003", empresa: "Farma+ Distribuidora", plano: "Starter", inicio: "2025-01-19", proximaCobranca: "2026-07-19", valor: 149, status: "atrasada" },
+  { id: "AS-9004", empresa: "Hospital São Bento", plano: "Enterprise", inicio: "2022-08-30", proximaCobranca: "2026-08-30", valor: 899, status: "ativa" },
+  { id: "AS-9005", empresa: "Odonto Prime", plano: "Starter", inicio: "2025-03-05", proximaCobranca: "2026-07-05", valor: 149, status: "suspensa" },
+];
+
+export const masterFinanceiro = {
+  mrr: 68420,
+  arr: 821040,
+  receitaMes: 71230,
+  ticketMedio: 386,
+  churn: 2.1,
+  inadimplenciaPct: 4.8,
+  meses: [
+    { mes: "Fev", receita: 54210 },
+    { mes: "Mar", receita: 58020 },
+    { mes: "Abr", receita: 61140 },
+    { mes: "Mai", receita: 63980 },
+    { mes: "Jun", receita: 67210 },
+    { mes: "Jul", receita: 71230 },
+  ],
+};
+
+export const masterUsuariosAtivos = [
+  { empresa: "Clínica Vitalis Ltda.", ativos: 12, ultimosLogin: "2026-07-11" },
+  { empresa: "LabAnalytics S.A.", ativos: 48, ultimosLogin: "2026-07-12" },
+  { empresa: "Hospital São Bento", ativos: 92, ultimosLogin: "2026-07-12" },
+  { empresa: "BioQuímica Sul", ativos: 22, ultimosLogin: "2026-07-10" },
+  { empresa: "Farma+ Distribuidora", ativos: 3, ultimosLogin: "2026-06-28" },
+];
+
+export const masterInadimplentes = [
+  { empresa: "Farma+ Distribuidora", plano: "Starter", valor: 149, diasAtraso: 12, ultimaTentativa: "2026-07-08" },
+  { empresa: "Odonto Prime", plano: "Starter", valor: 149, diasAtraso: 38, ultimaTentativa: "2026-07-04" },
+  { empresa: "TechDiag Imagem", plano: "Professional", valor: 349, diasAtraso: 4, ultimaTentativa: "2026-07-10" },
+];
+
+export const masterProximosPagamentos = [
+  { empresa: "Farma+ Distribuidora", vencimento: "2026-07-19", valor: 149, plano: "Starter" },
+  { empresa: "LabAnalytics S.A.", vencimento: "2026-08-02", valor: 899, plano: "Enterprise" },
+  { empresa: "Clínica Vitalis Ltda.", vencimento: "2026-08-10", valor: 349, plano: "Professional" },
+  { empresa: "BioQuímica Sul", vencimento: "2026-08-14", valor: 349, plano: "Professional" },
+  { empresa: "Hospital São Bento", vencimento: "2026-08-30", valor: 899, plano: "Enterprise" },
+];
+
 export const kpis = {
   indiceConformidade: 87,
   documentosVencidos: 4,
