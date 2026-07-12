@@ -11,7 +11,17 @@ import {
   Users,
   Settings,
   ShieldHalf,
+  DollarSign,
+  Package,
+  Building2,
+  CreditCard,
+  UserCheck,
+  AlertOctagon,
+  CalendarClock,
+  Tag,
+  SlidersHorizontal,
 } from "lucide-react";
+import { useSession } from "@/hooks/use-session";
 
 type NavItem = {
   to: string;
@@ -20,7 +30,7 @@ type NavItem = {
   exact?: boolean;
 };
 
-const groups: { label: string; items: NavItem[] }[] = [
+const baseGroups: { label: string; items: NavItem[] }[] = [
   {
     label: "Visão Geral",
     items: [{ to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true }],
@@ -51,8 +61,29 @@ const groups: { label: string; items: NavItem[] }[] = [
   },
 ] as const;
 
+const masterGroup: { label: string; items: NavItem[] } = {
+  label: "Admin Master",
+  items: [
+    { to: "/master/financeiro", label: "Financeiro", icon: DollarSign },
+    { to: "/master/planos", label: "Planos", icon: Package },
+    { to: "/master/empresas", label: "Empresas", icon: Building2 },
+    { to: "/master/assinaturas", label: "Assinaturas", icon: CreditCard },
+    { to: "/master/usuarios-ativos", label: "Usuários ativos", icon: UserCheck },
+    { to: "/master/inadimplentes", label: "Inadimplentes", icon: AlertOctagon },
+    { to: "/master/proximos-pagamentos", label: "Próximos pagamentos", icon: CalendarClock },
+    { to: "/master/valores-planos", label: "Valores dos planos", icon: Tag },
+    { to: "/master/recursos-planos", label: "Recursos por plano", icon: SlidersHorizontal },
+  ],
+};
+
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const { isMaster, acessoLiberado } = useSession();
+
+  // Se a empresa está bloqueada e o usuário não é master, o menu não é exibido.
+  if (!acessoLiberado) return null;
+
+  const groups = isMaster ? [...baseGroups, masterGroup] : baseGroups;
 
   return (
     <aside className="hidden md:flex w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
