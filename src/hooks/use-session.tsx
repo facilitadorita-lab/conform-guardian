@@ -14,6 +14,9 @@ import {
   type UsuarioAtualMock,
   type EmpresaStatus,
 } from "@/mocks/conformflow-mocks";
+import { useAuth } from "@/hooks/use-auth";
+import { getSupabaseClient } from "@/lib/supabaseClient";
+import { shouldUseMocks } from "@/lib/runtime-config";
 
 const STORAGE_KEY = "conformflow.selectedCompanyId";
 
@@ -33,7 +36,7 @@ export type EmpresaResumo = {
   desde: string;
 };
 
-const empresasCadastradas: EmpresaResumo[] = masterEmpresas.map((e) => ({
+const empresasMock: EmpresaResumo[] = masterEmpresas.map((e) => ({
   id: e.id,
   razao_social: e.razao,
   nome_fantasia: e.fantasia,
@@ -68,6 +71,7 @@ type SessionCtx = {
   isMaster: boolean;
   empresaAtiva: boolean;
   acessoLiberado: boolean;
+  contextoCarregando: boolean;
   trocarEmpresa: (id: string) => boolean;
   limparEmpresa: () => void;
   // Utilitários de simulação (mock).
@@ -78,15 +82,86 @@ type SessionCtx = {
 const Ctx = createContext<SessionCtx | undefined>(undefined);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [usuario, setUsuario] = useState<UsuarioAtualMock>(usuarioAtualMock);
-  const [empresas, setEmpresas] = useState<EmpresaResumo[]>(empresasCadastradas);
+  const useMocks = shouldUseMocks();
+  const { user } = useAuth();
+  const [usuario, setUsuario] = useState<UsuarioAtualMock>(
+    useMocks
+      ? usuarioAtualMock
+      : { id: "", nome: "", email: "", perfil: "Colaborador", isMaster: false },
+  );
+  const [empresas, setEmpresas] = useState<EmpresaResumo[]>(useMocks ? empresasMock : []);
+  const [contextoCarregando, setContextoCarregando] = useState<boolean>(!useMocks);
+
+  // Carrega contexto real do usuário via RPC api_contexto_usuario.
+  useEffect(() => {
+    if (useMocks) return;
+    const supabase = getSupabaseClient();
+    if (!supabase || !user) {
+      setEmpresas([]);
+      setUsuario({ id: "", nome: "", email: "", perfil: "Colaborador", isMaster: false });
+      setContextoCarregando(false);
+      return;
+    }
+    let cancelled = false;
+    setContextoCarregando(true);
+    (async () => {
+      const { data, error } = await supabase.rpc("api_contexto_usuario");
+      if (cancelled) return;
+      if (error || !data) {
+        console.error("api_contexto_usuario:", error);
+        setUsuario({
+          id: user.id,
+          nome: (user.user_metadata?.nome as string) ?? user.email ?? "",
+          email: user.email ?? "",
+          perfil: "Colaborador",
+          isMaster: false,
+        });
+        setEmpresas([]);
+        setContextoCarregando(false);
+        return;
+      }
+      // Aceita shape { usuario, empresas } ou { data: {...} }.
+      const payload = (data as { usuario?: unknown; empresas?: unknown; data?: unknown }).data
+        ? ((data as { data: unknown }).data as Record<string, unknown>)
+        : (data as Record<string, unknown>);
+      const u = (payload.usuario ?? {}) as Record<string, unknown>;
+      const isMaster = Boolean(u.is_master ?? u.isMaster);
+      setUsuario({
+        id: (u.id as string) ?? user.id,
+        nome: (u.nome as string) ?? user.email ?? "",
+        email: (u.email as string) ?? user.email ?? "",
+        perfil: isMaster ? "Admin Master" : ((u.perfil as UsuarioAtualMock["perfil"]) ?? "Administrador"),
+        isMaster,
+      });
+      const list = ((payload.empresas as unknown[]) ?? []).map((raw): EmpresaResumo => {
+        const e = raw as Record<string, unknown>;
+        return {
+          id: String(e.id ?? ""),
+          razao_social: String(e.razao_social ?? e.razao ?? e.nome ?? ""),
+          nome_fantasia: String(e.nome_fantasia ?? e.fantasia ?? e.razao_social ?? e.nome ?? ""),
+          cnpj: String(e.cnpj ?? ""),
+          plano: String(e.plano ?? "—"),
+          status: ((e.status as EmpresaStatus) ?? "ativa"),
+          usuarios: Number(e.usuarios ?? 0),
+          documentos: Number(e.documentos ?? 0),
+          equipamentos: Number(e.equipamentos ?? 0),
+          assinatura: String(e.assinatura ?? "ativa"),
+          desde: String(e.desde ?? ""),
+        };
+      });
+      setEmpresas(list);
+      setContextoCarregando(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [useMocks, user]);
 
   // Empresas visíveis conforme perfil.
   const empresasDisponiveis = useMemo(() => {
     if (usuario.isMaster) return empresas;
-    // Usuário comum: apenas a(s) empresa(s) vinculada(s). Enquanto sem backend
-    // real, considera-se a primeira empresa como vínculo padrão.
-    return empresas.slice(0, 1);
+    // Usuário comum: apenas empresas retornadas pelo backend para o vínculo dele.
+    return empresas;
   }, [empresas, usuario.isMaster]);
 
   const [selectedId, setSelectedId] = useState<string | null>(() => {
@@ -171,6 +246,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       empresaAtiva,
       // Master sempre libera; usuário comum precisa de empresa ativa selecionada.
       acessoLiberado: usuario.isMaster || (!!selectedCompany && empresaAtiva),
+      contextoCarregando,
       trocarEmpresa,
       limparEmpresa,
       setEmpresaStatus,
@@ -181,6 +257,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     selectedId,
     empresasDisponiveis,
     usuario,
+    contextoCarregando,
     trocarEmpresa,
     limparEmpresa,
     setEmpresaStatus,

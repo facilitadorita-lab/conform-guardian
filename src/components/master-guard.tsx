@@ -13,7 +13,15 @@ export function MasterOnly({
   description?: string;
   children: ReactNode;
 }) {
-  const { isMaster } = useSession();
+  const { isMaster, contextoCarregando } = useSession();
+
+  if (contextoCarregando) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+        Carregando contexto…
+      </div>
+    );
+  }
 
   if (!isMaster) {
     return (
