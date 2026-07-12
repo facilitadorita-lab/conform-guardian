@@ -29,6 +29,7 @@ import { Route as MasterProximosPagamentosRouteImport } from './routes/master.pr
 import { Route as MasterPlanosRouteImport } from './routes/master.planos'
 import { Route as MasterInadimplentesRouteImport } from './routes/master.inadimplentes'
 import { Route as MasterFinanceiroRouteImport } from './routes/master.financeiro'
+import { Route as MasterEmpresasRouteImport } from './routes/master.empresas'
 import { Route as MasterAssinaturasRouteImport } from './routes/master.assinaturas'
 import { Route as EquipamentosIdRouteImport } from './routes/equipamentos.$id'
 
@@ -133,6 +134,11 @@ const MasterFinanceiroRoute = MasterFinanceiroRouteImport.update({
   path: '/master/financeiro',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MasterEmpresasRoute = MasterEmpresasRouteImport.update({
+  id: '/master/empresas',
+  path: '/master/empresas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MasterAssinaturasRoute = MasterAssinaturasRouteImport.update({
   id: '/master/assinaturas',
   path: '/master/assinaturas',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/usuarios': typeof UsuariosRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
+  '/master/empresas': typeof MasterEmpresasRoute
   '/master/financeiro': typeof MasterFinanceiroRoute
   '/master/inadimplentes': typeof MasterInadimplentesRoute
   '/master/planos': typeof MasterPlanosRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/usuarios': typeof UsuariosRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
+  '/master/empresas': typeof MasterEmpresasRoute
   '/master/financeiro': typeof MasterFinanceiroRoute
   '/master/inadimplentes': typeof MasterInadimplentesRoute
   '/master/planos': typeof MasterPlanosRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/usuarios': typeof UsuariosRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
+  '/master/empresas': typeof MasterEmpresasRoute
   '/master/financeiro': typeof MasterFinanceiroRoute
   '/master/inadimplentes': typeof MasterInadimplentesRoute
   '/master/planos': typeof MasterPlanosRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/equipamentos/$id'
     | '/master/assinaturas'
+    | '/master/empresas'
     | '/master/financeiro'
     | '/master/inadimplentes'
     | '/master/planos'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/equipamentos/$id'
     | '/master/assinaturas'
+    | '/master/empresas'
     | '/master/financeiro'
     | '/master/inadimplentes'
     | '/master/planos'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/equipamentos/$id'
     | '/master/assinaturas'
+    | '/master/empresas'
     | '/master/financeiro'
     | '/master/inadimplentes'
     | '/master/planos'
@@ -307,6 +319,7 @@ export interface RootRouteChildren {
   RelatoriosRoute: typeof RelatoriosRoute
   UsuariosRoute: typeof UsuariosRoute
   MasterAssinaturasRoute: typeof MasterAssinaturasRoute
+  MasterEmpresasRoute: typeof MasterEmpresasRoute
   MasterFinanceiroRoute: typeof MasterFinanceiroRoute
   MasterInadimplentesRoute: typeof MasterInadimplentesRoute
   MasterPlanosRoute: typeof MasterPlanosRoute
@@ -458,6 +471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterFinanceiroRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/master/empresas': {
+      id: '/master/empresas'
+      path: '/master/empresas'
+      fullPath: '/master/empresas'
+      preLoaderRoute: typeof MasterEmpresasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/master/assinaturas': {
       id: '/master/assinaturas'
       path: '/master/assinaturas'
@@ -502,6 +522,7 @@ const rootRouteChildren: RootRouteChildren = {
   RelatoriosRoute: RelatoriosRoute,
   UsuariosRoute: UsuariosRoute,
   MasterAssinaturasRoute: MasterAssinaturasRoute,
+  MasterEmpresasRoute: MasterEmpresasRoute,
   MasterFinanceiroRoute: MasterFinanceiroRoute,
   MasterInadimplentesRoute: MasterInadimplentesRoute,
   MasterPlanosRoute: MasterPlanosRoute,
