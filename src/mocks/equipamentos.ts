@@ -1,0 +1,10 @@
+import type { EquipamentoResumo } from "@/types";
+
+export const equipamentosMock: EquipamentoResumo[] = [
+  { id: "E-01", nome: "Autoclave", codigo: "AC-01", tipo: "Esterilizacao", fabricante: "SterilTech", modelo: "ST-220", setor: "Laboratorio", criticidade: "Alta", status: "atencao", proximoVenc: "2026-07-10" },
+  { id: "E-02", nome: "Balanca Analitica", codigo: "BL-04", tipo: "Medicao", fabricante: "Precisa", modelo: "XP-320", setor: "Laboratorio", criticidade: "Alta", status: "vencido", proximoVenc: "2026-07-02" },
+  { id: "E-03", nome: "Camara Fria", codigo: "CF-02", tipo: "Armazenamento", fabricante: "ColdMax", modelo: "CM-600", setor: "Estoque", criticidade: "Critica", status: "atencao", proximoVenc: "2026-07-22" },
+  { id: "E-04", nome: "Estufa Bacteriologica", codigo: "EB-07", tipo: "Cultura", fabricante: "BioLab", modelo: "BL-45", setor: "Laboratorio", criticidade: "Media", status: "ok", proximoVenc: "2026-11-15" },
+  { id: "E-05", nome: "Ar-Condicionado Sala Limpa", codigo: "AR-08", tipo: "Climatizacao", fabricante: "AirCorp", modelo: "AC-9000", setor: "Sala Limpa", criticidade: "Alta", status: "vencido", proximoVenc: "2026-06-28" },
+  { id: "E-06", nome: "Refrigerador Vacinas", codigo: "RF-11", tipo: "Armazenamento", fabricante: "ColdMax", modelo: "CM-200", setor: "Farmacia", criticidade: "Critica", status: "ok", proximoVenc: "2027-01-20" },
+];

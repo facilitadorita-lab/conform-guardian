@@ -1,25 +1,43 @@
-import { requireSupabase, shouldUseMocks } from "./_supabase";
+import { runtimeConfig } from "@/lib/runtime-config";
+import {
+  assinaturasEmpresasMock,
+  financeiroResumoMasterMock,
+  planosComerciaisMock,
+} from "@/mocks";
+import type {
+  AssinaturaEmpresaResumo,
+  FinanceiroResumoMaster,
+  PlanoComercialResumo,
+} from "@/types";
+import { cloneMock, invokeRpc } from "./service-utils";
 
-// Operações restritas ao Admin Master (multi-empresa).
-// Toda escrita crítica deve ser feita via RPC/Edge Function no backend.
 export const adminMasterService = {
-  async listEmpresas() {
-    if (shouldUseMocks()) {
-      return [
-        { id: "mock-empresa", cnpj: "12.345.678/0001-90", razao_social: "Clínica Vitalis Ltda.", ativo: true },
-      ];
-    }
-    const { data, error } = await requireSupabase()
-      .from("empresas")
-      .select("*")
-      .order("razao_social", { ascending: true });
-    if (error) throw error;
-    return data ?? [];
+  async financeiroResumo(): Promise<FinanceiroResumoMaster> {
+    if (runtimeConfig.useMocks) return cloneMock(financeiroResumoMasterMock);
+    return invokeRpc<FinanceiroResumoMaster>("api_master_financeiro_resumo");
   },
 
-  async impersonateEmpresa(_empresaId: string) {
-    if (shouldUseMocks()) return { ok: true };
-    // TODO(supabase): RPC dedicada com log de auditoria imutável.
-    throw new Error("impersonateEmpresa: implementar via RPC segura no backend.");
+  async listarAssinaturas(): Promise<AssinaturaEmpresaResumo[]> {
+    if (runtimeConfig.useMocks) return cloneMock(assinaturasEmpresasMock);
+    return invokeRpc<AssinaturaEmpresaResumo[]>("api_master_listar_assinaturas");
+  },
+
+  async listarPlanos(): Promise<PlanoComercialResumo[]> {
+    if (runtimeConfig.useMocks) return cloneMock(planosComerciaisMock);
+    return invokeRpc<PlanoComercialResumo[]>("api_master_listar_planos");
+  },
+
+  salvarPlano(planoId: string | null, payload: Partial<PlanoComercialResumo>) {
+    return invokeRpc<PlanoComercialResumo>("api_master_salvar_plano", {
+      p_plano_id: planoId,
+      p_payload: payload,
+    });
+  },
+
+  atualizarAssinatura(empresaId: string, payload: Record<string, unknown>) {
+    return invokeRpc<AssinaturaEmpresaResumo>("api_master_atualizar_assinatura", {
+      p_empresa_id: empresaId,
+      p_payload: payload,
+    });
   },
 };

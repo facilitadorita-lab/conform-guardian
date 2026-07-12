@@ -8,21 +8,14 @@ import {
   Bell,
   BarChart3,
   ShieldCheck,
+  Sparkles,
   Users,
   Settings,
-  ShieldHalf,
-  DollarSign,
-  Package,
-  Building2,
-  CreditCard,
-  UserCheck,
-  AlertOctagon,
-  CalendarClock,
-  Tag,
+  WalletCards,
   SlidersHorizontal,
-  Sparkles,
+  Building2,
 } from "lucide-react";
-import { useSession } from "@/hooks/use-session";
+import { useAuthContext } from "@/hooks/use-conform-data";
 
 type NavItem = {
   to: string;
@@ -31,7 +24,7 @@ type NavItem = {
   exact?: boolean;
 };
 
-const baseGroups: { label: string; items: NavItem[] }[] = [
+const groups: { label: string; items: NavItem[] }[] = [
   {
     label: "Visão Geral",
     items: [{ to: "/", label: "Dashboard", icon: LayoutDashboard, exact: true }],
@@ -66,39 +59,26 @@ const baseGroups: { label: string; items: NavItem[] }[] = [
 const masterGroup: { label: string; items: NavItem[] } = {
   label: "Admin Master",
   items: [
-    { to: "/master/financeiro", label: "Financeiro", icon: DollarSign },
-    { to: "/master/planos", label: "Planos", icon: Package },
     { to: "/master/empresas", label: "Empresas", icon: Building2 },
-    { to: "/master/assinaturas", label: "Assinaturas", icon: CreditCard },
-    { to: "/master/usuarios-ativos", label: "Usuários ativos", icon: UserCheck },
-    { to: "/master/inadimplentes", label: "Inadimplentes", icon: AlertOctagon },
-    { to: "/master/proximos-pagamentos", label: "Próximos pagamentos", icon: CalendarClock },
-    { to: "/master/valores-planos", label: "Valores dos planos", icon: Tag },
-    { to: "/master/recursos-planos", label: "Recursos por plano", icon: SlidersHorizontal },
+    { to: "/master/financeiro", label: "Financeiro", icon: WalletCards },
+    { to: "/master/planos", label: "Planos", icon: SlidersHorizontal },
   ],
 };
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const { isMaster, acessoLiberado, usuarioAtual } = useSession();
-
-  // Se a empresa está bloqueada e o usuário não é master, o menu não é exibido.
-  if (!acessoLiberado) return null;
-
-  const groups = isMaster ? [...baseGroups, masterGroup] : baseGroups;
-  const iniciais = usuarioAtual.nome
-    .split(" ")
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const { data: authContext } = useAuthContext();
+  const visibleGroups = authContext?.usuario.isMaster ? [...groups, masterGroup] : groups;
 
   return (
     <aside className="hidden md:flex w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       <div className="flex items-center gap-2 px-5 py-5 border-b border-sidebar-border">
-        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-          <ShieldHalf className="h-5 w-5" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white/95 p-1 shadow-sm">
+          <img
+            src="/conform-flow-logo-transparent.png"
+            alt="Conform Flow"
+            className="h-full w-full object-contain"
+          />
         </div>
         <div className="leading-tight">
           <div className="text-sm font-semibold tracking-tight">Conform Flow</div>
@@ -107,7 +87,7 @@ export function AppSidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-      {groups.map((g: { label: string; items: NavItem[] }) => (
+      {visibleGroups.map((g: { label: string; items: NavItem[] }) => (
           <div key={g.label}>
             <div className="px-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 mb-2">
               {g.label}
@@ -141,11 +121,13 @@ export function AppSidebar() {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-sidebar-accent flex items-center justify-center text-sm font-semibold">
-            {iniciais}
+            MA
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-medium truncate">{usuarioAtual.nome}</div>
-            <div className="text-[11px] text-sidebar-foreground/60 truncate">{usuarioAtual.perfil}</div>
+            <div className="text-sm font-medium truncate">{authContext?.usuario.nome ?? "Marina Alves"}</div>
+            <div className="text-[11px] text-sidebar-foreground/60 truncate">
+              {authContext?.usuario.isMaster ? "Admin Master" : "Administrador"}
+            </div>
           </div>
         </div>
       </div>

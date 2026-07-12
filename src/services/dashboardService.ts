@@ -1,25 +1,18 @@
-import { kpis, pendenciasCriticas } from "@/mocks";
-import { requireSupabase, shouldUseMocks } from "./_supabase";
+import { runtimeConfig } from "@/lib/runtime-config";
+import { dashboardMock, pendenciasMock } from "@/mocks";
+import type { DashboardResumo, PendenciaResumo } from "@/types";
+import { cloneMock, invokeRpc } from "./service-utils";
+
+export interface DashboardData extends DashboardResumo {
+  pendencias: PendenciaResumo[];
+}
 
 export const dashboardService = {
-  async getKpis() {
-    if (shouldUseMocks()) return kpis;
-    // TODO(supabase): substituir por RPC agregada (ex.: rpc('dashboard_kpis')).
-    const supabase = requireSupabase();
-    const { data, error } = await supabase.rpc("dashboard_kpis");
-    if (error) throw error;
-    return data as typeof kpis;
-  },
+  async obter(empresaId: string): Promise<DashboardData> {
+    if (runtimeConfig.useMocks) {
+      return cloneMock({ ...dashboardMock, pendencias: pendenciasMock });
+    }
 
-  async getPendenciasCriticas() {
-    if (shouldUseMocks()) return pendenciasCriticas;
-    const supabase = requireSupabase();
-    const { data, error } = await supabase
-      .from("pendencias")
-      .select("*")
-      .in("status", ["vencido", "critico"])
-      .order("data_vencimento", { ascending: true });
-    if (error) throw error;
-    return data ?? [];
+    return invokeRpc<DashboardData>("api_dashboard", { p_empresa_id: empresaId });
   },
 };

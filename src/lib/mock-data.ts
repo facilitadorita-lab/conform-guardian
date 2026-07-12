@@ -1,3 +1,14 @@
-// Ponte de compatibilidade. Os dados mockados vivem em src/mocks/.
-// Novos arquivos devem importar dos services em src/services/*, não daqui.
-export * from "@/mocks";
+export type StatusVenc = "vencido" | "critico" | "atencao" | "ok";
+
+export {
+  alertasMock as alertas,
+  dashboardMock as kpis,
+  documentosMock as documentos,
+  equipamentosMock as equipamentos,
+  logsAuditoriaMock as auditoriaLogs,
+  manutencoesMock as manutencoes,
+  pendenciasMock as pendenciasCriticas,
+  usuariosMock as usuarios,
+} from "@/mocks";
+
+export { statusLabel, statusTone } from "@/utils/status";

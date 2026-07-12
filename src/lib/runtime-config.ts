@@ -1,20 +1,21 @@
-// Configuração de runtime do frontend Conform Flow.
-// Controla se os services devolvem dados mockados (src/mocks) ou
-// falam com o backend real (Supabase) via src/lib/supabaseClient.ts.
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const useMocksFlag = import.meta.env.VITE_USE_MOCKS;
 
 function readBool(value: string | undefined, fallback: boolean): boolean {
   if (value === undefined) return fallback;
-  const v = value.trim().toLowerCase();
-  if (["1", "true", "yes", "on"].includes(v)) return true;
-  if (["0", "false", "no", "off"].includes(v)) return false;
+  const normalized = value.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
   return fallback;
 }
 
 export const runtimeConfig = {
-  // Enquanto o backend Supabase não está pronto, mocks ficam ligados por padrão.
-  useMocks: readBool(import.meta.env.VITE_USE_MOCKS as string | undefined, true),
-  supabaseUrl: (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? "",
-  supabaseAnonKey: (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? "",
+  // Produção segura: se Supabase estiver configurado, mocks ficam desligados por padrão.
+  // Para prototipar localmente, use VITE_USE_MOCKS=true explicitamente.
+  useMocks: readBool(useMocksFlag, !supabaseUrl || !supabaseAnonKey),
+  supabaseUrl,
+  supabaseAnonKey,
 } as const;
 
 export function isSupabaseConfigured(): boolean {
@@ -22,7 +23,8 @@ export function isSupabaseConfigured(): boolean {
 }
 
 export function shouldUseMocks(): boolean {
-  // Se mocks estão explicitamente ligados, usa mocks.
-  // Se estão desligados mas o Supabase não foi configurado, cai em mocks para não quebrar a UI.
   return runtimeConfig.useMocks || !isSupabaseConfigured();
 }
+
+export const MOCK_EMPRESA_ID = "empresa-mock-clinica-vitalis";
+export const MOCK_USUARIO_ID = "usuario-mock-marina-alves";
