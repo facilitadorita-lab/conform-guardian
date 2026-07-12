@@ -84,6 +84,14 @@ export function AppSidebar() {
   if (!acessoLiberado) return null;
 
   const groups = isMaster ? [...baseGroups, masterGroup] : baseGroups;
+  const { usuarioAtual } = useSession();
+  const iniciais = usuarioAtual.nome
+    .split(" ")
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <aside className="hidden md:flex w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
@@ -132,11 +140,11 @@ export function AppSidebar() {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-sidebar-accent flex items-center justify-center text-sm font-semibold">
-            MA
+            {iniciais}
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-medium truncate">Marina Alves</div>
-            <div className="text-[11px] text-sidebar-foreground/60 truncate">Administrador</div>
+            <div className="text-sm font-medium truncate">{usuarioAtual.nome}</div>
+            <div className="text-[11px] text-sidebar-foreground/60 truncate">{usuarioAtual.perfil}</div>
           </div>
         </div>
       </div>
