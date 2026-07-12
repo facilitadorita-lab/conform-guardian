@@ -94,15 +94,20 @@ export async function uploadAnexoSeguro(
 // IA segura: SOMENTE perguntas sobre dados estruturados. Nunca enviar arquivos,
 // PDFs, imagens ou DOCX. O backend controla o contexto acessível.
 export interface AssistantQueryInput {
+  empresa_id: string;
   pergunta: string;
   contexto?: "dashboard" | "documentos" | "equipamentos" | "manutencoes" | "pendencias" | "geral";
   historico?: { role: "user" | "assistant"; content: string }[];
 }
 export interface AssistantQueryResult {
-  resposta: string;
+  resposta?: string;
+  answer?: string;
   referencias?: { tipo: string; id: string; label: string }[];
 }
 export function assistantQuery(input: AssistantQueryInput) {
+  if (!input.empresa_id) {
+    throw new Error("Selecione uma empresa antes de consultar a IA.");
+  }
   return invoke<AssistantQueryResult>("assistant-query", input);
 }
 

@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { Sparkles, Loader2, Send, ShieldAlert } from "lucide-react";
+import { Sparkles, Loader2, Send, ShieldAlert, Building2 } from "lucide-react";
 import { edgeFunctionsService } from "@/services";
+import { useSession } from "@/hooks/use-session";
 
 export const Route = createFileRoute("/assistente")({
   head: () => ({ meta: [{ title: "Assistente IA — Conform Flow" }] }),
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/assistente")({
 type Msg = { role: "user" | "assistant"; content: string };
 
 function AssistentePage() {
+  const { empresaAtual } = useSession();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,6 +23,10 @@ function AssistentePage() {
     e.preventDefault();
     const pergunta = input.trim();
     if (!pergunta || loading) return;
+    if (!empresaAtual?.id) {
+      setErro("Selecione uma empresa antes de consultar a IA.");
+      return;
+    }
     setErro(null);
     const historico = msgs.map((m) => ({ role: m.role, content: m.content }));
     const nextMsgs: Msg[] = [...msgs, { role: "user", content: pergunta }];
@@ -28,10 +34,17 @@ function AssistentePage() {
     setInput("");
     setLoading(true);
     try {
-      const res = await edgeFunctionsService.assistantQuery({ pergunta, contexto: "geral", historico });
-      setMsgs([...nextMsgs, { role: "assistant", content: res.resposta }]);
+      const res = await edgeFunctionsService.assistantQuery({
+        empresa_id: empresaAtual.id,
+        pergunta,
+        contexto: "geral",
+        historico,
+      });
+      const resposta = res.resposta ?? res.answer ?? "";
+      setMsgs([...nextMsgs, { role: "assistant", content: resposta }]);
     } catch (err) {
-      setErro(err instanceof Error ? err.message : "Falha ao consultar o assistente.");
+      console.error("assistant-query erro:", err);
+      setErro("Não consegui consultar a IA agora. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -42,6 +55,13 @@ function AssistentePage() {
       title="Assistente IA"
       description="Perguntas em linguagem natural sobre seus dados operacionais. Consulte vencimentos, pendências e status."
     >
+      <div className="rounded-md border border-border bg-muted/30 p-3 text-xs flex items-center gap-2">
+        <Building2 className="h-4 w-4 text-accent" />
+        <span>
+          Consultando dados de <strong>{empresaAtual.nome_fantasia}</strong>{" "}
+          <span className="text-muted-foreground">({empresaAtual.cnpj})</span>
+        </span>
+      </div>
       <div className="rounded-md border border-warning/40 bg-warning/5 p-3 text-xs flex items-start gap-2">
         <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0 text-warning" />
         <span>
