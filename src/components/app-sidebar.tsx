@@ -20,6 +20,7 @@ import {
   CalendarClock,
   Tag,
   SlidersHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
 
@@ -50,6 +51,7 @@ const baseGroups: { label: string; items: NavItem[] }[] = [
       { to: "/alertas", label: "Alertas", icon: Bell },
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
       { to: "/auditoria", label: "Auditoria", icon: ShieldCheck },
+      { to: "/assistente", label: "Assistente IA", icon: Sparkles },
     ],
   },
   {

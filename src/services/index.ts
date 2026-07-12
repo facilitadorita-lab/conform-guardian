@@ -8,3 +8,4 @@ export { alertasService } from "./alertasService";
 export { auditoriaService } from "./auditoriaService";
 export { usuariosService } from "./usuariosService";
 export { adminMasterService } from "./adminMasterService";
+export { edgeFunctionsService } from "./edgeFunctionsService";
