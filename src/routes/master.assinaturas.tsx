@@ -1,14 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { MasterOnly } from "@/components/master-guard";
 import { masterAssinaturas } from "@/mocks/conformflow-mocks";
+import { AsaasSubscriptionDialog } from "@/components/asaas-subscription-dialog";
+import { Plus } from "lucide-react";
 
 export const Route = createFileRoute("/master/assinaturas")({
   component: MasterAssinaturas,
 });
 
 function MasterAssinaturas() {
+  const [open, setOpen] = useState(false);
   return (
     <MasterOnly title="Assinaturas" description="Assinaturas ativas, suspensas e em atraso.">
+      <div className="flex justify-end">
+        <button
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" /> Nova assinatura Asaas
+        </button>
+      </div>
+      {open && <AsaasSubscriptionDialog onClose={() => setOpen(false)} />}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
