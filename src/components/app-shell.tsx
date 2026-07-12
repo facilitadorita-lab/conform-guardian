@@ -2,8 +2,10 @@ import { useEffect, type ReactNode } from "react";
 import { AppSidebar } from "./app-sidebar";
 import { Bell, LogOut, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { shouldUseMocks } from "@/lib/runtime-config";
+import { useSession } from "@/hooks/use-session";
+import { AccessBlocked } from "./access-blocked";
 
 export function AppShell({
   title,
@@ -19,6 +21,9 @@ export function AppShell({
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const bypassAuth = shouldUseMocks();
+  const { acessoLiberado, isMaster, empresaAtual, usuarioAtual, setIsMaster, setEmpresaStatus } = useSession();
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const isMasterRoute = pathname.startsWith("/master");
 
   useEffect(() => {
     if (bypassAuth) return;
@@ -31,6 +36,13 @@ export function AppShell({
         Carregando sessão…
       </div>
     );
+  }
+
+  // Regra de acesso: se a empresa não estiver ativa e o usuário não for Admin Master,
+  // nenhum dado operacional é exibido — apenas a tela de bloqueio.
+  // Rotas /master são independentes desse gate.
+  if (!acessoLiberado && !isMasterRoute) {
+    return <AccessBlocked />;
   }
 
   return (
@@ -46,14 +58,39 @@ export function AppShell({
             />
           </div>
           <div className="ml-auto flex items-center gap-3">
+            {/* Simulação (mock) — só aparece em modo mock para testar regras de acesso */}
+            {bypassAuth && (
+              <div className="hidden lg:flex items-center gap-2 text-[11px] text-muted-foreground">
+                <select
+                  value={empresaAtual.status}
+                  onChange={(e) => setEmpresaStatus(e.target.value as typeof empresaAtual.status)}
+                  className="h-8 rounded-md border border-border bg-background px-2"
+                  title="Simular status da empresa"
+                >
+                  <option value="ativa">Empresa: ativa</option>
+                  <option value="inadimplente">Empresa: inadimplente</option>
+                  <option value="suspensa">Empresa: suspensa</option>
+                  <option value="bloqueada">Empresa: bloqueada</option>
+                  <option value="cancelada">Empresa: cancelada</option>
+                </select>
+                <label className="inline-flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    checked={isMaster}
+                    onChange={(e) => setIsMaster(e.target.checked)}
+                  />
+                  Admin Master
+                </label>
+              </div>
+            )}
             <button className="relative h-9 w-9 rounded-md border border-border hover:bg-muted flex items-center justify-center">
               <Bell className="h-4 w-4" />
               <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-danger text-[10px] font-semibold text-white flex items-center justify-center">7</span>
             </button>
             <div className="hidden sm:flex flex-col items-end leading-tight">
-              <span className="text-xs font-medium">{user?.email ?? "Clínica Vitalis Ltda."}</span>
+              <span className="text-xs font-medium">{user?.email ?? usuarioAtual.email}</span>
               <span className="text-[11px] text-muted-foreground">
-                {bypassAuth ? "Modo mock" : "Sessão ativa"}
+                {isMaster ? "Admin Master" : bypassAuth ? "Modo mock" : "Sessão ativa"}
               </span>
             </div>
             {!bypassAuth && (
