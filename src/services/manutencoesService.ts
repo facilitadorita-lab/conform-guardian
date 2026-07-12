@@ -1,7 +1,7 @@
 import { runtimeConfig } from "@/lib/runtime-config";
 import { manutencoesMock } from "@/mocks";
-import type { Manutencao, ManutencaoResumo } from "@/types";
-import { cloneMock, invokeRpc } from "./service-utils";
+import type { Manutencao, ManutencaoResumo, StatusConformidade } from "@/types";
+import { cloneMock, extractRpcItems, invokeRpc, type PaginatedRpcResponse } from "./service-utils";
 
 export interface ListarManutencoesParams {
   busca?: string;
@@ -34,15 +34,20 @@ export const manutencoesService = {
       );
     }
 
-    return invokeRpc<ManutencaoResumo[]>("api_listar_manutencoes", {
-      p_empresa_id: empresaId,
-      p_busca: params.busca || null,
-      p_status: params.status || null,
-      p_natureza: params.natureza || null,
-      p_equipamento_id: params.equipamentoId ?? null,
-      p_limite: params.limite ?? 25,
-      p_offset: params.offset ?? 0,
-    });
+    const data = await invokeRpc<PaginatedRpcResponse<ApiManutencao> | ApiManutencao[]>(
+      "api_listar_manutencoes",
+      {
+        p_empresa_id: empresaId,
+        p_busca: params.busca || null,
+        p_status: params.status || null,
+        p_natureza: params.natureza || null,
+        p_equipamento_id: params.equipamentoId ?? null,
+        p_limite: params.limite ?? 25,
+        p_offset: params.offset ?? 0,
+      },
+    );
+
+    return extractRpcItems(data).map(normalizeManutencao);
   },
 
   criar(empresaId: string, payload: Partial<Manutencao>) {
@@ -60,3 +65,78 @@ export const manutencoesService = {
     });
   },
 };
+
+type ApiManutencao = Partial<ManutencaoResumo> & {
+  equipamento_nome?: string | null;
+  item_nome?: string | null;
+  nome_servico?: string | null;
+  natureza?: string | null;
+  tipo_servico?: string | null;
+  data_manutencao?: string | null;
+  proxima_manutencao?: string | null;
+  tecnico_responsavel?: string | null;
+  empresa_responsavel?: string | null;
+  numero_ordem_servico?: string | null;
+  status_calculado?: string | null;
+  status_execucao?: string | null;
+};
+
+function normalizeManutencao(manutencao: ApiManutencao): ManutencaoResumo {
+  return {
+    id: manutencao.id ?? crypto.randomUUID(),
+    equipamento:
+      manutencao.equipamento ??
+      manutencao.equipamento_nome ??
+      manutencao.item_nome ??
+      manutencao.nome_servico ??
+      "Serviço geral",
+    tipo: manutencao.tipo ?? labelManutencao(manutencao.natureza, manutencao.tipo_servico),
+    data: manutencao.data ?? manutencao.proxima_manutencao ?? manutencao.data_manutencao ?? "-",
+    responsavel:
+      manutencao.responsavel ??
+      manutencao.tecnico_responsavel ??
+      manutencao.empresa_responsavel ??
+      "Sem responsável",
+    status: normalizeStatus(
+      manutencao.status ?? manutencao.status_calculado ?? manutencao.status_execucao,
+    ),
+    os: manutencao.os ?? manutencao.numero_ordem_servico ?? "-",
+  };
+}
+
+function labelManutencao(natureza: unknown, tipoServico: unknown): string {
+  const naturezaLabel = labelFromSnakeCase(natureza, "Manutenção");
+  const tipoLabel = labelFromSnakeCase(tipoServico, "");
+
+  return tipoLabel ? `${naturezaLabel} · ${tipoLabel}` : naturezaLabel;
+}
+
+function labelFromSnakeCase(value: unknown, fallback: string): string {
+  const text = String(value ?? "")
+    .replaceAll("_", " ")
+    .trim();
+  if (!text) return fallback;
+
+  return text.charAt(0).toLocaleUpperCase("pt-BR") + text.slice(1);
+}
+
+function normalizeStatus(status: unknown): StatusConformidade {
+  const value = String(status ?? "").toLowerCase();
+
+  if (value === "ok" || value === "em_dia" || value === "concluida" || value === "concluída") {
+    return "ok";
+  }
+  if (
+    value === "atencao" ||
+    value === "a_vencer" ||
+    value === "programada" ||
+    value === "pendente_evidencia"
+  ) {
+    return "atencao";
+  }
+  if (value === "critico" || value === "vence_hoje" || value === "em_andamento") return "critico";
+  if (value === "vencido") return "vencido";
+  if (value === "sem_validade" || value === "cancelada") return "sem_validade";
+
+  return "ok";
+}
