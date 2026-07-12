@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { ShieldCheck } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { useSession } from "@/hooks/use-session";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Entrar — Conform Flow" }] }),
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { signIn, user, loading, passwordRecovery } = useAuth();
+  const { isMaster, selectedCompanyId, empresasDisponiveis } = useSession();
   const navigate = useNavigate();
   const isLoading = useRouterState({ select: (s) => s.status === "pending" });
   const search = useSearch({ from: "/login" });
@@ -33,8 +35,18 @@ function LoginPage() {
       navigate({ to: "/definir-senha" });
       return;
     }
-    if (user) navigate({ to: "/" });
-  }, [loading, user, passwordRecovery, navigate]);
+    if (!user) return;
+    // Admin Master sem empresa selecionada vai para /master/empresas.
+    if (isMaster && !selectedCompanyId) {
+      navigate({ to: "/master/empresas" });
+      return;
+    }
+    // Usuário comum sem vínculo ativo — sinaliza mensagem em /login.
+    if (!isMaster && empresasDisponiveis.length === 0) {
+      return;
+    }
+    navigate({ to: "/" });
+  }, [loading, user, passwordRecovery, isMaster, selectedCompanyId, empresasDisponiveis, navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +54,7 @@ function LoginPage() {
     setSubmitting(true);
     try {
       await signIn(email, password);
-      navigate({ to: "/" });
+      // Redirect será tratado pelo useEffect acima assim que a sessão hidratar.
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao entrar.");
     } finally {
