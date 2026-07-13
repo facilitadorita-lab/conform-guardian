@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Eye, Filter, Plus, X } from "lucide-react";
-import { useDocumentos } from "@/hooks/use-conform-data";
-import { useSession } from "@/hooks/use-session";
+import { useAuthContext, useDocumentos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { documentosService, edgeFunctionsService } from "@/services";
 import type { DocumentoResumo } from "@/types";
@@ -13,7 +12,9 @@ const uploadAccept =
   "application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export function DocumentosPage() {
-  const { selectedCompanyId, selectedCompany, empresaAtual } = useSession();
+  const { data: authContext } = useAuthContext();
+  const selectedCompanyId = authContext?.empresaAtual.id ?? null;
+  const empresaNome = authContext?.empresaAtual.nome ?? "empresa não selecionada";
   const { data: documentos = [] } = useDocumentos();
   const queryClient = useQueryClient();
   const [documentoPreview, setDocumentoPreview] = useState<DocumentoResumo | null>(null);
@@ -179,9 +180,8 @@ export function DocumentosPage() {
                     <div className="mx-auto max-w-md">
                       <p className="font-medium text-foreground">Nenhum documento cadastrado.</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Ambiente atual:{" "}
-                        {selectedCompany?.nome_fantasia ?? empresaAtual.nome_fantasia}. Cadastre um
-                        documento ou troque de empresa no seletor superior.
+                        Ambiente atual: {empresaNome}. Cadastre um documento ou troque de empresa no
+                        seletor superior.
                       </p>
                     </div>
                   </td>

@@ -2,15 +2,16 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Plus, X } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
-import { useEquipamentos } from "@/hooks/use-conform-data";
-import { useSession } from "@/hooks/use-session";
+import { useAuthContext, useEquipamentos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { equipamentosService } from "@/services";
 import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function EquipamentosPage() {
-  const { selectedCompanyId, selectedCompany, empresaAtual } = useSession();
+  const { data: authContext } = useAuthContext();
+  const selectedCompanyId = authContext?.empresaAtual.id ?? null;
+  const empresaNome = authContext?.empresaAtual.nome ?? "empresa não selecionada";
   const { data: equipamentos = [], isLoading } = useEquipamentos();
   const queryClient = useQueryClient();
   const [modalAberto, setModalAberto] = useState(false);
@@ -141,8 +142,8 @@ export function EquipamentosPage() {
                   <div className="mx-auto max-w-md">
                     <p className="font-medium text-foreground">Nenhum equipamento cadastrado.</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Ambiente atual: {selectedCompany?.nome_fantasia ?? empresaAtual.nome_fantasia}
-                      . Cadastre um equipamento ou troque de empresa no seletor superior.
+                      Ambiente atual: {empresaNome}. Cadastre um equipamento ou troque de empresa no
+                      seletor superior.
                     </p>
                   </div>
                 </td>

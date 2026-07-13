@@ -2,8 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, Eye, Paperclip, Plus, X } from "lucide-react";
-import { useEquipamento } from "@/hooks/use-conform-data";
-import { useSession } from "@/hooks/use-session";
+import { useAuthContext, useEquipamento } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { edgeFunctionsService } from "@/services";
 import {
@@ -34,7 +33,8 @@ const uploadAccept =
   "application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export function EquipamentoDetalhePage({ id }: { id: string }) {
-  const { selectedCompanyId } = useSession();
+  const { data: authContext } = useAuthContext();
+  const selectedCompanyId = authContext?.empresaAtual.id ?? null;
   const { data: equipamento, isLoading } = useEquipamento(id);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("Dados gerais");

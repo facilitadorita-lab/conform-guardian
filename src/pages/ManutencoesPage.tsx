@@ -2,8 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, Plus, Search, X } from "lucide-react";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { useEquipamentos, useManutencoes } from "@/hooks/use-conform-data";
-import { useSession } from "@/hooks/use-session";
+import { useAuthContext, useEquipamentos, useManutencoes } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { edgeFunctionsService, manutencoesService } from "@/services";
 import type { ManutencaoResumo } from "@/types";
@@ -16,7 +15,8 @@ const uploadAccept =
 type FiltroNatureza = "todas" | "preventiva" | "corretiva";
 
 export function ManutencoesPage() {
-  const { selectedCompanyId } = useSession();
+  const { data: authContext } = useAuthContext();
+  const selectedCompanyId = authContext?.empresaAtual.id ?? null;
   const [busca, setBusca] = useState("");
   const [natureza, setNatureza] = useState<FiltroNatureza>("todas");
   const [modalAberto, setModalAberto] = useState(false);
