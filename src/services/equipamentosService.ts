@@ -102,7 +102,7 @@ export const equipamentosService = {
     });
   },
 
-  criar(empresaId: string, payload: Partial<Equipamento>) {
+  criar(empresaId: string, payload: Record<string, unknown>) {
     return invokeRpc<Equipamento>("api_criar_equipamento", {
       p_empresa_id: empresaId,
       p_payload: payload,

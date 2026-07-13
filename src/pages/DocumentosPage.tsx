@@ -1,14 +1,68 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Eye, Filter, Plus, X } from "lucide-react";
 import { useDocumentos } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { documentosService, edgeFunctionsService } from "@/services";
 import type { DocumentoResumo } from "@/types";
 import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
+const uploadAccept =
+  "application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
 export function DocumentosPage() {
+  const { selectedCompanyId, selectedCompany } = useSession();
   const { data: documentos = [] } = useDocumentos();
+  const queryClient = useQueryClient();
   const [documentoPreview, setDocumentoPreview] = useState<DocumentoResumo | null>(null);
+  const [modalAberto, setModalAberto] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const createMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
+
+      const created = await documentosService.criar(selectedCompanyId, {
+        nome: required(formData, "nome"),
+        numero_documento: optional(formData, "numero_documento"),
+        orgao_emissor: optional(formData, "orgao_emissor"),
+        data_emissao: optional(formData, "data_emissao"),
+        data_vencimento: optional(formData, "data_vencimento"),
+        periodicidade_meses: optional(formData, "periodicidade_meses"),
+        setor_unidade: optional(formData, "setor_unidade"),
+        exige_anexo: true,
+        observacoes: optional(formData, "observacoes"),
+      });
+
+      const file = formData.get("anexo");
+      if (created.id && file instanceof File && file.size > 0) {
+        await edgeFunctionsService.uploadAnexoSeguro(file, {
+          empresaId: selectedCompanyId,
+          modulo: "documentos",
+          registroId: created.id,
+          finalidade: "principal",
+        });
+      }
+
+      return created;
+    },
+    onSuccess: async () => {
+      setModalAberto(false);
+      setErro(null);
+      await queryClient.invalidateQueries({ queryKey: ["documentos", selectedCompanyId] });
+    },
+    onError: (error) => {
+      setErro(error instanceof Error ? error.message : "Não foi possível salvar o documento.");
+    },
+  });
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErro(null);
+    createMutation.mutate(new FormData(event.currentTarget));
+  }
 
   return (
     <AppShell
@@ -19,7 +73,10 @@ export function DocumentosPage() {
           <button className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-muted">
             <Download className="h-4 w-4" /> Exportar
           </button>
-          <button className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <button
+            onClick={() => setModalAberto(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
             <Plus className="h-4 w-4" /> Novo documento
           </button>
         </>
@@ -116,6 +173,20 @@ export function DocumentosPage() {
                   </td>
                 </tr>
               ))}
+              {documentos.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-10 text-center">
+                    <div className="mx-auto max-w-md">
+                      <p className="font-medium text-foreground">Nenhum documento cadastrado.</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Ambiente atual:{" "}
+                        {selectedCompany?.nome_fantasia ?? "empresa não selecionada"}. Cadastre um
+                        documento ou troque de empresa no seletor superior.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -139,6 +210,20 @@ export function DocumentosPage() {
         <DocumentPreviewModal
           documento={documentoPreview}
           onClose={() => setDocumentoPreview(null)}
+        />
+      )}
+
+      {modalAberto && (
+        <NovoDocumentoModal
+          erro={erro}
+          isSaving={createMutation.isPending}
+          onSubmit={handleSubmit}
+          onClose={() => {
+            if (!createMutation.isPending) {
+              setModalAberto(false);
+              setErro(null);
+            }
+          }}
         />
       )}
     </AppShell>
@@ -216,6 +301,135 @@ function DocumentPreviewModal({
   );
 }
 
+function NovoDocumentoModal({
+  erro,
+  isSaving,
+  onSubmit,
+  onClose,
+}: {
+  erro: string | null;
+  isSaving: boolean;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+      <form
+        onSubmit={onSubmit}
+        className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-2xl border border-border bg-background shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div>
+            <h2 className="text-lg font-semibold">Novo documento</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              O documento será salvo apenas no ambiente da empresa selecionada.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid gap-4 p-5 md:grid-cols-2">
+          <Input label="Nome do documento" name="nome" required />
+          <Input label="Número do documento" name="numero_documento" />
+          <Input label="Órgão emissor" name="orgao_emissor" />
+          <Input label="Setor / unidade" name="setor_unidade" />
+          <Input label="Data de emissão" name="data_emissao" type="date" />
+          <Input label="Data de vencimento" name="data_vencimento" type="date" />
+          <Input label="Periodicidade (meses)" name="periodicidade_meses" type="number" />
+          <TextArea label="Observações" name="observacoes" />
+
+          <label className="md:col-span-2">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Anexo / evidência
+            </span>
+            <input
+              name="anexo"
+              type="file"
+              accept={uploadAccept}
+              className="mt-1 w-full rounded-md border border-dashed border-border bg-muted/30 px-3 py-3 text-sm"
+            />
+            <span className="mt-1 block text-xs text-muted-foreground">
+              PDF, imagem, Word ou Excel. O arquivo fica privado no Storage da empresa.
+            </span>
+          </label>
+
+          {erro && (
+            <div className="md:col-span-2 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+              {erro}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-border p-5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+          >
+            {isSaving ? "Salvando..." : "Salvar documento"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function Input({
+  label,
+  name,
+  type = "text",
+  required,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  required?: boolean;
+}) {
+  return (
+    <label>
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+      />
+    </label>
+  );
+}
+
+function TextArea({ label, name }: { label: string; name: string }) {
+  return (
+    <label className="md:col-span-2">
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <textarea
+        name={name}
+        rows={3}
+        className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+    </label>
+  );
+}
+
 function PreviewField({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -223,6 +437,17 @@ function PreviewField({ label, value }: { label: string; value: string }) {
       <dd className="mt-0.5 font-medium text-foreground">{value}</dd>
     </div>
   );
+}
+
+function required(formData: FormData, key: string): string {
+  const value = optional(formData, key);
+  if (!value) throw new Error("Preencha os campos obrigatórios.");
+  return value;
+}
+
+function optional(formData: FormData, key: string): string {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function SummaryTile({

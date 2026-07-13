@@ -45,7 +45,7 @@ export const documentosService = {
     return hydrateDocumentAttachmentUrls(empresaId, documentos);
   },
 
-  criar(empresaId: string, payload: Partial<Documento>) {
+  criar(empresaId: string, payload: Record<string, unknown>) {
     return invokeRpc<Documento>("api_criar_documento", {
       p_empresa_id: empresaId,
       p_payload: payload,
