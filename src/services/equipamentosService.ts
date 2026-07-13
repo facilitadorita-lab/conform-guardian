@@ -61,13 +61,16 @@ export const equipamentosService = {
         : null;
     }
 
-    const data = await invokeRpc<ApiEquipamentoDetalheResponse | ApiEquipamento>(
-      "api_equipamento_detalhe",
-      {
-        p_empresa_id: empresaId,
-        p_equipamento_id: equipamentoId,
-      },
-    );
+    const data = await invokeRpc<
+      | ApiEquipamentoDetalheResponse
+      | ApiEquipamento
+      | ApiEquipamentoDetalheResponse[]
+      | ApiEquipamento[]
+      | null
+    >("api_equipamento_detalhe", {
+      p_empresa_id: empresaId,
+      p_equipamento_id: equipamentoId,
+    });
 
     return data ? normalizeEquipamentoDetalhe(data) : null;
   },
@@ -107,6 +110,7 @@ export type EquipamentoDetalhe = EquipamentoResumo & {
 
 type ApiEquipamento = Partial<EquipamentoResumo> & {
   codigo_interno?: string | null;
+  numero_serie?: string | null;
   tipo_nome?: string | null;
   tipo_equipamento_nome?: string | null;
   status_consolidado?: string | null;
@@ -126,19 +130,23 @@ type ApiEquipamentoDetalheResponse = {
 };
 
 function normalizeEquipamentoDetalhe(
-  data: ApiEquipamentoDetalheResponse | ApiEquipamento,
+  data:
+    | ApiEquipamentoDetalheResponse
+    | ApiEquipamento
+    | ApiEquipamentoDetalheResponse[]
+    | ApiEquipamento[],
 ): EquipamentoDetalhe {
-  const payload =
-    "equipamento" in data && data.equipamento
-      ? data
-      : ({
-          equipamento: data as ApiEquipamento,
-          calibracoes: [],
-          qualificacoes: [],
-          manutencoes: [],
-          anexos: [],
-          historico: [],
-        } satisfies ApiEquipamentoDetalheResponse);
+  const normalizedData = unwrapRpcObject(data);
+  const payload = isEquipamentoDetalheResponse(normalizedData)
+    ? normalizedData
+    : ({
+        equipamento: normalizedData as ApiEquipamento,
+        calibracoes: [],
+        qualificacoes: [],
+        manutencoes: [],
+        anexos: [],
+        historico: [],
+      } satisfies ApiEquipamentoDetalheResponse);
 
   const equipamento = normalizeEquipamento(payload.equipamento ?? {});
 
@@ -177,6 +185,36 @@ function normalizeEquipamento(equipamento: ApiEquipamento): EquipamentoResumo {
   };
 }
 
+function unwrapRpcObject(value: unknown): Record<string, unknown> {
+  if (Array.isArray(value)) return unwrapRpcObject(value[0] ?? {});
+
+  if (!value || typeof value !== "object") return {};
+
+  const objectValue = value as Record<string, unknown>;
+  const wrapperKeys = ["data", "result", "api_equipamento_detalhe"];
+
+  for (const key of wrapperKeys) {
+    if (objectValue[key]) return unwrapRpcObject(objectValue[key]);
+  }
+
+  if (Array.isArray(objectValue.items)) return unwrapRpcObject(objectValue.items[0] ?? {});
+
+  return objectValue;
+}
+
+function isEquipamentoDetalheResponse(
+  value: Record<string, unknown>,
+): value is ApiEquipamentoDetalheResponse {
+  return (
+    "equipamento" in value ||
+    "calibracoes" in value ||
+    "qualificacoes" in value ||
+    "manutencoes" in value ||
+    "anexos" in value ||
+    "historico" in value
+  );
+}
+
 function normalizeCriticidade(criticidade: unknown): EquipamentoResumo["criticidade"] {
   const value = String(criticidade ?? "").toLowerCase();
 
@@ -205,8 +243,10 @@ function normalizeTimelineStatus(status: unknown): StatusConformidade | "info" {
   return normalizeStatus(status);
 }
 
-function normalizeTimeline(items: unknown[] | undefined, kind: string): EquipamentoHistoricoItem[] {
-  return (items ?? []).map((raw, index) => {
+function normalizeTimeline(items: unknown, kind: string): EquipamentoHistoricoItem[] {
+  const normalizedItems = normalizeTimelineItems(items);
+
+  return normalizedItems.map((raw, index) => {
     const item = (raw ?? {}) as Record<string, unknown>;
     const status = normalizeTimelineStatus(
       item.status_calculado ?? item.status_execucao ?? item.status ?? item.nivel ?? "info",
@@ -229,6 +269,17 @@ function normalizeTimeline(items: unknown[] | undefined, kind: string): Equipame
       documentoUrl: typeof item.url === "string" ? item.url : null,
     };
   });
+}
+
+function normalizeTimelineItems(items: unknown): unknown[] {
+  if (Array.isArray(items)) return items;
+  if (!items || typeof items !== "object") return [];
+
+  const objectValue = items as Record<string, unknown>;
+  if (Array.isArray(objectValue.items)) return objectValue.items;
+  if (Array.isArray(objectValue.data)) return objectValue.data;
+
+  return [];
 }
 
 function buildTimelineDescription(item: Record<string, unknown>, kind: string) {

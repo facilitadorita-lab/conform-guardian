@@ -36,6 +36,8 @@ export interface DocumentoResumo {
   vencimento: ISODate;
   status: StatusConformidade;
   setor: string;
+  anexoUrl?: string | null;
+  anexoNome?: string | null;
 }
 
 export interface EquipamentoResumo {
@@ -83,11 +85,7 @@ export interface UsuarioResumo {
   id: UUID;
   nome: string;
   email: string;
-  perfil:
-    | "Administrador"
-    | "Responsavel tecnico"
-    | "Colaborador"
-    | "Somente leitura";
+  perfil: "Administrador" | "Responsavel tecnico" | "Colaborador" | "Somente leitura";
   setor: string;
   status: "Ativo" | "Inativo";
 }
@@ -109,11 +107,7 @@ export interface AuthContexto {
   empresaAtual: EmpresaResumo;
   empresasPermitidas: EmpresaResumo[];
   perfilAtual:
-    | "administrador"
-    | "responsavel_tecnico"
-    | "colaborador"
-    | "somente_leitura"
-    | "master";
+    "administrador" | "responsavel_tecnico" | "colaborador" | "somente_leitura" | "master";
 }
 
 export interface RelatorioCatalogoItem {
@@ -146,12 +140,7 @@ export type PlanoRecurso =
   | "suporte_prioritario";
 
 export type StatusAssinatura =
-  | "trial"
-  | "ativa"
-  | "pagamento_pendente"
-  | "inadimplente"
-  | "bloqueada"
-  | "cancelada";
+  "trial" | "ativa" | "pagamento_pendente" | "inadimplente" | "bloqueada" | "cancelada";
 
 export interface PlanoComercialResumo {
   id: UUID;

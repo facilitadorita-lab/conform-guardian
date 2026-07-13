@@ -1,3 +1,4 @@
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { runtimeConfig } from "@/lib/runtime-config";
 import { documentosMock } from "@/mocks";
 import type { Documento, DocumentoResumo, StatusConformidade } from "@/types";
@@ -40,7 +41,8 @@ export const documentosService = {
       },
     );
 
-    return extractRpcItems(data).map(normalizeDocumento);
+    const documentos = extractRpcItems(data).map(normalizeDocumento);
+    return hydrateDocumentAttachmentUrls(empresaId, documentos);
   },
 
   criar(empresaId: string, payload: Partial<Documento>) {
@@ -80,6 +82,13 @@ type ApiDocumento = Partial<DocumentoResumo> & {
   responsavel_id?: string | null;
 };
 
+type ApiAnexoDocumento = {
+  registro_id: string;
+  storage_path: string;
+  nome_original?: string | null;
+  mime_type?: string | null;
+};
+
 function normalizeDocumento(documento: ApiDocumento): DocumentoResumo {
   return {
     id: documento.id ?? crypto.randomUUID(),
@@ -96,7 +105,61 @@ function normalizeDocumento(documento: ApiDocumento): DocumentoResumo {
     vencimento: documento.vencimento ?? documento.data_vencimento ?? "-",
     status: normalizeStatus(documento.status ?? documento.status_calculado),
     setor: documento.setor ?? documento.setor_unidade ?? "-",
+    anexoUrl: documento.anexoUrl ?? null,
+    anexoNome: documento.anexoNome ?? null,
   };
+}
+
+async function hydrateDocumentAttachmentUrls(
+  empresaId: string,
+  documentos: DocumentoResumo[],
+): Promise<DocumentoResumo[]> {
+  if (documentos.length === 0) return documentos;
+
+  const supabase = getSupabaseClient();
+  const documentoIds = documentos.map((documento) => documento.id);
+  const { data, error } = await supabase
+    .from("anexos")
+    .select("registro_id, storage_path, nome_original, mime_type")
+    .eq("empresa_id", empresaId)
+    .eq("modulo", "documentos")
+    .in("registro_id", documentoIds)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error || !data?.length) return documentos;
+
+  const anexosPorDocumento = new Map<string, ApiAnexoDocumento>();
+  for (const anexo of data as ApiAnexoDocumento[]) {
+    if (!anexosPorDocumento.has(anexo.registro_id)) {
+      anexosPorDocumento.set(anexo.registro_id, anexo);
+    }
+  }
+
+  const signedUrls = new Map<string, string>();
+
+  await Promise.all(
+    Array.from(anexosPorDocumento.values()).map(async (anexo) => {
+      const { data: signedUrlData } = await supabase.storage
+        .from("evidencias")
+        .createSignedUrl(anexo.storage_path, 60 * 10, { download: false });
+
+      if (signedUrlData?.signedUrl) {
+        signedUrls.set(anexo.storage_path, signedUrlData.signedUrl);
+      }
+    }),
+  );
+
+  return documentos.map((documento) => {
+    const anexo = anexosPorDocumento.get(documento.id);
+    if (!anexo) return documento;
+
+    return {
+      ...documento,
+      anexoUrl: signedUrls.get(anexo.storage_path) ?? null,
+      anexoNome: anexo.nome_original ?? "Anexo do documento",
+    };
+  });
 }
 
 function normalizeStatus(status: unknown): StatusConformidade {

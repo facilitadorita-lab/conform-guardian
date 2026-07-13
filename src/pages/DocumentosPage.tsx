@@ -1,4 +1,4 @@
-import { Download, Filter, Paperclip, Plus } from "lucide-react";
+import { Download, Eye, Filter, Plus } from "lucide-react";
 import { useDocumentos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { formatDateBR } from "@/utils/date";
@@ -76,7 +76,7 @@ export function DocumentosPage() {
                 <th className="px-4 py-2.5 text-left font-medium">Emissão</th>
                 <th className="px-4 py-2.5 text-left font-medium">Vencimento</th>
                 <th className="px-4 py-2.5 text-left font-medium">Status</th>
-                <th className="px-6 py-2.5 text-right font-medium">Anexo</th>
+                <th className="px-6 py-2.5 text-right font-medium">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -104,9 +104,19 @@ export function DocumentosPage() {
                     </StatusBadge>
                   </td>
                   <td className="px-6 py-3 text-right">
-                    <button className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline">
-                      <Paperclip className="h-3.5 w-3.5" /> Baixar
-                    </button>
+                    {documento.anexoUrl ? (
+                      <a
+                        href={documento.anexoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={documento.anexoNome ?? "Visualizar anexo"}
+                        className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-accent hover:bg-muted"
+                      >
+                        <Eye className="h-3.5 w-3.5" /> Visualizar
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sem anexo</span>
+                    )}
                   </td>
                 </tr>
               ))}
