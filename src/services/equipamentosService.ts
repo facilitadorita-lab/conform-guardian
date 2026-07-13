@@ -132,6 +132,7 @@ export type EquipamentoHistoricoItem = {
   finalidade?: string | null;
   versao?: number | null;
   substituiAnexoId?: string | null;
+  anexoId?: string | null;
   documentoUrl?: string | null;
   documentoNome?: string | null;
 };
@@ -496,6 +497,7 @@ async function hydrateEquipamentoAttachmentUrls(
       ...item,
       documentoUrl: signedUrls.get(preferred.id) ?? item.documentoUrl ?? null,
       documentoNome: preferred.nome_original ?? item.documentoNome ?? item.descricao,
+      anexoId: preferred.id,
       finalidade: preferred.finalidade ?? item.finalidade ?? null,
       anexoStatus: preferred.status ?? item.anexoStatus ?? null,
       versao: preferred.versao ?? item.versao ?? null,
@@ -515,6 +517,7 @@ async function hydrateEquipamentoAttachmentUrls(
       finalidade: anexo.finalidade ?? item.finalidade ?? null,
       versao: anexo.versao ?? item.versao ?? null,
       substituiAnexoId: anexo.substitui_anexo_id ?? item.substituiAnexoId ?? null,
+      anexoId: anexo.id,
       documentoUrl: signedUrls.get(anexo.id) ?? null,
       documentoNome: anexo.nome_original ?? item.documentoNome ?? "Anexo",
     };

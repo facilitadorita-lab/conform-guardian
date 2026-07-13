@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Eye, Plus, Search, X } from "lucide-react";
+import { CheckCircle2, Eye, Plus, Search, X } from "lucide-react";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useAuthContext, useEquipamentos, useManutencoes } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
@@ -22,6 +22,12 @@ export function ManutencoesPage() {
   const [modalAberto, setModalAberto] = useState(false);
   const [preview, setPreview] = useState<ManutencaoResumo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [lastUpload, setLastUpload] = useState<{
+    label: string;
+    url?: string;
+    anexoId?: string;
+  } | null>(null);
   const queryClient = useQueryClient();
 
   const params = useMemo(
@@ -39,6 +45,10 @@ export function ManutencoesPage() {
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
+      const file = formData.get("anexo");
+      if (file instanceof File && file.size > 0) {
+        edgeFunctionsService.validateAttachmentFile(file);
+      }
 
       const equipamentoId = optional(formData, "equipamento_id");
       const naturezaSelecionada = required(formData, "natureza");
@@ -65,23 +75,32 @@ export function ManutencoesPage() {
 
       const created = await manutencoesService.criar(selectedCompanyId, payload);
       const registroId = created.id;
-      const file = formData.get("anexo");
+      let upload: { anexoId?: string; signedUrl?: string } | null = null;
 
       if (registroId && file instanceof File && file.size > 0) {
-        await edgeFunctionsService.uploadAnexoSeguro(file, {
+        setUploadProgress(0);
+        upload = await edgeFunctionsService.uploadAnexoSeguro(file, {
           empresaId: selectedCompanyId,
           modulo: "manutencoes",
           registroId,
           finalidade: "evidencia",
+          onProgress: setUploadProgress,
         });
       }
 
-      return created;
+      return { created, upload, equipamentoId, label: payload.nome_servico };
     },
-    onSuccess: async (_, formData) => {
+    onSuccess: async ({ upload, equipamentoId, label }) => {
       setModalAberto(false);
       setErro(null);
-      const equipamentoId = optional(formData, "equipamento_id");
+      setUploadProgress(null);
+      if (upload?.anexoId || upload?.signedUrl) {
+        setLastUpload({
+          label: label || "Manutenção",
+          url: upload.signedUrl,
+          anexoId: upload.anexoId,
+        });
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["manutencoes", selectedCompanyId] }),
         equipamentoId
@@ -93,12 +112,14 @@ export function ManutencoesPage() {
     },
     onError: (error) => {
       setErro(error instanceof Error ? error.message : "Não foi possível salvar a manutenção.");
+      setUploadProgress(null);
     },
   });
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErro(null);
+    setLastUpload(null);
     createMutation.mutate(new FormData(event.currentTarget));
   }
 
@@ -115,6 +136,19 @@ export function ManutencoesPage() {
         </button>
       }
     >
+      {lastUpload && (
+        <UploadSuccessBanner
+          label={lastUpload.label}
+          url={lastUpload.url}
+          onDismiss={() => setLastUpload(null)}
+          onVisualizar={() => {
+            if (lastUpload.anexoId) {
+              void edgeFunctionsService.registrarEventoAnexo(lastUpload.anexoId);
+            }
+          }}
+        />
+      )}
+
       <div className="grid gap-3 rounded-xl border border-border bg-card p-4 lg:grid-cols-[1fr_auto]">
         <label className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -224,10 +258,12 @@ export function ManutencoesPage() {
           equipamentos={equipamentos}
           erro={erro}
           isSaving={createMutation.isPending}
+          uploadProgress={uploadProgress}
           onClose={() => {
             if (!createMutation.isPending) {
               setModalAberto(false);
               setErro(null);
+              setUploadProgress(null);
             }
           }}
           onSubmit={handleSubmit}
@@ -243,12 +279,14 @@ function NovaManutencaoModal({
   equipamentos,
   erro,
   isSaving,
+  uploadProgress,
   onClose,
   onSubmit,
 }: {
   equipamentos: { id: string; nome: string; codigo: string }[];
   erro: string | null;
   isSaving: boolean;
+  uploadProgress: number | null;
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
@@ -346,6 +384,10 @@ function NovaManutencaoModal({
               {erro}
             </div>
           )}
+
+          {uploadProgress !== null && (
+            <UploadProgress value={uploadProgress} label="Enviando anexo..." />
+          )}
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border p-5">
@@ -366,6 +408,66 @@ function NovaManutencaoModal({
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function UploadProgress({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="md:col-span-2 rounded-md border border-border bg-muted/30 p-3">
+      <div className="mb-2 flex items-center justify-between text-xs font-medium text-muted-foreground">
+        <span>{label}</span>
+        <span>{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-accent transition-all"
+          style={{ width: `${value}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function UploadSuccessBanner({
+  label,
+  url,
+  onDismiss,
+  onVisualizar,
+}: {
+  label: string;
+  url?: string;
+  onDismiss: () => void;
+  onVisualizar: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-success/10 p-4 text-sm">
+      <div className="flex items-center gap-2 text-success">
+        <CheckCircle2 className="h-4 w-4" />
+        <span>
+          Anexo salvo com sucesso em <strong>{label}</strong>.
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={onVisualizar}
+            className="rounded-md border border-success/30 bg-background px-3 py-1.5 text-xs font-medium text-success hover:bg-muted"
+          >
+            Visualizar anexo
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+        >
+          Fechar
+        </button>
+      </div>
     </div>
   );
 }

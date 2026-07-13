@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
-import { ArrowLeft, Eye, Paperclip, Plus, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Eye, Paperclip, Plus, X } from "lucide-react";
 import { useAuthContext, useEquipamento } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { edgeFunctionsService } from "@/services";
@@ -41,14 +41,25 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
   const [activeForm, setActiveForm] = useState<FormKind | null>(null);
   const [previewItem, setPreviewItem] = useState<EquipamentoHistoricoItem | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [lastUpload, setLastUpload] = useState<{
+    label: string;
+    url?: string;
+    anexoId?: string;
+  } | null>(null);
 
   const createMutation = useMutation({
     mutationFn: async ({ kind, formData }: { kind: FormKind; formData: FormData }) => {
       if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
+      let upload: { anexoId?: string; signedUrl?: string } | null = null;
+      if (file instanceof File && file.size > 0) {
+        edgeFunctionsService.validateAttachmentFile(file);
+      }
 
       let registroId = "";
       let modulo: "calibracoes" | "qualificacoes" | "manutencoes";
       let finalidade = "principal";
+      let descricao = "";
 
       if (kind === "calibracao") {
         const payload: CriarCalibracaoPayload = {
@@ -63,6 +74,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         registroId = created.id;
         modulo = "calibracoes";
         finalidade = "certificado";
+        descricao = payload.numero_certificado || "Calibração";
       } else if (kind === "qualificacao") {
         const payload: CriarQualificacaoPayload = {
           tipo: required(formData, "tipo"),
@@ -76,6 +88,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         registroId = created.id;
         modulo = "qualificacoes";
         finalidade = "relatorio";
+        descricao = `Qualificação ${payload.tipo}`;
       } else {
         const natureza = required(formData, "natureza") as CriarManutencaoPayload["natureza"];
         const payload: CriarManutencaoPayload = {
@@ -103,25 +116,39 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         registroId = created.id;
         modulo = "manutencoes";
         finalidade = "evidencia";
+        descricao = payload.nome_servico || "Manutenção";
       }
 
       const file = formData.get("anexo");
       if (file instanceof File && file.size > 0) {
-        await edgeFunctionsService.uploadAnexoSeguro(file, {
+        setUploadProgress(0);
+        upload = await edgeFunctionsService.uploadAnexoSeguro(file, {
           empresaId: selectedCompanyId,
           modulo,
           registroId,
           finalidade,
+          onProgress: setUploadProgress,
         });
       }
+
+      return { upload, descricao };
     },
-    onSuccess: async () => {
+    onSuccess: async ({ upload, descricao }) => {
       setActiveForm(null);
       setFormError(null);
+      setUploadProgress(null);
+      if (upload?.anexoId || upload?.signedUrl) {
+        setLastUpload({
+          label: descricao || "Registro do equipamento",
+          url: upload.signedUrl,
+          anexoId: upload.anexoId,
+        });
+      }
       await queryClient.invalidateQueries({ queryKey: ["equipamentos", selectedCompanyId, id] });
     },
     onError: (error) => {
-      setFormError(error instanceof Error ? error.message : "Não foi possível salvar o registro.");
+      setFormError(error instanceof Error ? error.message : "Nao foi possivel salvar o registro.");
+      setUploadProgress(null);
     },
   });
 
@@ -156,7 +183,15 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
     event.preventDefault();
     if (!activeForm) return;
     setFormError(null);
+    setLastUpload(null);
     createMutation.mutate({ kind: activeForm, formData: new FormData(event.currentTarget) });
+  }
+
+  function handlePreviewItem(item: EquipamentoHistoricoItem) {
+    setPreviewItem(item);
+    if (item.anexoId) {
+      void edgeFunctionsService.registrarEventoAnexo(item.anexoId);
+    }
   }
 
   const calibracoesAtuais = currentItems(equipamento.calibracoes);
@@ -176,6 +211,19 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
       description={`${equipamento.fabricante} ${equipamento.modelo} - setor ${equipamento.setor}`}
       actions={<BackButton />}
     >
+      {lastUpload && (
+        <UploadSuccessBanner
+          label={lastUpload.label}
+          url={lastUpload.url}
+          onDismiss={() => setLastUpload(null)}
+          onVisualizar={() => {
+            if (lastUpload.anexoId) {
+              void edgeFunctionsService.registrarEventoAnexo(lastUpload.anexoId);
+            }
+          }}
+        />
+      )}
+
       <div className="flex flex-wrap items-center gap-3">
         <StatusBadge tone={equipamento.status}>{statusLabel(equipamento.status)}</StatusBadge>
         <span className="text-xs text-muted-foreground">
@@ -226,7 +274,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               <TimelineList
                 items={calibracoesAtuais}
                 empty="Nenhuma calibração cadastrada para este equipamento."
-                onPreview={setPreviewItem}
+                onPreview={handlePreviewItem}
               />
               <ArchiveShortcut
                 count={archivedItems(equipamento.calibracoes).length}
@@ -244,7 +292,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               <TimelineList
                 items={qualificacoesAtuais}
                 empty="Nenhuma qualificação cadastrada para este equipamento."
-                onPreview={setPreviewItem}
+                onPreview={handlePreviewItem}
               />
               <ArchiveShortcut
                 count={archivedItems(equipamento.qualificacoes).length}
@@ -262,7 +310,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               <TimelineList
                 items={manutencoesAtuais}
                 empty="Nenhuma manutenção cadastrada para este equipamento."
-                onPreview={setPreviewItem}
+                onPreview={handlePreviewItem}
               />
               <ArchiveShortcut
                 count={archivedItems(equipamento.manutencoes).length}
@@ -275,7 +323,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
             <TimelineList
               items={anexosAtuais}
               empty="Nenhum anexo vinculado a este equipamento."
-              onPreview={setPreviewItem}
+              onPreview={handlePreviewItem}
             />
           )}
 
@@ -290,7 +338,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
             <TimelineList
               items={equipamento.historico}
               empty="Nenhum evento de histórico registrado para este equipamento."
-              onPreview={setPreviewItem}
+              onPreview={handlePreviewItem}
             />
           )}
 
@@ -298,7 +346,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
             <TimelineList
               items={arquivados}
               empty="Nenhum registro arquivado para este equipamento."
-              onPreview={setPreviewItem}
+              onPreview={handlePreviewItem}
               archivedView
             />
           )}
@@ -310,12 +358,14 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
           kind={activeForm}
           equipamentoNome={equipamento.nome}
           isSaving={createMutation.isPending}
+          uploadProgress={uploadProgress}
           error={formError}
           onSubmit={handleSubmit}
           onClose={() => {
             if (!createMutation.isPending) {
               setActiveForm(null);
               setFormError(null);
+              setUploadProgress(null);
             }
           }}
         />
@@ -458,6 +508,7 @@ function OperationalModal({
   kind,
   equipamentoNome,
   isSaving,
+  uploadProgress,
   error,
   onSubmit,
   onClose,
@@ -465,6 +516,7 @@ function OperationalModal({
   kind: FormKind;
   equipamentoNome: string;
   isSaving: boolean;
+  uploadProgress: number | null;
   error: string | null;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
@@ -519,6 +571,10 @@ function OperationalModal({
               {error}
             </div>
           )}
+
+          {uploadProgress !== null && (
+            <UploadProgress value={uploadProgress} label="Enviando anexo..." />
+          )}
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border p-5">
@@ -539,6 +595,66 @@ function OperationalModal({
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function UploadProgress({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="md:col-span-2 rounded-md border border-border bg-muted/30 p-3">
+      <div className="mb-2 flex items-center justify-between text-xs font-medium text-muted-foreground">
+        <span>{label}</span>
+        <span>{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-accent transition-all"
+          style={{ width: `${value}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function UploadSuccessBanner({
+  label,
+  url,
+  onDismiss,
+  onVisualizar,
+}: {
+  label: string;
+  url?: string;
+  onDismiss: () => void;
+  onVisualizar: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-success/10 p-4 text-sm">
+      <div className="flex items-center gap-2 text-success">
+        <CheckCircle2 className="h-4 w-4" />
+        <span>
+          Anexo salvo com sucesso em <strong>{label}</strong>.
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            onClick={onVisualizar}
+            className="rounded-md border border-success/30 bg-background px-3 py-1.5 text-xs font-medium text-success hover:bg-muted"
+          >
+            Visualizar anexo
+          </a>
+        )}
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+        >
+          Fechar
+        </button>
+      </div>
     </div>
   );
 }

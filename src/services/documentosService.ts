@@ -83,6 +83,7 @@ type ApiDocumento = Partial<DocumentoResumo> & {
 };
 
 type ApiAnexoDocumento = {
+  id: string;
   registro_id: string;
   storage_path: string;
   nome_original?: string | null;
@@ -120,7 +121,7 @@ async function hydrateDocumentAttachmentUrls(
   const documentoIds = documentos.map((documento) => documento.id);
   const { data, error } = await supabase
     .from("anexos")
-    .select("registro_id, storage_path, nome_original, mime_type")
+    .select("id, registro_id, storage_path, nome_original, mime_type")
     .eq("empresa_id", empresaId)
     .eq("modulo", "documentos")
     .in("registro_id", documentoIds)
@@ -156,6 +157,7 @@ async function hydrateDocumentAttachmentUrls(
 
     return {
       ...documento,
+      anexoId: anexo.id,
       anexoUrl: signedUrls.get(anexo.storage_path) ?? null,
       anexoNome: anexo.nome_original ?? "Anexo do documento",
     };

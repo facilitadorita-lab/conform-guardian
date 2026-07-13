@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Upload, Loader2, Check } from "lucide-react";
+import { Upload, Loader2, Check, Eye } from "lucide-react";
 import { edgeFunctionsService } from "@/services";
 
 type Contexto =
@@ -25,23 +25,33 @@ export function SecureUploadButton({
   const inputRef = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<"idle" | "uploading" | "done">("idle");
   const [erro, setErro] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [successUrl, setSuccessUrl] = useState<string | null>(null);
+  const [successAnexoId, setSuccessAnexoId] = useState<string | null>(null);
 
   async function handleFile(file: File) {
     setErro(null);
+    setSuccessUrl(null);
+    setSuccessAnexoId(null);
+    setProgress(0);
     setState("uploading");
     try {
-      const { anexoId } = await edgeFunctionsService.uploadAnexoSeguro(file, {
+      edgeFunctionsService.validateAttachmentFile(file);
+      const { anexoId, signedUrl } = await edgeFunctionsService.uploadAnexoSeguro(file, {
         empresaId,
         modulo: contexto,
         registroId: referenciaId,
         finalidade,
+        onProgress: setProgress,
       });
       setState("done");
+      setSuccessUrl(signedUrl ?? null);
+      setSuccessAnexoId(anexoId ?? null);
       onUploaded?.(anexoId ?? "", file);
-      setTimeout(() => setState("idle"), 2000);
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao enviar arquivo.");
       setState("idle");
+      setProgress(0);
     }
   }
 
@@ -73,6 +83,38 @@ export function SecureUploadButton({
         )}
         {state === "done" ? "Enviado" : label}
       </button>
+      {state === "uploading" && (
+        <div className="w-52 rounded-md border border-border bg-muted/30 p-2">
+          <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>Enviando anexo</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-accent transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+      {state === "done" && (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-success">
+          <span>Anexo salvo com sucesso.</span>
+          {successUrl && (
+            <a
+              href={successUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => {
+                if (successAnexoId) void edgeFunctionsService.registrarEventoAnexo(successAnexoId);
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-success/30 px-2 py-1 font-medium hover:bg-muted"
+            >
+              <Eye className="h-3.5 w-3.5" /> Visualizar
+            </a>
+          )}
+        </div>
+      )}
       {erro && <span className="text-xs text-destructive">{erro}</span>}
     </div>
   );

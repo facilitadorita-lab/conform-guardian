@@ -36,6 +36,7 @@ export interface DocumentoResumo {
   vencimento: ISODate;
   status: StatusConformidade;
   setor: string;
+  anexoId?: UUID | null;
   anexoUrl?: string | null;
   anexoNome?: string | null;
 }

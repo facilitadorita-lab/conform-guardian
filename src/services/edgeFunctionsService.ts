@@ -3,6 +3,17 @@
 // usuario autenticado. NUNCA chamar asaas-webhook daqui: e webhook externo.
 import { requireSupabase } from "./_supabase";
 
+export const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+export const SIGNED_PREVIEW_SECONDS = 10 * 60;
+
+const acceptedAttachmentMimeTypes = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]);
+
 async function invoke<T = unknown>(name: string, body?: unknown): Promise<T> {
   const supabase = requireSupabase();
   const { data, error } = await supabase.functions.invoke<T>(name, {
@@ -132,8 +143,10 @@ export async function uploadAnexoSeguro(
     registroId: string;
     finalidade?: string;
     substituiAnexoId?: string | null;
+    onProgress?: (progress: number) => void;
   },
-): Promise<{ anexoId?: string }> {
+): Promise<{ anexoId?: string; signedUrl?: string; path?: string }> {
+  validateAttachmentFile(file);
   const supabase = requireSupabase();
   const ticket = await createEvidenceUpload({
     empresaId: input.empresaId,
@@ -144,13 +157,7 @@ export async function uploadAnexoSeguro(
     tamanhoBytes: file.size,
   });
 
-  const { error: uploadError } = await supabase.storage
-    .from("evidencias")
-    .uploadToSignedUrl(ticket.path, ticket.token, file);
-
-  if (uploadError) {
-    throw new Error(translateFunctionError(uploadError.message || "Falha no upload do arquivo."));
-  }
+  await uploadFileToSignedUrl(ticket.signed_url, file, input.onProgress);
 
   const result = await invoke<{ anexo?: { id?: string } }>("create-evidence-upload", {
     action: "complete",
@@ -165,7 +172,78 @@ export async function uploadAnexoSeguro(
     substitui_anexo_id: input.substituiAnexoId ?? null,
   });
 
-  return { anexoId: result.anexo?.id };
+  input.onProgress?.(100);
+
+  const { data: signedUrlData } = await supabase.storage
+    .from("evidencias")
+    .createSignedUrl(ticket.path, SIGNED_PREVIEW_SECONDS, { download: false });
+
+  return {
+    anexoId: result.anexo?.id,
+    signedUrl: signedUrlData?.signedUrl ?? undefined,
+    path: ticket.path,
+  };
+}
+
+export function validateAttachmentFile(file: File): void {
+  if (file.size <= 0) {
+    throw new Error("Arquivo vazio. Selecione um arquivo valido para anexar.");
+  }
+  if (file.size > MAX_ATTACHMENT_BYTES) {
+    throw new Error("Arquivo maior que 20 MB. Reduza o arquivo antes de anexar.");
+  }
+  if (!acceptedAttachmentMimeTypes.has(file.type || "application/octet-stream")) {
+    throw new Error("Arquivo invalido. Envie PDF, PNG, JPG, Word ou Excel com ate 20 MB.");
+  }
+}
+
+function uploadFileToSignedUrl(
+  signedUrl: string,
+  file: File,
+  onProgress?: (progress: number) => void,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    const formData = new FormData();
+
+    formData.append("cacheControl", "3600");
+    formData.append("", file);
+
+    xhr.open("PUT", signedUrl);
+    xhr.setRequestHeader("x-upsert", "false");
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+      const progress = Math.min(95, Math.round((event.loaded / event.total) * 95));
+      onProgress?.(progress);
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress?.(95);
+        resolve();
+        return;
+      }
+
+      reject(new Error(translateFunctionError(xhr.responseText || `Falha no upload (${xhr.status}).`)));
+    };
+
+    xhr.onerror = () => reject(new Error("Falha de rede durante o upload do arquivo."));
+    xhr.onabort = () => reject(new Error("Upload cancelado antes de finalizar."));
+    xhr.send(formData);
+  });
+}
+
+export function registrarEventoAnexo(
+  anexoId: string,
+  acao: "visualizacao_anexo" | "download_anexo" = "visualizacao_anexo",
+) {
+  if (!anexoId) return Promise.resolve();
+  return requireSupabase().rpc("registrar_evento_anexo", {
+    p_anexo_id: anexoId,
+    p_acao: acao,
+    p_user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+  });
 }
 
 // ---- assistant-query ----
@@ -215,6 +293,8 @@ export const edgeFunctionsService = {
   inviteCompanyUser,
   createEvidenceUpload,
   uploadAnexoSeguro,
+  validateAttachmentFile,
+  registrarEventoAnexo,
   assistantQuery,
   createAsaasSubscription,
 };
