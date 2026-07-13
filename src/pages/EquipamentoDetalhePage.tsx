@@ -1,9 +1,18 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { ArrowLeft, Eye, Paperclip, Plus, X } from "lucide-react";
 import { useEquipamento } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
-import type { EquipamentoHistoricoItem } from "@/services/equipamentosService";
+import { edgeFunctionsService } from "@/services";
+import {
+  equipamentosService,
+  type CriarCalibracaoPayload,
+  type CriarManutencaoPayload,
+  type CriarQualificacaoPayload,
+  type EquipamentoHistoricoItem,
+} from "@/services/equipamentosService";
 import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
@@ -18,10 +27,102 @@ const tabs = [
 ] as const;
 
 type Tab = (typeof tabs)[number];
+type FormKind = "calibracao" | "qualificacao" | "manutencao";
+
+const uploadAccept =
+  "application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export function EquipamentoDetalhePage({ id }: { id: string }) {
+  const { selectedCompanyId } = useSession();
   const { data: equipamento, isLoading } = useEquipamento(id);
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("Dados gerais");
+  const [activeForm, setActiveForm] = useState<FormKind | null>(null);
+  const [previewItem, setPreviewItem] = useState<EquipamentoHistoricoItem | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const createMutation = useMutation({
+    mutationFn: async ({ kind, formData }: { kind: FormKind; formData: FormData }) => {
+      if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
+
+      let registroId = "";
+      let modulo: "calibracoes" | "qualificacoes" | "manutencoes";
+      let finalidade = "principal";
+
+      if (kind === "calibracao") {
+        const payload: CriarCalibracaoPayload = {
+          data_calibracao: required(formData, "data_calibracao"),
+          data_vencimento: optional(formData, "data_vencimento"),
+          numero_certificado: optional(formData, "numero_certificado"),
+          laboratorio_responsavel: optional(formData, "laboratorio_responsavel"),
+          resultado: required(formData, "resultado") as CriarCalibracaoPayload["resultado"],
+          observacoes: optional(formData, "observacoes"),
+        };
+        const created = await equipamentosService.criarCalibracao(selectedCompanyId, id, payload);
+        registroId = created.id;
+        modulo = "calibracoes";
+        finalidade = "certificado";
+      } else if (kind === "qualificacao") {
+        const payload: CriarQualificacaoPayload = {
+          tipo: required(formData, "tipo"),
+          data_qualificacao: required(formData, "data_qualificacao"),
+          data_vencimento: optional(formData, "data_vencimento"),
+          resultado: required(formData, "resultado") as CriarQualificacaoPayload["resultado"],
+          empresa_executora: optional(formData, "empresa_executora"),
+          observacoes: optional(formData, "observacoes"),
+        };
+        const created = await equipamentosService.criarQualificacao(selectedCompanyId, id, payload);
+        registroId = created.id;
+        modulo = "qualificacoes";
+        finalidade = "relatorio";
+      } else {
+        const natureza = required(formData, "natureza") as CriarManutencaoPayload["natureza"];
+        const payload: CriarManutencaoPayload = {
+          equipamento_id: id,
+          nome_servico: optional(formData, "nome_servico") || `Manutenção ${natureza}`,
+          natureza,
+          tipo_servico: optional(formData, "tipo_servico"),
+          status_execucao: optional(formData, "status_execucao") as
+            CriarManutencaoPayload["status_execucao"] | undefined,
+          data_manutencao: required(formData, "data_manutencao"),
+          proxima_manutencao: optional(formData, "proxima_manutencao"),
+          periodicidade_meses: optional(formData, "periodicidade_meses"),
+          empresa_responsavel: optional(formData, "empresa_responsavel"),
+          tecnico_responsavel: optional(formData, "tecnico_responsavel"),
+          numero_ordem_servico: optional(formData, "numero_ordem_servico"),
+          exige_evidencia: true,
+          falha_apresentada: optional(formData, "falha_apresentada"),
+          prioridade: optional(formData, "prioridade"),
+          diagnostico: optional(formData, "diagnostico"),
+          causa_raiz: optional(formData, "causa_raiz"),
+          acao_realizada: optional(formData, "acao_realizada"),
+          observacoes: optional(formData, "observacoes"),
+        };
+        const created = await equipamentosService.criarManutencao(selectedCompanyId, payload);
+        registroId = created.id;
+        modulo = "manutencoes";
+        finalidade = "evidencia";
+      }
+
+      const file = formData.get("anexo");
+      if (file instanceof File && file.size > 0) {
+        await edgeFunctionsService.uploadAnexoSeguro(file, {
+          empresaId: selectedCompanyId,
+          modulo,
+          registroId,
+          finalidade,
+        });
+      }
+    },
+    onSuccess: async () => {
+      setActiveForm(null);
+      setFormError(null);
+      await queryClient.invalidateQueries({ queryKey: ["equipamentos", selectedCompanyId, id] });
+    },
+    onError: (error) => {
+      setFormError(error instanceof Error ? error.message : "Não foi possível salvar o registro.");
+    },
+  });
 
   if (!equipamento && isLoading) {
     return (
@@ -48,6 +149,13 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         </div>
       </AppShell>
     );
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!activeForm) return;
+    setFormError(null);
+    createMutation.mutate({ kind: activeForm, formData: new FormData(event.currentTarget) });
   }
 
   return (
@@ -98,30 +206,52 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
           )}
 
           {tab === "Calibrações" && (
-            <TimelineList
-              items={equipamento.calibracoes}
-              empty="Nenhuma calibração cadastrada para este equipamento."
-            />
+            <TimelineSection
+              title="Calibrações"
+              actionLabel="Inserir nova calibração"
+              onAdd={() => setActiveForm("calibracao")}
+            >
+              <TimelineList
+                items={equipamento.calibracoes}
+                empty="Nenhuma calibração cadastrada para este equipamento."
+                onPreview={setPreviewItem}
+              />
+            </TimelineSection>
           )}
 
           {tab === "Qualificações" && (
-            <TimelineList
-              items={equipamento.qualificacoes}
-              empty="Nenhuma qualificação cadastrada para este equipamento."
-            />
+            <TimelineSection
+              title="Qualificações"
+              actionLabel="Inserir nova qualificação"
+              onAdd={() => setActiveForm("qualificacao")}
+            >
+              <TimelineList
+                items={equipamento.qualificacoes}
+                empty="Nenhuma qualificação cadastrada para este equipamento."
+                onPreview={setPreviewItem}
+              />
+            </TimelineSection>
           )}
 
           {tab === "Manutenções" && (
-            <TimelineList
-              items={equipamento.manutencoes}
-              empty="Nenhuma manutenção cadastrada para este equipamento."
-            />
+            <TimelineSection
+              title="Manutenções"
+              actionLabel="Inserir nova manutenção"
+              onAdd={() => setActiveForm("manutencao")}
+            >
+              <TimelineList
+                items={equipamento.manutencoes}
+                empty="Nenhuma manutenção cadastrada para este equipamento."
+                onPreview={setPreviewItem}
+              />
+            </TimelineSection>
           )}
 
           {tab === "Anexos" && (
             <TimelineList
               items={equipamento.anexos}
               empty="Nenhum anexo vinculado a este equipamento."
+              onPreview={setPreviewItem}
             />
           )}
 
@@ -136,10 +266,29 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
             <TimelineList
               items={equipamento.historico}
               empty="Nenhum evento de histórico registrado para este equipamento."
+              onPreview={setPreviewItem}
             />
           )}
         </div>
       </div>
+
+      {activeForm && (
+        <OperationalModal
+          kind={activeForm}
+          equipamentoNome={equipamento.nome}
+          isSaving={createMutation.isPending}
+          error={formError}
+          onSubmit={handleSubmit}
+          onClose={() => {
+            if (!createMutation.isPending) {
+              setActiveForm(null);
+              setFormError(null);
+            }
+          }}
+        />
+      )}
+
+      {previewItem && <AttachmentPreview item={previewItem} onClose={() => setPreviewItem(null)} />}
     </AppShell>
   );
 }
@@ -155,7 +304,47 @@ function BackButton() {
   );
 }
 
-function TimelineList({ items, empty }: { items: EquipamentoHistoricoItem[]; empty: string }) {
+function TimelineSection({
+  title,
+  actionLabel,
+  onAdd,
+  children,
+}: {
+  title: string;
+  actionLabel: string;
+  onAdd: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <p className="text-xs text-muted-foreground">
+            Registros vinculados apenas a este equipamento.
+          </p>
+        </div>
+        <button
+          onClick={onAdd}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" /> {actionLabel}
+        </button>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function TimelineList({
+  items,
+  empty,
+  onPreview,
+}: {
+  items: EquipamentoHistoricoItem[];
+  empty: string;
+  onPreview: (item: EquipamentoHistoricoItem) => void;
+}) {
   if (!items.length) {
     return (
       <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
@@ -167,7 +356,7 @@ function TimelineList({ items, empty }: { items: EquipamentoHistoricoItem[]; emp
   return (
     <div className="divide-y divide-border rounded-lg border border-border">
       {items.map((item, index) => (
-        <div key={item.id ?? index} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center">
+        <div key={item.id ?? index} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-medium text-foreground">{item.descricao}</p>
@@ -181,19 +370,290 @@ function TimelineList({ items, empty }: { items: EquipamentoHistoricoItem[]; emp
             </div>
           </div>
 
-          {item.documentoUrl && (
-            <a
-              href={item.documentoUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
-            >
-              Abrir anexo <ExternalLink className="h-3 w-3" />
-            </a>
-          )}
+          <button
+            onClick={() => onPreview(item)}
+            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-accent hover:bg-muted"
+          >
+            <Eye className="h-3.5 w-3.5" /> Visualizar
+          </button>
         </div>
       ))}
     </div>
+  );
+}
+
+function OperationalModal({
+  kind,
+  equipamentoNome,
+  isSaving,
+  error,
+  onSubmit,
+  onClose,
+}: {
+  kind: FormKind;
+  equipamentoNome: string;
+  isSaving: boolean;
+  error: string | null;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onClose: () => void;
+}) {
+  const title = {
+    calibracao: "Inserir nova calibração",
+    qualificacao: "Inserir nova qualificação",
+    manutencao: "Inserir nova manutenção",
+  }[kind];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+      <form
+        onSubmit={onSubmit}
+        className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-2xl border border-border bg-background shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div>
+            <h2 className="text-lg font-semibold">{title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{equipamentoNome}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid gap-4 p-5 md:grid-cols-2">
+          {kind === "calibracao" && <CalibracaoFields />}
+          {kind === "qualificacao" && <QualificacaoFields />}
+          {kind === "manutencao" && <ManutencaoFields />}
+
+          <label className="md:col-span-2">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Anexo / evidência
+            </span>
+            <div className="mt-1 flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/30 px-3 py-3">
+              <Paperclip className="h-4 w-4 text-muted-foreground" />
+              <input name="anexo" type="file" accept={uploadAccept} className="text-sm" />
+            </div>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              PDF, imagem, Word ou Excel. O arquivo fica privado no Storage da empresa.
+            </span>
+          </label>
+
+          {error && (
+            <div className="md:col-span-2 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-border p-5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+          >
+            {isSaving ? "Salvando..." : "Salvar registro"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function CalibracaoFields() {
+  return (
+    <>
+      <Input label="Data da calibração" name="data_calibracao" type="date" required />
+      <Input label="Vencimento" name="data_vencimento" type="date" />
+      <Input label="Nº do certificado" name="numero_certificado" />
+      <Input label="Laboratório responsável" name="laboratorio_responsavel" />
+      <Select label="Resultado" name="resultado" required>
+        <option value="aprovado">Aprovado</option>
+        <option value="aprovado_restricao">Aprovado com restrição</option>
+        <option value="reprovado">Reprovado</option>
+        <option value="nao_aplicavel">Não aplicável</option>
+      </Select>
+      <TextArea label="Observações" name="observacoes" />
+    </>
+  );
+}
+
+function QualificacaoFields() {
+  return (
+    <>
+      <Select label="Tipo de qualificação" name="tipo" required>
+        <option value="instalacao">Instalação</option>
+        <option value="operacao">Operação</option>
+        <option value="desempenho">Desempenho</option>
+        <option value="mapeamento_termico">Mapeamento térmico</option>
+      </Select>
+      <Input label="Data da qualificação" name="data_qualificacao" type="date" required />
+      <Input label="Vencimento" name="data_vencimento" type="date" />
+      <Input label="Empresa executora" name="empresa_executora" />
+      <Select label="Resultado" name="resultado" required>
+        <option value="aprovado">Aprovado</option>
+        <option value="aprovado_restricao">Aprovado com restrição</option>
+        <option value="reprovado">Reprovado</option>
+        <option value="nao_aplicavel">Não aplicável</option>
+      </Select>
+      <TextArea label="Observações" name="observacoes" />
+    </>
+  );
+}
+
+function ManutencaoFields() {
+  return (
+    <>
+      <Select label="Natureza" name="natureza" required>
+        <option value="preventiva">Preventiva</option>
+        <option value="corretiva">Corretiva</option>
+      </Select>
+      <Input label="Data da manutenção" name="data_manutencao" type="date" required />
+      <Input label="Nome do serviço" name="nome_servico" />
+      <Input label="Próxima manutenção" name="proxima_manutencao" type="date" />
+      <Input label="Periodicidade (meses)" name="periodicidade_meses" type="number" />
+      <Input label="Nº da ordem de serviço" name="numero_ordem_servico" />
+      <Input label="Empresa responsável" name="empresa_responsavel" />
+      <Input label="Técnico responsável" name="tecnico_responsavel" />
+      <Input label="Falha apresentada (corretiva)" name="falha_apresentada" />
+      <Input label="Prioridade" name="prioridade" />
+      <TextArea label="Diagnóstico" name="diagnostico" />
+      <TextArea label="Ação realizada" name="acao_realizada" />
+      <TextArea label="Observações" name="observacoes" />
+    </>
+  );
+}
+
+function AttachmentPreview({
+  item,
+  onClose,
+}: {
+  item: EquipamentoHistoricoItem;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div>
+            <h2 className="text-lg font-semibold">{item.documentoNome || item.descricao}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {item.tipo ? `Tipo: ${humanizeTipo(item.tipo)}` : "Registro do equipamento"}
+              {item.data ? ` · Data: ${formatDateBR(item.data)}` : ""}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted"
+            aria-label="Fechar visualização"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="min-h-[420px] overflow-auto bg-muted/30 p-5">
+          {item.documentoUrl ? (
+            <iframe
+              title={`Visualização de ${item.documentoNome || item.descricao}`}
+              src={item.documentoUrl}
+              className="h-[70vh] min-h-[420px] w-full rounded-xl border border-border bg-background"
+            />
+          ) : (
+            <div className="flex min-h-[420px] items-center justify-center rounded-xl border border-dashed border-border bg-background p-8 text-center">
+              <div className="max-w-md">
+                <Eye className="mx-auto h-10 w-10 text-muted-foreground" />
+                <h3 className="mt-4 text-base font-semibold text-foreground">
+                  Pré-visualização do registro
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Este item ainda não possui arquivo disponível para abrir no navegador. Quando
+                  houver anexo real, ele será exibido aqui sem precisar baixar.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Input({
+  label,
+  name,
+  type = "text",
+  required,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  required?: boolean;
+}) {
+  return (
+    <label>
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+      />
+    </label>
+  );
+}
+
+function Select({
+  label,
+  name,
+  required,
+  children,
+}: {
+  label: string;
+  name: string;
+  required?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <label>
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <select
+        name={name}
+        required={required}
+        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+      >
+        {children}
+      </select>
+    </label>
+  );
+}
+
+function TextArea({ label, name }: { label: string; name: string }) {
+  return (
+    <label className="md:col-span-2">
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <textarea
+        name={name}
+        rows={3}
+        className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+    </label>
   );
 }
 
@@ -208,4 +668,15 @@ function Field({ k, v }: { k: string; v: string }) {
 
 function humanizeTipo(value: string) {
   return value.replaceAll("_", " ");
+}
+
+function required(formData: FormData, key: string) {
+  const value = optional(formData, key);
+  if (!value) throw new Error("Preencha todos os campos obrigatórios.");
+  return value;
+}
+
+function optional(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
 }

@@ -34,20 +34,33 @@ export function inviteCompanyUser(input: InviteCompanyUserInput) {
 // ---- create-evidence-upload ----
 // Passo 1: pede URL assinada. Passo 2: envia arquivo. Passo 3: confirma.
 export interface CreateEvidenceUploadRequest {
-  fileName: string;
+  empresaId: string;
+  modulo:
+    "documentos" | "equipamentos" | "calibracoes" | "qualificacoes" | "manutencoes" | "pendencias";
+  registroId: string;
+  nomeOriginal: string;
   mimeType: string;
-  size: number;
-  contexto: "documento" | "equipamento" | "manutencao" | "pendencia" | "outro";
-  referenciaId?: string;
+  tamanhoBytes: number;
+  finalidade?: string;
+  substituiAnexoId?: string | null;
 }
 export interface CreateEvidenceUploadResponse {
-  uploadUrl: string;
-  evidenceId: string;
-  headers?: Record<string, string>;
-  confirmToken?: string;
+  upload_id: string;
+  path: string;
+  token: string;
+  signed_url: string;
+  expires_in: number;
 }
 export function createEvidenceUpload(input: CreateEvidenceUploadRequest) {
-  return invoke<CreateEvidenceUploadResponse>("create-evidence-upload", input);
+  return invoke<CreateEvidenceUploadResponse>("create-evidence-upload", {
+    action: "prepare",
+    empresa_id: input.empresaId,
+    modulo: input.modulo,
+    registro_id: input.registroId,
+    nome_original: input.nomeOriginal,
+    mime_type: input.mimeType,
+    tamanho_bytes: input.tamanhoBytes,
+  });
 }
 
 /**
@@ -58,36 +71,46 @@ export function createEvidenceUpload(input: CreateEvidenceUploadRequest) {
  */
 export async function uploadAnexoSeguro(
   file: File,
-  contexto: CreateEvidenceUploadRequest["contexto"],
-  referenciaId?: string,
-): Promise<{ evidenceId: string }> {
+  input: {
+    empresaId: string;
+    modulo: CreateEvidenceUploadRequest["modulo"];
+    registroId: string;
+    finalidade?: string;
+    substituiAnexoId?: string | null;
+  },
+): Promise<{ anexoId?: string }> {
+  const supabase = requireSupabase();
   const ticket = await createEvidenceUpload({
-    fileName: file.name,
+    empresaId: input.empresaId,
+    modulo: input.modulo,
+    registroId: input.registroId,
+    nomeOriginal: file.name,
     mimeType: file.type || "application/octet-stream",
-    size: file.size,
-    contexto,
-    referenciaId,
+    tamanhoBytes: file.size,
   });
 
-  const putResp = await fetch(ticket.uploadUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": file.type || "application/octet-stream",
-      ...(ticket.headers ?? {}),
-    },
-    body: file,
-  });
-  if (!putResp.ok) {
-    throw new Error(`Falha no upload do arquivo (${putResp.status}).`);
+  const { error: uploadError } = await supabase.storage
+    .from("evidencias")
+    .uploadToSignedUrl(ticket.path, ticket.token, file);
+
+  if (uploadError) {
+    throw new Error(uploadError.message || "Falha no upload do arquivo.");
   }
 
-  await invoke("create-evidence-upload", {
-    confirm: true,
-    evidenceId: ticket.evidenceId,
-    confirmToken: ticket.confirmToken,
+  const result = await invoke<{ anexo?: { id?: string } }>("create-evidence-upload", {
+    action: "complete",
+    empresa_id: input.empresaId,
+    modulo: input.modulo,
+    registro_id: input.registroId,
+    path: ticket.path,
+    nome_original: file.name,
+    mime_type: file.type || "application/octet-stream",
+    tamanho_bytes: file.size,
+    finalidade: input.finalidade ?? "principal",
+    substitui_anexo_id: input.substituiAnexoId ?? null,
   });
 
-  return { evidenceId: ticket.evidenceId };
+  return { anexoId: result.anexo?.id };
 }
 
 // ---- assistant-query ----

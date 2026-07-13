@@ -1,4 +1,5 @@
 import { runtimeConfig } from "@/lib/runtime-config";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { equipamentosMock } from "@/mocks";
 import type { Equipamento, EquipamentoResumo, StatusConformidade } from "@/types";
 import { cloneMock, extractRpcItems, invokeRpc, type PaginatedRpcResponse } from "./service-utils";
@@ -72,7 +73,33 @@ export const equipamentosService = {
       p_equipamento_id: equipamentoId,
     });
 
-    return data ? normalizeEquipamentoDetalhe(data) : null;
+    if (!data) return null;
+
+    const detalhe = normalizeEquipamentoDetalhe(data);
+    return hydrateEquipamentoAttachmentUrls(empresaId, detalhe);
+  },
+
+  criarCalibracao(empresaId: string, equipamentoId: string, payload: CriarCalibracaoPayload) {
+    return invokeRpc<{ id: string }>("api_criar_calibracao", {
+      p_empresa_id: empresaId,
+      p_equipamento_id: equipamentoId,
+      p_payload: payload,
+    });
+  },
+
+  criarQualificacao(empresaId: string, equipamentoId: string, payload: CriarQualificacaoPayload) {
+    return invokeRpc<{ id: string }>("api_criar_qualificacao", {
+      p_empresa_id: empresaId,
+      p_equipamento_id: equipamentoId,
+      p_payload: payload,
+    });
+  },
+
+  criarManutencao(empresaId: string, payload: CriarManutencaoPayload) {
+    return invokeRpc<{ id: string }>("api_criar_manutencao", {
+      p_empresa_id: empresaId,
+      p_payload: payload,
+    });
   },
 
   criar(empresaId: string, payload: Partial<Equipamento>) {
@@ -93,11 +120,53 @@ export const equipamentosService = {
 
 export type EquipamentoHistoricoItem = {
   id?: string;
+  registroId?: string | null;
+  modulo?: string | null;
   data?: string | null;
   descricao: string;
   tipo?: string | null;
   status?: StatusConformidade | "info";
   documentoUrl?: string | null;
+  documentoNome?: string | null;
+};
+
+export type CriarCalibracaoPayload = {
+  data_calibracao: string;
+  data_vencimento?: string;
+  numero_certificado?: string;
+  laboratorio_responsavel?: string;
+  resultado: "aprovado" | "reprovado" | "aprovado_restricao" | "nao_aplicavel";
+  observacoes?: string;
+};
+
+export type CriarQualificacaoPayload = {
+  tipo: string;
+  data_qualificacao: string;
+  data_vencimento?: string;
+  resultado: "aprovado" | "reprovado" | "aprovado_restricao" | "nao_aplicavel";
+  empresa_executora?: string;
+  observacoes?: string;
+};
+
+export type CriarManutencaoPayload = {
+  equipamento_id: string;
+  nome_servico?: string;
+  natureza: "preventiva" | "corretiva";
+  tipo_servico?: string;
+  status_execucao?: "programada" | "em_andamento" | "concluida" | "cancelada";
+  data_manutencao: string;
+  proxima_manutencao?: string;
+  periodicidade_meses?: string;
+  empresa_responsavel?: string;
+  tecnico_responsavel?: string;
+  numero_ordem_servico?: string;
+  exige_evidencia?: boolean;
+  falha_apresentada?: string;
+  prioridade?: string;
+  diagnostico?: string;
+  causa_raiz?: string;
+  acao_realizada?: string;
+  observacoes?: string;
 };
 
 export type EquipamentoDetalhe = EquipamentoResumo & {
@@ -254,6 +323,8 @@ function normalizeTimeline(items: unknown, kind: string): EquipamentoHistoricoIt
 
     return {
       id: String(item.id ?? `${kind}-${index}`),
+      registroId: String(item.registro_id ?? item.registroId ?? item.id ?? ""),
+      modulo: String(item.modulo ?? kind),
       data: String(
         item.data_vencimento ??
           item.proxima_manutencao ??
@@ -267,6 +338,7 @@ function normalizeTimeline(items: unknown, kind: string): EquipamentoHistoricoIt
       tipo: String(item.tipo ?? item.natureza ?? item.finalidade ?? item.acao ?? kind),
       status,
       documentoUrl: typeof item.url === "string" ? item.url : null,
+      documentoNome: String(item.nome_original ?? item.nome ?? item.finalidade ?? ""),
     };
   });
 }
@@ -318,4 +390,67 @@ function buildTimelineDescription(item: Record<string, unknown>, kind: string) {
   }
 
   return [item.acao, item.entidade, item.descricao].filter(Boolean).join(" · ") || "Registro";
+}
+type ApiAnexo = {
+  id: string;
+  registro_id: string;
+  modulo: string;
+  storage_path: string;
+  nome_original?: string | null;
+};
+
+async function hydrateEquipamentoAttachmentUrls(
+  empresaId: string,
+  detalhe: EquipamentoDetalhe,
+): Promise<EquipamentoDetalhe> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return detalhe;
+
+  const registroIds = [
+    detalhe.id,
+    ...detalhe.calibracoes.map((item) => item.id).filter(Boolean),
+    ...detalhe.qualificacoes.map((item) => item.id).filter(Boolean),
+    ...detalhe.manutencoes.map((item) => item.id).filter(Boolean),
+  ] as string[];
+
+  if (!registroIds.length) return detalhe;
+
+  const { data, error } = await supabase
+    .from("anexos")
+    .select("id, registro_id, modulo, storage_path, nome_original")
+    .eq("empresa_id", empresaId)
+    .in("registro_id", registroIds)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error || !data?.length) return detalhe;
+
+  const anexos = data as ApiAnexo[];
+  const signedUrls = new Map<string, string>();
+
+  await Promise.all(
+    anexos.map(async (anexo) => {
+      const { data: signedUrlData } = await supabase.storage
+        .from("evidencias")
+        .createSignedUrl(anexo.storage_path, 60 * 10, { download: false });
+
+      if (signedUrlData?.signedUrl) signedUrls.set(anexo.id, signedUrlData.signedUrl);
+    }),
+  );
+
+  return {
+    ...detalhe,
+    anexos: detalhe.anexos.map((item) => {
+      const anexo = anexos.find((candidate) => candidate.id === item.id);
+      if (!anexo) return item;
+
+      return {
+        ...item,
+        registroId: anexo.registro_id,
+        modulo: anexo.modulo,
+        documentoUrl: signedUrls.get(anexo.id) ?? null,
+        documentoNome: anexo.nome_original ?? item.documentoNome ?? "Anexo",
+      };
+    }),
+  };
 }
