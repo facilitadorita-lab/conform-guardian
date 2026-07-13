@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Download, Plus } from "lucide-react";
 import { useEquipamentos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function EquipamentosPage() {
@@ -61,7 +62,7 @@ export function EquipamentosPage() {
                     {equipamento.criticidade}
                   </span>
                 </td>
-                <td className="px-4 py-3 tabular-nums">{equipamento.proximoVenc}</td>
+                <td className="px-4 py-3 tabular-nums">{formatDateBR(equipamento.proximoVenc)}</td>
                 <td className="px-4 py-3">
                   <StatusBadge tone={equipamento.status}>
                     {statusLabel(equipamento.status)}

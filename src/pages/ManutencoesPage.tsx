@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { useManutencoes } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function ManutencoesPage() {
@@ -50,7 +51,7 @@ export function ManutencoesPage() {
                 <td className="px-6 py-3 font-mono text-xs">{manutencao.id}</td>
                 <td className="px-4 py-3 font-medium">{manutencao.equipamento}</td>
                 <td className="px-4 py-3 text-muted-foreground">{manutencao.tipo}</td>
-                <td className="px-4 py-3 tabular-nums">{manutencao.data}</td>
+                <td className="px-4 py-3 tabular-nums">{formatDateBR(manutencao.data)}</td>
                 <td className="px-4 py-3 text-muted-foreground">{manutencao.responsavel}</td>
                 <td className="px-4 py-3 font-mono text-xs">{manutencao.os}</td>
                 <td className="px-4 py-3">

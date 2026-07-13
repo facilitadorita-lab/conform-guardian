@@ -6,11 +6,9 @@ import {
   CreditCard,
   Users,
 } from "lucide-react";
-import {
-  useMasterAssinaturas,
-  useMasterFinanceiroResumo,
-} from "@/hooks/use-conform-data";
+import { useMasterAssinaturas, useMasterFinanceiroResumo } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { formatDateBR } from "@/utils/date";
 import { formatCurrencyFromCents } from "@/utils/money";
 import type { StatusConformidade } from "@/types";
 
@@ -74,15 +72,20 @@ export function MasterFinanceiroPage() {
           </div>
           <div className="divide-y divide-border">
             {(resumo?.proximos_pagamentos ?? []).map((item) => (
-              <div key={item.empresa_id} className="flex items-center justify-between gap-3 px-5 py-3">
+              <div
+                key={item.empresa_id}
+                className="flex items-center justify-between gap-3 px-5 py-3"
+              >
                 <div>
                   <div className="text-sm font-medium">{item.nome_fantasia}</div>
                   <div className="text-xs text-muted-foreground">
-                    {item.cnpj} · venc. {item.proximo_vencimento ?? "sem data"}
+                    {item.cnpj} · venc. {formatDateBR(item.proximo_vencimento)}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-semibold">{formatCurrencyFromCents(item.valor_centavos)}</div>
+                  <div className="text-sm font-semibold">
+                    {formatCurrencyFromCents(item.valor_centavos)}
+                  </div>
                   <StatusBadge tone={statusTone[item.status] ?? "info"}>{item.status}</StatusBadge>
                 </div>
               </div>
@@ -101,11 +104,14 @@ export function MasterFinanceiroPage() {
           </div>
           <div className="divide-y divide-border">
             {(resumo?.pagamentos_atrasados ?? []).map((item) => (
-              <div key={item.fatura_id} className="flex items-center justify-between gap-3 px-5 py-3">
+              <div
+                key={item.fatura_id}
+                className="flex items-center justify-between gap-3 px-5 py-3"
+              >
                 <div>
                   <div className="text-sm font-medium">{item.nome_fantasia}</div>
                   <div className="text-xs text-muted-foreground">
-                    {item.cnpj} · venc. {item.vencimento}
+                    {item.cnpj} · venc. {formatDateBR(item.vencimento)}
                   </div>
                 </div>
                 <div className="text-right">
@@ -152,7 +158,7 @@ export function MasterFinanceiroPage() {
                   {formatCurrencyFromCents(assinatura.valor_mensal_centavos)}
                 </td>
                 <td className="px-4 py-3 tabular-nums text-muted-foreground">
-                  {assinatura.proximo_vencimento ?? "—"}
+                  {formatDateBR(assinatura.proximo_vencimento)}
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge tone={statusTone[assinatura.status ?? "trial"] ?? "info"}>

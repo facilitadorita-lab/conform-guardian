@@ -1,5 +1,6 @@
 import { useDashboardData, usePendencias } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function PendenciasPage() {
@@ -22,7 +23,11 @@ export function PendenciasPage() {
       count: dashboard?.pendenciasCriticas ?? 0,
       tone: "text-danger",
     },
-    { label: "Atenção operacional", count: dashboard?.equipamentosAtencao ?? 0, tone: "text-warning" },
+    {
+      label: "Atenção operacional",
+      count: dashboard?.equipamentosAtencao ?? 0,
+      tone: "text-warning",
+    },
     {
       label: "Manutenções vencidas",
       count: dashboard?.manutencoesVencidas ?? 0,
@@ -74,7 +79,7 @@ export function PendenciasPage() {
                 <td className="px-6 py-3 font-medium">{pendencia.item}</td>
                 <td className="px-4 py-3 text-muted-foreground">{pendencia.tipo}</td>
                 <td className="px-4 py-3 text-muted-foreground">{pendencia.responsavel}</td>
-                <td className="px-4 py-3 tabular-nums">{pendencia.vencimento}</td>
+                <td className="px-4 py-3 tabular-nums">{formatDateBR(pendencia.vencimento)}</td>
                 <td className="px-4 py-3">
                   <span
                     className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${
@@ -87,9 +92,7 @@ export function PendenciasPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <StatusBadge tone={pendencia.status}>
-                    {statusLabel(pendencia.status)}
-                  </StatusBadge>
+                  <StatusBadge tone={pendencia.status}>{statusLabel(pendencia.status)}</StatusBadge>
                 </td>
               </tr>
             ))}

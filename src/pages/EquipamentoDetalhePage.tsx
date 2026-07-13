@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useEquipamento } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 const tabs = [
@@ -27,7 +28,10 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         title="Equipamento não encontrado"
         description="O registro solicitado ainda não foi carregado ou não existe."
         actions={
-          <Link to="/equipamentos" className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-muted">
+          <Link
+            to="/equipamentos"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-muted"
+          >
             <ArrowLeft className="h-4 w-4" /> Voltar
           </Link>
         }
@@ -44,7 +48,10 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
       title={`${equipamento.nome} · ${equipamento.codigo}`}
       description={`${equipamento.fabricante} ${equipamento.modelo} - setor ${equipamento.setor}`}
       actions={
-        <Link to="/equipamentos" className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-muted">
+        <Link
+          to="/equipamentos"
+          className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-muted"
+        >
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Link>
       }
@@ -55,7 +62,8 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
           Criticidade <strong className="text-foreground">{equipamento.criticidade}</strong>
         </span>
         <span className="text-xs text-muted-foreground">
-          Próximo vencimento <strong className="text-foreground">{equipamento.proximoVenc}</strong>
+          Próximo vencimento{" "}
+          <strong className="text-foreground">{formatDateBR(equipamento.proximoVenc)}</strong>
         </span>
       </div>
 

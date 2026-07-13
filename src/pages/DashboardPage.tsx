@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useDashboardData } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function DashboardPage() {
@@ -59,39 +60,83 @@ export function DashboardPage() {
             />
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Calculado no backend considerando documentos, equipamentos, manutenções e
-            pendências.
+            Calculado no backend considerando documentos, equipamentos, manutenções e pendências.
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:col-span-2">
-          <KpiCard label="Documentos vencidos" value={dashboard.documentosVencidos} tone="vencido" icon={FileWarning} />
-          <KpiCard label="Vencendo em 7d" value={dashboard.vencendo7} tone="critico" icon={AlertTriangle} />
-          <KpiCard label="Vencendo em 30d" value={dashboard.vencendo30} tone="atencao" icon={AlertTriangle} />
-          <KpiCard label="Vencendo em 60d" value={dashboard.vencendo60} tone="info" icon={AlertTriangle} />
-          <KpiCard label="Equip. em atenção" value={dashboard.equipamentosAtencao} tone="atencao" icon={AlertTriangle} />
-          <KpiCard label="Manut. vencidas" value={dashboard.manutencoesVencidas} tone="vencido" icon={Wrench} />
-          <KpiCard label="Manut. próximas" value={dashboard.manutencoesProximas} tone="atencao" icon={Wrench} />
-          <KpiCard label="Pendências críticas" value={dashboard.pendenciasCriticas} tone="critico" icon={ClipboardList} />
+          <KpiCard
+            label="Documentos vencidos"
+            value={dashboard.documentosVencidos}
+            tone="vencido"
+            icon={FileWarning}
+          />
+          <KpiCard
+            label="Vencendo em 7d"
+            value={dashboard.vencendo7}
+            tone="critico"
+            icon={AlertTriangle}
+          />
+          <KpiCard
+            label="Vencendo em 30d"
+            value={dashboard.vencendo30}
+            tone="atencao"
+            icon={AlertTriangle}
+          />
+          <KpiCard
+            label="Vencendo em 60d"
+            value={dashboard.vencendo60}
+            tone="info"
+            icon={AlertTriangle}
+          />
+          <KpiCard
+            label="Equip. em atenção"
+            value={dashboard.equipamentosAtencao}
+            tone="atencao"
+            icon={AlertTriangle}
+          />
+          <KpiCard
+            label="Manut. vencidas"
+            value={dashboard.manutencoesVencidas}
+            tone="vencido"
+            icon={Wrench}
+          />
+          <KpiCard
+            label="Manut. próximas"
+            value={dashboard.manutencoesProximas}
+            tone="atencao"
+            icon={Wrench}
+          />
+          <KpiCard
+            label="Pendências críticas"
+            value={dashboard.pendenciasCriticas}
+            tone="critico"
+            icon={ClipboardList}
+          />
         </div>
       </section>
 
       <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <MiniStat label="Registros sem responsável" value={dashboard.semResponsavel} hint="Atribuir para permitir rastreabilidade" />
-        <MiniStat label="Conformidade geral" value={`${dashboard.indiceConformidade}%`} hint="Meta operacional: >= 95%" tone="ok" />
+        <MiniStat
+          label="Registros sem responsável"
+          value={dashboard.semResponsavel}
+          hint="Atribuir para permitir rastreabilidade"
+        />
+        <MiniStat
+          label="Conformidade geral"
+          value={`${dashboard.indiceConformidade}%`}
+          hint="Meta operacional: >= 95%"
+          tone="ok"
+        />
       </section>
 
       <section className="rounded-xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
             <h2 className="text-base font-semibold">Pendências Críticas</h2>
-            <p className="text-xs text-muted-foreground">
-              Itens que exigem tratativa imediata.
-            </p>
+            <p className="text-xs text-muted-foreground">Itens que exigem tratativa imediata.</p>
           </div>
-          <button className="text-xs font-medium text-accent hover:underline">
-            Ver todas
-          </button>
+          <button className="text-xs font-medium text-accent hover:underline">Ver todas</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -112,7 +157,7 @@ export function DashboardPage() {
                   <td className="px-6 py-3 font-medium">{pendencia.item}</td>
                   <td className="px-4 py-3 text-muted-foreground">{pendencia.tipo}</td>
                   <td className="px-4 py-3 text-muted-foreground">{pendencia.responsavel}</td>
-                  <td className="px-4 py-3 tabular-nums">{pendencia.vencimento}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatDateBR(pendencia.vencimento)}</td>
                   <td
                     className={`px-4 py-3 font-medium tabular-nums ${
                       pendencia.diasRestantes < 0
@@ -173,9 +218,7 @@ function KpiCard({
         </span>
         <Icon className={`h-4 w-4 ${toneColor[tone]}`} />
       </div>
-      <div className={`mt-2 text-3xl font-semibold tabular-nums ${toneColor[tone]}`}>
-        {value}
-      </div>
+      <div className={`mt-2 text-3xl font-semibold tabular-nums ${toneColor[tone]}`}>{value}</div>
     </div>
   );
 }

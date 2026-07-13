@@ -1,6 +1,7 @@
 import { Lock, ShieldCheck } from "lucide-react";
 import { useAuditoria } from "@/hooks/use-conform-data";
 import { AppShell } from "@/layouts/app-layout";
+import { formatDateTimeBR } from "@/utils/date";
 
 export function AuditoriaPage() {
   const { data: auditoria = [] } = useAuditoria();
@@ -22,9 +23,8 @@ export function AuditoriaPage() {
             </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Registros de criação, edição, exclusão lógica, anexos, substituição de
-            arquivos, downloads, login/logout, acesso do Admin Master e alteração de
-            permissões.
+            Registros de criação, edição, exclusão lógica, anexos, substituição de arquivos,
+            downloads, login/logout, acesso do Admin Master e alteração de permissões.
           </p>
         </div>
       </div>
@@ -43,7 +43,7 @@ export function AuditoriaPage() {
           <tbody className="divide-y divide-border">
             {auditoria.map((log) => (
               <tr key={log.id} className="hover:bg-muted/30">
-                <td className="px-6 py-3 text-xs tabular-nums">{log.data}</td>
+                <td className="px-6 py-3 text-xs tabular-nums">{formatDateTimeBR(log.data)}</td>
                 <td className="px-4 py-3">{log.usuario}</td>
                 <td className="px-4 py-3 text-muted-foreground">{log.acao}</td>
                 <td className="px-4 py-3">{log.entidade}</td>

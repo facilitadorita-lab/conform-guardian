@@ -1,6 +1,7 @@
 import { Bell, Mail, Monitor } from "lucide-react";
 import { useAlertas } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { formatDateBR } from "@/utils/date";
 
 const tones: Record<string, "info" | "atencao" | "critico" | "vencido"> = {
   info: "info",
@@ -18,9 +19,21 @@ export function AlertasPage() {
       description="Marcos automáticos de 60, 30, 15, 7 dias, no vencimento e após vencido. Envio processado pelo backend."
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <ChannelCard icon={Monitor} title="Dashboard" desc="Notificações fixas no painel principal." />
-        <ChannelCard icon={Bell} title="Central interna" desc="Feed com histórico completo por usuário." />
-        <ChannelCard icon={Mail} title="E-mail" desc="Envio agendado em batch pela Edge Function." />
+        <ChannelCard
+          icon={Monitor}
+          title="Dashboard"
+          desc="Notificações fixas no painel principal."
+        />
+        <ChannelCard
+          icon={Bell}
+          title="Central interna"
+          desc="Feed com histórico completo por usuário."
+        />
+        <ChannelCard
+          icon={Mail}
+          title="E-mail"
+          desc="Envio agendado em batch pela Edge Function."
+        />
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
@@ -40,7 +53,7 @@ export function AlertasPage() {
                 <td className="px-6 py-3 font-medium">{alerta.marco}</td>
                 <td className="px-4 py-3">{alerta.item}</td>
                 <td className="px-4 py-3 text-muted-foreground">{alerta.canal}</td>
-                <td className="px-4 py-3 tabular-nums">{alerta.data}</td>
+                <td className="px-4 py-3 tabular-nums">{formatDateBR(alerta.data)}</td>
                 <td className="px-4 py-3">
                   <StatusBadge tone={tones[alerta.nivel] ?? "info"}>{alerta.nivel}</StatusBadge>
                 </td>

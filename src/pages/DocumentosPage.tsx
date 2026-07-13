@@ -1,6 +1,7 @@
 import { Download, Filter, Paperclip, Plus } from "lucide-react";
 import { useDocumentos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function DocumentosPage() {
@@ -22,10 +23,26 @@ export function DocumentosPage() {
       }
     >
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <SummaryTile label="Em dia" value={documentos.filter((item) => item.status === "ok").length} tone="ok" />
-        <SummaryTile label="Atenção" value={documentos.filter((item) => item.status === "atencao").length} tone="atencao" />
-        <SummaryTile label="Críticos" value={documentos.filter((item) => item.status === "critico").length} tone="critico" />
-        <SummaryTile label="Vencidos" value={documentos.filter((item) => item.status === "vencido").length} tone="vencido" />
+        <SummaryTile
+          label="Em dia"
+          value={documentos.filter((item) => item.status === "ok").length}
+          tone="ok"
+        />
+        <SummaryTile
+          label="Atenção"
+          value={documentos.filter((item) => item.status === "atencao").length}
+          tone="atencao"
+        />
+        <SummaryTile
+          label="Críticos"
+          value={documentos.filter((item) => item.status === "critico").length}
+          tone="critico"
+        />
+        <SummaryTile
+          label="Vencidos"
+          value={documentos.filter((item) => item.status === "vencido").length}
+          tone="vencido"
+        />
       </div>
 
       <div className="rounded-xl border border-border bg-card">
@@ -77,8 +94,10 @@ export function DocumentosPage() {
                     <div className="text-xs text-muted-foreground">{documento.orgao}</div>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{documento.responsavel}</td>
-                  <td className="px-4 py-3 tabular-nums text-muted-foreground">{documento.emissao}</td>
-                  <td className="px-4 py-3 tabular-nums">{documento.vencimento}</td>
+                  <td className="px-4 py-3 tabular-nums text-muted-foreground">
+                    {formatDateBR(documento.emissao)}
+                  </td>
+                  <td className="px-4 py-3 tabular-nums">{formatDateBR(documento.vencimento)}</td>
                   <td className="px-4 py-3">
                     <StatusBadge tone={documento.status}>
                       {statusLabel(documento.status)}
@@ -134,9 +153,7 @@ function SummaryTile({
       <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
-      <div className={`mt-1 text-2xl font-semibold tabular-nums ${toneColor}`}>
-        {value}
-      </div>
+      <div className={`mt-1 text-2xl font-semibold tabular-nums ${toneColor}`}>{value}</div>
     </div>
   );
 }
