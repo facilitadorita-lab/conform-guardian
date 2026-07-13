@@ -1,11 +1,14 @@
-import { Download, Eye, Filter, Plus } from "lucide-react";
+import { useState } from "react";
+import { Download, Eye, Filter, Plus, X } from "lucide-react";
 import { useDocumentos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import type { DocumentoResumo } from "@/types";
 import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function DocumentosPage() {
   const { data: documentos = [] } = useDocumentos();
+  const [documentoPreview, setDocumentoPreview] = useState<DocumentoResumo | null>(null);
 
   return (
     <AppShell
@@ -104,19 +107,12 @@ export function DocumentosPage() {
                     </StatusBadge>
                   </td>
                   <td className="px-6 py-3 text-right">
-                    {documento.anexoUrl ? (
-                      <a
-                        href={documento.anexoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        title={documento.anexoNome ?? "Visualizar anexo"}
-                        className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-accent hover:bg-muted"
-                      >
-                        <Eye className="h-3.5 w-3.5" /> Visualizar
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Sem anexo</span>
-                    )}
+                    <button
+                      onClick={() => setDocumentoPreview(documento)}
+                      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-accent hover:bg-muted"
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Visualizar
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -138,7 +134,94 @@ export function DocumentosPage() {
           </div>
         </div>
       </div>
+
+      {documentoPreview && (
+        <DocumentPreviewModal
+          documento={documentoPreview}
+          onClose={() => setDocumentoPreview(null)}
+        />
+      )}
     </AppShell>
+  );
+}
+
+function DocumentPreviewModal({
+  documento,
+  onClose,
+}: {
+  documento: DocumentoResumo;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">{documento.nome}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {documento.tipo} · {documento.setor} · {documento.numero}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Fechar visualização"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[320px_1fr]">
+          <aside className="border-b border-border p-5 text-sm lg:border-b-0 lg:border-r">
+            <dl className="space-y-4">
+              <PreviewField label="Categoria" value={documento.categoria} />
+              <PreviewField label="Órgão" value={documento.orgao} />
+              <PreviewField label="Responsável" value={documento.responsavel} />
+              <PreviewField label="Emissão" value={formatDateBR(documento.emissao)} />
+              <PreviewField label="Vencimento" value={formatDateBR(documento.vencimento)} />
+              <div>
+                <dt className="text-xs uppercase tracking-wider text-muted-foreground">Status</dt>
+                <dd className="mt-1">
+                  <StatusBadge tone={documento.status}>{statusLabel(documento.status)}</StatusBadge>
+                </dd>
+              </div>
+            </dl>
+          </aside>
+
+          <section className="min-h-[420px] overflow-auto bg-muted/30 p-5">
+            {documento.anexoUrl ? (
+              <iframe
+                title={`Visualização de ${documento.nome}`}
+                src={documento.anexoUrl}
+                className="h-[70vh] min-h-[420px] w-full rounded-xl border border-border bg-background"
+              />
+            ) : (
+              <div className="flex h-full min-h-[420px] items-center justify-center rounded-xl border border-dashed border-border bg-background p-8 text-center">
+                <div className="max-w-md">
+                  <Eye className="mx-auto h-10 w-10 text-muted-foreground" />
+                  <h3 className="mt-4 text-base font-semibold text-foreground">
+                    Pré-visualização do registro
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Este documento ainda não possui arquivo disponível para abrir no navegador.
+                    Mesmo assim, você consegue conferir os dados principais sem baixar nada.
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreviewField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 font-medium text-foreground">{value}</dd>
+    </div>
   );
 }
 
