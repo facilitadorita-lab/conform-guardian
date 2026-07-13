@@ -149,7 +149,10 @@ function humanizeLegacyAssistantAnswer(pergunta: string, resposta: string) {
 
 function parseLegacyItem(raw: string) {
   const parts = raw.split("—").map((part) => part.trim());
-  const title = parts[0] ?? "Item";
+  const title =
+    parts
+      .filter((part) => !/vencimento|próxima data|proxima data|status|setor/i.test(part))
+      .join(" — ") || "Item";
   const datePart = parts.find((part) => /vencimento|próxima data|proxima data/i.test(part));
   const statusPart = parts.find((part) => /status/i.test(part));
   const setorPart = parts.find((part) => /setor/i.test(part));
