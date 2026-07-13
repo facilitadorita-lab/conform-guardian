@@ -1,14 +1,56 @@
-import { ArrowRight, Building2, CheckCircle2, ShieldCheck } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState, type FormEvent } from "react";
+import { ArrowRight, Building2, CheckCircle2, Plus, ShieldCheck, X } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { useAuthContext } from "@/hooks/use-conform-data";
+import { adminMasterService } from "@/services/adminMasterService";
 import { setSelectedCompanyId } from "@/services/authService";
 
 export function MasterEmpresasPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: authContext, isLoading, error } = useAuthContext();
+  const [modalAberto, setModalAberto] = useState(false);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+  const [erroCadastro, setErroCadastro] = useState<string | null>(null);
+
+  const criarEmpresaMutation = useMutation({
+    mutationFn: (formData: FormData) =>
+      adminMasterService.criarEmpresa({
+        razao_social: required(formData, "razao_social"),
+        nome_fantasia: required(formData, "nome_fantasia"),
+        cnpj: required(formData, "cnpj"),
+        tipo_estabelecimento: optional(formData, "tipo_estabelecimento"),
+        segmento: optional(formData, "segmento"),
+        cidade: optional(formData, "cidade"),
+        estado: optional(formData, "estado"),
+        email_principal: optional(formData, "email_principal"),
+        responsavel_legal: optional(formData, "responsavel_legal"),
+        responsavel_tecnico: optional(formData, "responsavel_tecnico"),
+        observacoes: optional(formData, "observacoes"),
+      }),
+    onSuccess: async (result) => {
+      setModalAberto(false);
+      setErroCadastro(null);
+      setMensagem(
+        `${result.empresa.nome_fantasia} cadastrada com ${result.provisionamento_documentos.documentos_criados} documento(s) inicial(is) do perfil ${result.provisionamento_documentos.chaves.join(", ")}.`,
+      );
+      await queryClient.invalidateQueries();
+      await queryClient.refetchQueries({
+        queryKey: ["auth", "contexto"],
+        type: "active",
+      });
+      await router.invalidate();
+    },
+    onError: (mutationError) => {
+      setErroCadastro(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Não foi possível cadastrar a empresa.",
+      );
+    },
+  });
 
   const entrarNaEmpresa = async (empresaId: string) => {
     setSelectedCompanyId(empresaId);
@@ -20,6 +62,12 @@ export function MasterEmpresasPage() {
     await router.invalidate();
     await router.navigate({ to: "/" });
   };
+
+  function handleCriarEmpresa(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErroCadastro(null);
+    criarEmpresaMutation.mutate(new FormData(event.currentTarget));
+  }
 
   if (isLoading) {
     return (
@@ -46,11 +94,28 @@ export function MasterEmpresasPage() {
       title="Empresas cadastradas"
       description={
         authContext.usuario.isMaster
-          ? "Admin Master: selecione a empresa que deseja acessar."
+          ? "Admin Master: selecione a empresa que deseja acessar ou cadastre uma nova."
           : "Selecione uma empresa vinculada ao seu usuário."
+      }
+      actions={
+        authContext.usuario.isMaster ? (
+          <button
+            type="button"
+            onClick={() => setModalAberto(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" /> Nova empresa
+          </button>
+        ) : null
       }
     >
       <section className="grid gap-4">
+        {mensagem ? (
+          <div className="rounded-xl border border-success/30 bg-success/10 p-4 text-sm text-success">
+            {mensagem}
+          </div>
+        ) : null}
+
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-start gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -115,6 +180,173 @@ export function MasterEmpresasPage() {
           })}
         </div>
       </section>
+
+      {modalAberto ? (
+        <NovaEmpresaModal
+          erro={erroCadastro}
+          isSaving={criarEmpresaMutation.isPending}
+          onClose={() => {
+            if (!criarEmpresaMutation.isPending) {
+              setModalAberto(false);
+              setErroCadastro(null);
+            }
+          }}
+          onSubmit={handleCriarEmpresa}
+        />
+      ) : null}
     </AppShell>
   );
+}
+
+function NovaEmpresaModal({
+  erro,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  erro: string | null;
+  isSaving: boolean;
+  onClose: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+      <form
+        onSubmit={onSubmit}
+        className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-2xl border border-border bg-background shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div>
+            <h2 className="text-lg font-semibold">Nova empresa</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              O tipo e o segmento serão usados para pré-configurar os documentos necessários apenas
+              neste ambiente.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid gap-4 p-5 md:grid-cols-2">
+          <Input label="Razão social" name="razao_social" required />
+          <Input label="Nome fantasia" name="nome_fantasia" required />
+          <Input label="CNPJ" name="cnpj" required />
+
+          <label>
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Tipo de estabelecimento
+            </span>
+            <select
+              name="tipo_estabelecimento"
+              className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+              defaultValue="Clínica"
+            >
+              <option>Clínica</option>
+              <option>Laboratório</option>
+              <option>Farmácia</option>
+              <option>Distribuidora</option>
+              <option>Clínica odontológica</option>
+              <option>Diagnóstico por imagem</option>
+              <option>Armazenamento</option>
+              <option>Banco biológico</option>
+              <option>Laboratório de alimentos</option>
+            </select>
+          </label>
+
+          <Input label="Segmento" name="segmento" placeholder="Ex.: Cardiologia, Farmacêutico..." />
+          <Input label="Cidade" name="cidade" />
+          <Input label="Estado" name="estado" placeholder="SP" />
+          <Input label="E-mail principal" name="email_principal" type="email" />
+          <Input label="Responsável legal" name="responsavel_legal" />
+          <Input label="Responsável técnico" name="responsavel_tecnico" />
+          <TextArea label="Observações" name="observacoes" />
+
+          {erro ? (
+            <div className="md:col-span-2 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+              {erro}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-border p-5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+          >
+            {isSaving ? "Preparando ambiente..." : "Cadastrar e preparar ambiente"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function Input({
+  label,
+  name,
+  type = "text",
+  required,
+  placeholder,
+}: {
+  label: string;
+  name: string;
+  type?: string;
+  required?: boolean;
+  placeholder?: string;
+}) {
+  return (
+    <label>
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <input
+        name={name}
+        type={type}
+        required={required}
+        placeholder={placeholder}
+        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+      />
+    </label>
+  );
+}
+
+function TextArea({ label, name }: { label: string; name: string }) {
+  return (
+    <label className="md:col-span-2">
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <textarea
+        name={name}
+        rows={3}
+        className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+    </label>
+  );
+}
+
+function required(formData: FormData, key: string): string {
+  const value = optional(formData, key);
+  if (!value) throw new Error("Preencha os campos obrigatórios.");
+  return value;
+}
+
+function optional(formData: FormData, key: string): string {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
 }
