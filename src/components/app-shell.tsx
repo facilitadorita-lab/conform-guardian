@@ -8,6 +8,7 @@ import { runtimeConfig } from "@/lib/runtime-config";
 import { setSelectedCompanyId } from "@/services/authService";
 import type { StatusConformidade } from "@/types";
 import { AppSidebar } from "./app-sidebar";
+import { FloatingAssistant } from "./floating-assistant";
 
 export function AppShell({
   title,
@@ -139,6 +140,7 @@ export function AppShell({
           {children}
         </main>
       </div>
+      <FloatingAssistant />
     </div>
   );
 }

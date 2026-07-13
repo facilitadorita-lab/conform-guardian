@@ -8,7 +8,6 @@ import {
   Bell,
   BarChart3,
   ShieldCheck,
-  Sparkles,
   Users,
   Settings,
   WalletCards,
@@ -44,7 +43,6 @@ const groups: { label: string; items: NavItem[] }[] = [
       { to: "/alertas", label: "Alertas", icon: Bell },
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
       { to: "/auditoria", label: "Auditoria", icon: ShieldCheck },
-      { to: "/assistente", label: "Assistente IA", icon: Sparkles },
     ],
   },
   {
@@ -87,14 +85,16 @@ export function AppSidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-      {visibleGroups.map((g: { label: string; items: NavItem[] }) => (
+        {visibleGroups.map((g: { label: string; items: NavItem[] }) => (
           <div key={g.label}>
             <div className="px-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 mb-2">
               {g.label}
             </div>
             <ul className="space-y-0.5">
               {g.items.map((item: NavItem) => {
-                const active = item.exact ? pathname === item.to : pathname === item.to || pathname.startsWith(item.to + "/");
+                const active = item.exact
+                  ? pathname === item.to
+                  : pathname === item.to || pathname.startsWith(item.to + "/");
                 const Icon = item.icon;
                 return (
                   <li key={item.to}>
@@ -124,7 +124,9 @@ export function AppSidebar() {
             MA
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-medium truncate">{authContext?.usuario.nome ?? "Marina Alves"}</div>
+            <div className="text-sm font-medium truncate">
+              {authContext?.usuario.nome ?? "Marina Alves"}
+            </div>
             <div className="text-[11px] text-sidebar-foreground/60 truncate">
               {authContext?.usuario.isMaster ? "Admin Master" : "Administrador"}
             </div>
