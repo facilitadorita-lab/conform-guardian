@@ -189,11 +189,6 @@ export function FloatingAssistant() {
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{mensagem.content}</p>
-                    {mensagem.role === "assistant" && mensagem.sourcesCount ? (
-                      <p className="mt-2 text-[11px] text-muted-foreground">
-                        Baseado em {mensagem.sourcesCount} registro(s) estruturado(s).
-                      </p>
-                    ) : null}
                   </div>
                 </article>
               ))

@@ -148,11 +148,6 @@ export function AssistentePage() {
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{mensagem.content}</p>
-                  {mensagem.role === "assistant" && mensagem.sourcesCount ? (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Baseado em {mensagem.sourcesCount} registro(s) estruturado(s).
-                    </p>
-                  ) : null}
                 </article>
               </div>
             ))

@@ -176,7 +176,7 @@ function buildSpecificAnswer(tipo: string, label: string, itens: LegacyItem[]) {
     return saida.join("\n");
   }
 
-  const equipamento = extractEquipmentName(item.title) || label;
+  const equipamento = extractEquipmentName(item.title, label) || label;
   const data = item.date ? formatDateBR(item.date) : null;
   const status = item.status ? statusLabelHuman(item.status) : null;
 
@@ -273,7 +273,9 @@ function scopeItemsToQuestion(pergunta: string, itens: LegacyItem[]) {
 
   return {
     isSpecific: true,
-    label: filtered[0] ? extractEquipmentName(filtered[0].title) || scope.label : scope.label,
+    label: filtered[0]
+      ? extractEquipmentName(filtered[0].title, scope.label) || scope.label
+      : scope.label,
     items: filtered,
   };
 }
@@ -399,12 +401,22 @@ function humanIntentLabel(tipo: string) {
   return labels[tipo] ?? "registro";
 }
 
-function extractEquipmentName(title: string) {
+function extractEquipmentName(title: string, fallback = "") {
+  const directMatch = title.match(
+    /(geladeira|freezer|autoclave|termohigr[oô]metro|termohigrometro|c[aâ]mara fria|camara fria|camera fria)[^—â]*/i,
+  );
+  const direct = directMatch?.[0]?.trim();
+
+  if (direct) return direct;
+
   const parts = title.split(/\s+(?:—|â€”)\s+/).map((part) => part.trim());
   const last = parts.at(-1) ?? title;
-  return last
+  const cleaned = last
     .replace(/^(calibração|calibracao|qualificação|qualificacao|manutenção|manutencao)\s+/i, "")
     .trim();
+
+  if (["preventiva", "corretiva"].includes(normalize(cleaned))) return fallback;
+  return cleaned;
 }
 
 function statusLabelHuman(value: string) {
