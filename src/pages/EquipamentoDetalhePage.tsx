@@ -515,20 +515,28 @@ function QualificacaoFields() {
 function ManutencaoFields() {
   return (
     <>
-      <Select label="Natureza" name="natureza" required>
+      <Select label="Tipo de manutenção" name="natureza" required>
         <option value="preventiva">Preventiva</option>
         <option value="corretiva">Corretiva</option>
       </Select>
       <Input label="Data da manutenção" name="data_manutencao" type="date" required />
       <Input label="Nome do serviço" name="nome_servico" />
+      <Input label="Tipo de serviço" name="tipo_servico" />
       <Input label="Próxima manutenção" name="proxima_manutencao" type="date" />
       <Input label="Periodicidade (meses)" name="periodicidade_meses" type="number" />
       <Input label="Nº da ordem de serviço" name="numero_ordem_servico" />
       <Input label="Empresa responsável" name="empresa_responsavel" />
       <Input label="Técnico responsável" name="tecnico_responsavel" />
+      <Select label="Status da execução" name="status_execucao">
+        <option value="realizada">Realizada</option>
+        <option value="programada">Programada</option>
+        <option value="em_andamento">Em andamento</option>
+        <option value="cancelada">Cancelada</option>
+      </Select>
       <Input label="Falha apresentada (corretiva)" name="falha_apresentada" />
       <Input label="Prioridade" name="prioridade" />
       <TextArea label="Diagnóstico" name="diagnostico" />
+      <TextArea label="Causa raiz" name="causa_raiz" />
       <TextArea label="Ação realizada" name="acao_realizada" />
       <TextArea label="Observações" name="observacoes" />
     </>
