@@ -26,6 +26,7 @@ import {
   relatoriosService,
   usuariosService,
 } from "@/services";
+import type { EquipamentoDetalhe } from "@/services/equipamentosService";
 
 const staleTime = 60_000;
 
@@ -45,8 +46,8 @@ function useResolvedCompanyId() {
   const authQuery = useAuthContext();
   const acessoBloqueado = Boolean(
     authQuery.data &&
-      !authQuery.data.usuario.isMaster &&
-      authQuery.data.empresaAtual.status !== "ativa",
+    !authQuery.data.usuario.isMaster &&
+    authQuery.data.empresaAtual.status !== "ativa",
   );
   const empresaId = acessoBloqueado
     ? undefined
@@ -101,13 +102,23 @@ export function useEquipamentos() {
 
 export function useEquipamento(id: string) {
   const { empresaId } = useResolvedCompanyId();
+  const equipamentoMock = equipamentosMock.find((equipamento) => equipamento.id === id);
 
   return useQuery({
     queryKey: ["equipamentos", empresaId, id],
     queryFn: () => equipamentosService.obterDetalhe(empresaId!, id),
     enabled: Boolean(empresaId),
     initialData: runtimeConfig.useMocks
-      ? equipamentosMock.find((equipamento) => equipamento.id === id) ?? null
+      ? equipamentoMock
+        ? ({
+            ...equipamentoMock,
+            calibracoes: [],
+            qualificacoes: [],
+            manutencoes: [],
+            anexos: [],
+            historico: [],
+          } satisfies EquipamentoDetalhe)
+        : null
       : undefined,
     staleTime,
   });

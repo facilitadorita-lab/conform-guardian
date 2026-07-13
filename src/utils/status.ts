@@ -1,12 +1,13 @@
 import type { StatusConformidade } from "@/types";
 
-export function statusLabel(status: StatusConformidade) {
+export function statusLabel(status: StatusConformidade | "info") {
   return {
     vencido: "Vencido",
     critico: "Crítico",
     atencao: "Atenção",
     ok: "Em dia",
     sem_validade: "Sem validade",
+    info: "Informativo",
   }[status];
 }
 

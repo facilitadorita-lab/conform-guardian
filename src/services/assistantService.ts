@@ -18,6 +18,14 @@ export interface AssistantResponse {
   sources?: AssistantSource[];
 }
 
+type LegacyItem = {
+  raw: string;
+  title: string;
+  date?: string;
+  status?: string;
+  setor?: string;
+};
+
 export const assistantService = {
   async perguntar(empresaId: UUID, pergunta: string): Promise<AssistantResponse> {
     const supabase = getSupabaseClient();
@@ -53,7 +61,8 @@ function humanizeLegacyAssistantAnswer(pergunta: string, resposta: string) {
   const isLegacy =
     resposta.includes("Analisei apenas os dados estruturados") ||
     resposta.includes("Principais itens:") ||
-    resposta.includes("Recomendação: priorize");
+    resposta.includes("Recomendação: priorize") ||
+    resposta.includes("RecomendaÃ§Ã£o: priorize");
 
   if (!isLegacy) return resposta;
 
@@ -69,13 +78,19 @@ function humanizeLegacyAssistantAnswer(pergunta: string, resposta: string) {
 
   const resumo =
     linhas.find((linha) =>
-      /(Calibrações|Qualificações|Manutenções|Equipamentos avaliados|Documentos encontrados|Vencimentos em atenção)/i.test(
+      /(Calibrações|CalibraÃ§Ãµes|Qualificações|QualificaÃ§Ãµes|Manutenções|ManutenÃ§Ãµes|Equipamentos avaliados|Documentos encontrados|Vencimentos em atenção|Vencimentos em atenÃ§Ã£o)/i.test(
         linha,
       ),
     ) ?? "";
 
   const counts = parseCounts(resumo);
   const tipo = detectIntent(perguntaNormalizada, resumo);
+  const escopo = scopeItemsToQuestion(perguntaNormalizada, itens);
+
+  if (escopo.isSpecific) {
+    return buildSpecificAnswer(tipo, escopo.label, escopo.items);
+  }
+
   const saida: string[] = [];
 
   if (tipo === "calibracao") {
@@ -84,7 +99,7 @@ function humanizeLegacyAssistantAnswer(pergunta: string, resposta: string) {
     );
     saida.push(
       hasColdChainItem(itens)
-        ? "Como há itens de cadeia fria na lista, eu priorizaria geladeira, freezer e câmara fria primeiro."
+        ? "Como tem equipamento de cadeia fria na lista, eu priorizaria geladeira, freezer e câmara fria."
         : "Eu organizaria por data de vencimento e criticidade operacional.",
     );
   } else if (tipo === "qualificacao") {
@@ -98,14 +113,14 @@ function humanizeLegacyAssistantAnswer(pergunta: string, resposta: string) {
       ),
     );
     saida.push(
-      "Para qualificação, eu olharia primeiro os equipamentos críticos e os que impactam temperatura, esterilização ou operação assistencial.",
+      "Eu olharia primeiro os equipamentos críticos e os que impactam temperatura, esterilização ou operação assistencial.",
     );
   } else if (tipo === "manutencao") {
     saida.push(
       buildCountPhrase("manutenção", "manutenções", counts.vencidas, counts.proximas, itens.length),
     );
     saida.push(
-      "Eu separaria preventiva de corretiva: preventiva entra no planejamento; corretiva indica falha/quebra e merece olhar mais rápido.",
+      "Eu separaria preventiva de corretiva: preventiva entra no planejamento; corretiva indica falha/quebra e merece atenção mais rápida.",
     );
   } else if (tipo === "equipamento") {
     const avaliados = parseFirstNumber(resumo);
@@ -140,28 +155,126 @@ function humanizeLegacyAssistantAnswer(pergunta: string, resposta: string) {
 
   appendHumanItems(saida, itens);
   saida.push(
-    "Minha sugestão: resolva primeiro o que estiver vencido ou crítico; depois acompanhe os itens em atenção antes que virem atraso.",
+    "Minha sugestão: trate primeiro o que estiver vencido ou crítico; depois acompanhe os itens em atenção antes que virem atraso.",
   );
-  saida.push("Obs.: considerei apenas os dados cadastrados no sistema, sem ler anexos ou PDFs.");
+  saida.push("Obs.: usei apenas os dados cadastrados no sistema, sem ler anexos ou PDFs.");
 
   return saida.join("\n");
 }
 
-function parseLegacyItem(raw: string) {
-  const parts = raw.split("—").map((part) => part.trim());
+function buildSpecificAnswer(tipo: string, label: string, itens: LegacyItem[]) {
+  const item = itens[0];
+  const saida: string[] = [];
+  const tipoLabel = humanIntentLabel(tipo);
+
+  if (!item) {
+    saida.push(`Não encontrei ${tipoLabel} cadastrada para ${label} nos dados desta empresa.`);
+    saida.push(
+      "Eu conferiria se o equipamento foi cadastrado com outro nome ou se o registro ainda não foi lançado.",
+    );
+    saida.push("Obs.: usei apenas os dados cadastrados no sistema, sem ler anexos ou PDFs.");
+    return saida.join("\n");
+  }
+
+  const equipamento = extractEquipmentName(item.title) || label;
+  const data = item.date ? formatDateBR(item.date) : null;
+  const status = item.status ? statusLabelHuman(item.status) : null;
+
+  if (tipo === "manutencao") {
+    saida.push(
+      data
+        ? `A próxima manutenção da ${equipamento} está prevista para ${data}.`
+        : `Encontrei manutenção cadastrada para ${equipamento}, mas sem data clara de vencimento.`,
+    );
+    saida.push(
+      status
+        ? `Pelo status atual, ela está ${status}. Eu já deixaria essa preventiva programada para não virar atraso.`
+        : "Eu já deixaria essa preventiva programada para não virar atraso.",
+    );
+  } else if (tipo === "calibracao") {
+    saida.push(
+      data
+        ? `Sim — a próxima calibração da ${equipamento} vence em ${data}.`
+        : `Encontrei calibração vinculada à ${equipamento}, mas sem data clara de vencimento.`,
+    );
+    saida.push(
+      status
+        ? `Status atual: ${status}. Minha sugestão é agendar antes do vencimento e anexar o certificado assim que sair.`
+        : "Minha sugestão é agendar antes do vencimento e anexar o certificado assim que sair.",
+    );
+  } else if (tipo === "qualificacao") {
+    saida.push(
+      data
+        ? `Sim — a próxima qualificação da ${equipamento} está prevista para ${data}.`
+        : `Encontrei qualificação vinculada à ${equipamento}, mas sem data clara de vencimento.`,
+    );
+    saida.push(
+      status
+        ? `Ela está ${status}. Eu manteria isso no radar porque qualificação costuma impactar diretamente a conformidade do equipamento.`
+        : "Eu manteria isso no radar porque qualificação costuma impactar diretamente a conformidade do equipamento.",
+    );
+  } else {
+    saida.push(
+      data
+        ? `Encontrei o registro da ${equipamento} com vencimento em ${data}.`
+        : `Encontrei o registro da ${equipamento}, mas sem data clara de vencimento.`,
+    );
+    if (status) saida.push(`Status atual: ${status}.`);
+  }
+
+  if (item.setor) saida.push(`Setor vinculado: ${item.setor}.`);
+  saida.push("Obs.: usei apenas os dados cadastrados no sistema, sem ler anexos ou PDFs.");
+
+  return saida.join("\n");
+}
+
+function parseLegacyItem(raw: string): LegacyItem {
+  const parts = raw.split(/\s+(?:—|â€”)\s+/).map((part) => part.trim());
   const title =
     parts
-      .filter((part) => !/vencimento|próxima data|proxima data|status|setor/i.test(part))
+      .filter(
+        (part) => !/vencimento|próxima data|prÃ³xima data|proxima data|status|setor/i.test(part),
+      )
       .join(" — ") || "Item";
-  const datePart = parts.find((part) => /vencimento|próxima data|proxima data/i.test(part));
+  const datePart = parts.find((part) =>
+    /vencimento|próxima data|prÃ³xima data|proxima data/i.test(part),
+  );
   const statusPart = parts.find((part) => /status/i.test(part));
   const setorPart = parts.find((part) => /setor/i.test(part));
 
   return {
+    raw,
     title,
     date: datePart?.split(":").slice(1).join(":").trim(),
     status: statusPart?.split(":").slice(1).join(":").trim(),
     setor: setorPart?.split(":").slice(1).join(":").trim(),
+  };
+}
+
+function scopeItemsToQuestion(pergunta: string, itens: LegacyItem[]) {
+  const scopes = [
+    { label: "geladeira", terms: ["geladeira", "refrigerador"] },
+    { label: "freezer", terms: ["freezer"] },
+    { label: "autoclave", terms: ["autoclave"] },
+    { label: "termohigrômetro", terms: ["termohigrometro", "termo higrometro", "termohigr"] },
+    { label: "câmara fria", terms: ["camara fria", "camera fria", "câmara fria"] },
+  ];
+
+  const scope = scopes.find((candidate) =>
+    candidate.terms.some((term) => pergunta.includes(normalize(term))),
+  );
+
+  if (!scope) return { isSpecific: false, label: "", items: itens };
+
+  const filtered = itens.filter((item) => {
+    const searchable = normalize(`${item.title} ${item.raw}`);
+    return scope.terms.some((term) => searchable.includes(normalize(term)));
+  });
+
+  return {
+    isSpecific: true,
+    label: filtered[0] ? extractEquipmentName(filtered[0].title) || scope.label : scope.label,
+    items: filtered,
   };
 }
 
@@ -170,8 +283,10 @@ function parseCounts(resumo: string) {
   const proximas =
     Number(
       resumo.match(/e\s+(\d+)\s+próxima/i)?.[1] ??
+        resumo.match(/e\s+(\d+)\s+prÃ³xima/i)?.[1] ??
         resumo.match(/e\s+(\d+)\s+proxima/i)?.[1] ??
         resumo.match(/atenção:\s*(\d+)/i)?.[1] ??
+        resumo.match(/atenÃ§Ã£o:\s*(\d+)/i)?.[1] ??
         resumo.match(/atencao:\s*(\d+)/i)?.[1] ??
         0,
     ) || 0;
@@ -227,7 +342,7 @@ function buildCountPhrase(
   return `Sim — encontrei ${proximas || total} ${(proximas || total) === 1 ? singular : plural} em atenção. Nenhuma está vencida, mas vale programar antes de virar atraso.`;
 }
 
-function appendHumanItems(saida: string[], itens: ReturnType<typeof parseLegacyItem>[]) {
+function appendHumanItems(saida: string[], itens: LegacyItem[]) {
   if (itens.length === 0) {
     saida.push("Não encontrei nenhum item crítico para esse filtro.");
     return;
@@ -248,7 +363,7 @@ function appendHumanItems(saida: string[], itens: ReturnType<typeof parseLegacyI
   }
 }
 
-function hasColdChainItem(itens: ReturnType<typeof parseLegacyItem>[]) {
+function hasColdChainItem(itens: LegacyItem[]) {
   return itens.some((item) => {
     const title = normalize(item.title);
     return ["geladeira", "freezer", "camara fria", "camera fria"].some((term) =>
@@ -257,7 +372,7 @@ function hasColdChainItem(itens: ReturnType<typeof parseLegacyItem>[]) {
   });
 }
 
-function humanizeDocumentHint(itens: ReturnType<typeof parseLegacyItem>[]) {
+function humanizeDocumentHint(itens: LegacyItem[]) {
   const statuses = itens.map((item) => normalize(item.status ?? ""));
 
   if (statuses.includes("vencido"))
@@ -272,12 +387,32 @@ function humanizeDocumentHint(itens: ReturnType<typeof parseLegacyItem>[]) {
   return "Pelo status atual, não parece haver urgência, mas é bom manter a evidência e o responsável atualizados.";
 }
 
+function humanIntentLabel(tipo: string) {
+  const labels: Record<string, string> = {
+    calibracao: "calibração",
+    qualificacao: "qualificação",
+    manutencao: "manutenção",
+    documento: "documento",
+    equipamento: "equipamento",
+  };
+
+  return labels[tipo] ?? "registro";
+}
+
+function extractEquipmentName(title: string) {
+  const parts = title.split(/\s+(?:—|â€”)\s+/).map((part) => part.trim());
+  const last = parts.at(-1) ?? title;
+  return last
+    .replace(/^(calibração|calibracao|qualificação|qualificacao|manutenção|manutencao)\s+/i, "")
+    .trim();
+}
+
 function statusLabelHuman(value: string) {
   const status = normalize(value);
   const labels: Record<string, string> = {
-    vencido: "vencido",
-    vence_hoje: "vence hoje",
-    critico: "crítico",
+    vencido: "vencida",
+    vence_hoje: "vencendo hoje",
+    critico: "crítica",
     a_vencer: "a vencer",
     atencao: "em atenção",
     em_dia: "em dia",
