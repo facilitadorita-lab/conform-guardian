@@ -24,6 +24,7 @@ const tabs = [
   "Anexos",
   "Pendências",
   "Histórico",
+  "Arquivados",
 ] as const;
 
 type Tab = (typeof tabs)[number];
@@ -158,6 +159,17 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
     createMutation.mutate({ kind: activeForm, formData: new FormData(event.currentTarget) });
   }
 
+  const calibracoesAtuais = currentItems(equipamento.calibracoes);
+  const qualificacoesAtuais = currentItems(equipamento.qualificacoes);
+  const manutencoesAtuais = currentItems(equipamento.manutencoes);
+  const anexosAtuais = currentItems(equipamento.anexos);
+  const arquivados = [
+    ...archivedItems(equipamento.calibracoes, "Calibração"),
+    ...archivedItems(equipamento.qualificacoes, "Qualificação"),
+    ...archivedItems(equipamento.manutencoes, "Manutenção"),
+    ...archivedItems(equipamento.anexos, "Anexo"),
+  ];
+
   return (
     <AppShell
       title={`${equipamento.nome} · ${equipamento.codigo}`}
@@ -212,9 +224,13 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               onAdd={() => setActiveForm("calibracao")}
             >
               <TimelineList
-                items={equipamento.calibracoes}
+                items={calibracoesAtuais}
                 empty="Nenhuma calibração cadastrada para este equipamento."
                 onPreview={setPreviewItem}
+              />
+              <ArchiveShortcut
+                count={archivedItems(equipamento.calibracoes).length}
+                onClick={() => setTab("Arquivados")}
               />
             </TimelineSection>
           )}
@@ -226,9 +242,13 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               onAdd={() => setActiveForm("qualificacao")}
             >
               <TimelineList
-                items={equipamento.qualificacoes}
+                items={qualificacoesAtuais}
                 empty="Nenhuma qualificação cadastrada para este equipamento."
                 onPreview={setPreviewItem}
+              />
+              <ArchiveShortcut
+                count={archivedItems(equipamento.qualificacoes).length}
+                onClick={() => setTab("Arquivados")}
               />
             </TimelineSection>
           )}
@@ -240,16 +260,20 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               onAdd={() => setActiveForm("manutencao")}
             >
               <TimelineList
-                items={equipamento.manutencoes}
+                items={manutencoesAtuais}
                 empty="Nenhuma manutenção cadastrada para este equipamento."
                 onPreview={setPreviewItem}
+              />
+              <ArchiveShortcut
+                count={archivedItems(equipamento.manutencoes).length}
+                onClick={() => setTab("Arquivados")}
               />
             </TimelineSection>
           )}
 
           {tab === "Anexos" && (
             <TimelineList
-              items={equipamento.anexos}
+              items={anexosAtuais}
               empty="Nenhum anexo vinculado a este equipamento."
               onPreview={setPreviewItem}
             />
@@ -267,6 +291,15 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               items={equipamento.historico}
               empty="Nenhum evento de histórico registrado para este equipamento."
               onPreview={setPreviewItem}
+            />
+          )}
+
+          {tab === "Arquivados" && (
+            <TimelineList
+              items={arquivados}
+              empty="Nenhum registro arquivado para este equipamento."
+              onPreview={setPreviewItem}
+              archivedView
             />
           )}
         </div>
@@ -336,14 +369,47 @@ function TimelineSection({
   );
 }
 
+function currentItems(items: EquipamentoHistoricoItem[]) {
+  const explicitCurrent = items.filter((item) => !item.arquivado);
+  if (explicitCurrent.length) return explicitCurrent;
+  return items.slice(0, 1);
+}
+
+function archivedItems(items: EquipamentoHistoricoItem[], label?: string) {
+  return items
+    .filter((item, index) => item.arquivado || index > 0)
+    .map((item) => ({
+      ...item,
+      arquivado: true,
+      descricao: label ? `${label} · ${item.descricao}` : item.descricao,
+    }));
+}
+
+function ArchiveShortcut({ count, onClick }: { count: number; onClick: () => void }) {
+  if (!count) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-md border border-border bg-muted/40 px-3 py-2 text-left text-xs text-muted-foreground hover:bg-muted"
+    >
+      {count} registro{count === 1 ? "" : "s"} arquivado{count === 1 ? "" : "s"} disponível
+      {count === 1 ? "" : "s"} no histórico.
+    </button>
+  );
+}
+
 function TimelineList({
   items,
   empty,
   onPreview,
+  archivedView = false,
 }: {
   items: EquipamentoHistoricoItem[];
   empty: string;
   onPreview: (item: EquipamentoHistoricoItem) => void;
+  archivedView?: boolean;
 }) {
   if (!items.length) {
     return (
@@ -363,10 +429,16 @@ function TimelineList({
               {item.status && (
                 <StatusBadge tone={item.status}>{statusLabel(item.status)}</StatusBadge>
               )}
+              {(archivedView || item.arquivado) && (
+                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  Arquivado
+                </span>
+              )}
             </div>
             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               {item.tipo && <span>Tipo: {humanizeTipo(item.tipo)}</span>}
               {item.data && <span>Data: {formatDateBR(item.data)}</span>}
+              {item.versao && <span>Versão: {item.versao}</span>}
             </div>
           </div>
 
@@ -528,7 +600,7 @@ function ManutencaoFields() {
       <Input label="Empresa responsável" name="empresa_responsavel" />
       <Input label="Técnico responsável" name="tecnico_responsavel" />
       <Select label="Status da execução" name="status_execucao">
-        <option value="realizada">Realizada</option>
+        <option value="concluida">Concluída</option>
         <option value="programada">Programada</option>
         <option value="em_andamento">Em andamento</option>
         <option value="cancelada">Cancelada</option>

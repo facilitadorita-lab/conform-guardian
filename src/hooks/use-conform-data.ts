@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/hooks/use-session";
 import { MOCK_EMPRESA_ID, runtimeConfig } from "@/lib/runtime-config";
 import {
   alertasMock,
@@ -44,16 +45,15 @@ export function useAuthContext() {
 
 function useResolvedCompanyId() {
   const authQuery = useAuthContext();
+  const { selectedCompanyId, selectedCompany, isMaster } = useSession();
   const acessoBloqueado = Boolean(
-    authQuery.data &&
-    !authQuery.data.usuario.isMaster &&
-    authQuery.data.empresaAtual.status !== "ativa",
+    !isMaster && selectedCompany && selectedCompany.status !== "ativa",
   );
   const empresaId = acessoBloqueado
     ? undefined
     : runtimeConfig.useMocks
       ? MOCK_EMPRESA_ID
-      : authQuery.data?.empresaAtual.id;
+      : selectedCompanyId;
 
   return {
     ...authQuery,
@@ -124,12 +124,12 @@ export function useEquipamento(id: string) {
   });
 }
 
-export function useManutencoes() {
+export function useManutencoes(params: Parameters<typeof manutencoesService.listar>[1] = {}) {
   const { empresaId } = useResolvedCompanyId();
 
   return useQuery({
-    queryKey: ["manutencoes", empresaId],
-    queryFn: () => manutencoesService.listar(empresaId!),
+    queryKey: ["manutencoes", empresaId, params],
+    queryFn: () => manutencoesService.listar(empresaId!, params),
     enabled: Boolean(empresaId),
     initialData: runtimeConfig.useMocks ? manutencoesMock : undefined,
     staleTime,

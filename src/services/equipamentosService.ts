@@ -126,6 +126,12 @@ export type EquipamentoHistoricoItem = {
   descricao: string;
   tipo?: string | null;
   status?: StatusConformidade | "info";
+  arquivado?: boolean;
+  vigente?: boolean | null;
+  anexoStatus?: "ativo" | "substituido" | "excluido" | string | null;
+  finalidade?: string | null;
+  versao?: number | null;
+  substituiAnexoId?: string | null;
   documentoUrl?: string | null;
   documentoNome?: string | null;
 };
@@ -219,11 +225,15 @@ function normalizeEquipamentoDetalhe(
 
   const equipamento = normalizeEquipamento(payload.equipamento ?? {});
 
+  const calibracoes = normalizeTimeline(payload.calibracoes, "calibracao");
+  const qualificacoes = normalizeTimeline(payload.qualificacoes, "qualificacao");
+  const manutencoes = markOnlyFirstAsCurrent(normalizeTimeline(payload.manutencoes, "manutencao"));
+
   return {
     ...equipamento,
-    calibracoes: normalizeTimeline(payload.calibracoes, "calibracao"),
-    qualificacoes: normalizeTimeline(payload.qualificacoes, "qualificacao"),
-    manutencoes: normalizeTimeline(payload.manutencoes, "manutencao"),
+    calibracoes,
+    qualificacoes,
+    manutencoes,
     anexos: normalizeTimeline(payload.anexos, "anexo"),
     historico: normalizeTimeline(payload.historico, "historico"),
   };
@@ -337,10 +347,37 @@ function normalizeTimeline(items: unknown, kind: string): EquipamentoHistoricoIt
       descricao: buildTimelineDescription(item, kind),
       tipo: String(item.tipo ?? item.natureza ?? item.finalidade ?? item.acao ?? kind),
       status,
+      arquivado: isArchivedTimelineItem(item, kind),
+      vigente: typeof item.vigente === "boolean" ? item.vigente : null,
+      anexoStatus: typeof item.status === "string" ? item.status : null,
+      finalidade: String(item.finalidade ?? item.tipo ?? ""),
+      versao: typeof item.versao === "number" ? item.versao : null,
+      substituiAnexoId:
+        typeof item.substitui_anexo_id === "string" ? item.substitui_anexo_id : null,
       documentoUrl: typeof item.url === "string" ? item.url : null,
       documentoNome: String(item.nome_original ?? item.nome ?? item.finalidade ?? ""),
     };
   });
+}
+
+function isArchivedTimelineItem(item: Record<string, unknown>, kind: string): boolean {
+  if (typeof item.arquivado === "boolean") return item.arquivado;
+  if (typeof item.vigente === "boolean") return !item.vigente;
+
+  if (kind === "anexo") {
+    const status = String(item.status ?? "").toLowerCase();
+    return status === "substituido" || status === "excluido" || status === "arquivado";
+  }
+
+  return false;
+}
+
+function markOnlyFirstAsCurrent(items: EquipamentoHistoricoItem[]): EquipamentoHistoricoItem[] {
+  return items.map((item, index) => ({
+    ...item,
+    vigente: index === 0,
+    arquivado: index > 0,
+  }));
 }
 
 function normalizeTimelineItems(items: unknown): unknown[] {
@@ -397,6 +434,10 @@ type ApiAnexo = {
   modulo: string;
   storage_path: string;
   nome_original?: string | null;
+  status?: string | null;
+  finalidade?: string | null;
+  versao?: number | null;
+  substitui_anexo_id?: string | null;
 };
 
 async function hydrateEquipamentoAttachmentUrls(
@@ -417,7 +458,9 @@ async function hydrateEquipamentoAttachmentUrls(
 
   const { data, error } = await supabase
     .from("anexos")
-    .select("id, registro_id, modulo, storage_path, nome_original")
+    .select(
+      "id, registro_id, modulo, storage_path, nome_original, status, finalidade, versao, substitui_anexo_id",
+    )
     .eq("empresa_id", empresaId)
     .in("registro_id", registroIds)
     .is("deleted_at", null)
@@ -438,19 +481,71 @@ async function hydrateEquipamentoAttachmentUrls(
     }),
   );
 
+  const anexosPorRegistro = new Map<string, ApiAnexo[]>();
+  for (const anexo of anexos) {
+    const key = `${anexo.modulo}:${anexo.registro_id}`;
+    anexosPorRegistro.set(key, [...(anexosPorRegistro.get(key) ?? []), anexo]);
+  }
+
+  const hydrateRecordItem = (item: EquipamentoHistoricoItem, modulo: string) => {
+    const candidates = anexosPorRegistro.get(`${modulo}:${item.id}`) ?? [];
+    const preferred = candidates.find((anexo) => anexo.status === "ativo") ?? candidates[0];
+    if (!preferred) return item;
+
+    return {
+      ...item,
+      documentoUrl: signedUrls.get(preferred.id) ?? item.documentoUrl ?? null,
+      documentoNome: preferred.nome_original ?? item.documentoNome ?? item.descricao,
+      finalidade: preferred.finalidade ?? item.finalidade ?? null,
+      anexoStatus: preferred.status ?? item.anexoStatus ?? null,
+      versao: preferred.versao ?? item.versao ?? null,
+    };
+  };
+
+  const anexosComUrls = detalhe.anexos.map((item) => {
+    const anexo = anexos.find((candidate) => candidate.id === item.id);
+    if (!anexo) return item;
+
+    return {
+      ...item,
+      registroId: anexo.registro_id,
+      modulo: anexo.modulo,
+      arquivado: anexo.status === "substituido" || anexo.status === "excluido",
+      anexoStatus: anexo.status ?? item.anexoStatus ?? null,
+      finalidade: anexo.finalidade ?? item.finalidade ?? null,
+      versao: anexo.versao ?? item.versao ?? null,
+      substituiAnexoId: anexo.substitui_anexo_id ?? item.substituiAnexoId ?? null,
+      documentoUrl: signedUrls.get(anexo.id) ?? null,
+      documentoNome: anexo.nome_original ?? item.documentoNome ?? "Anexo",
+    };
+  });
+
   return {
     ...detalhe,
-    anexos: detalhe.anexos.map((item) => {
-      const anexo = anexos.find((candidate) => candidate.id === item.id);
-      if (!anexo) return item;
-
-      return {
-        ...item,
-        registroId: anexo.registro_id,
-        modulo: anexo.modulo,
-        documentoUrl: signedUrls.get(anexo.id) ?? null,
-        documentoNome: anexo.nome_original ?? item.documentoNome ?? "Anexo",
-      };
-    }),
+    calibracoes: detalhe.calibracoes.map((item) => hydrateRecordItem(item, "calibracoes")),
+    qualificacoes: detalhe.qualificacoes.map((item) => hydrateRecordItem(item, "qualificacoes")),
+    manutencoes: detalhe.manutencoes.map((item) => hydrateRecordItem(item, "manutencoes")),
+    anexos: markArchivedDuplicatedAttachments(anexosComUrls),
   };
+}
+
+function markArchivedDuplicatedAttachments(
+  items: EquipamentoHistoricoItem[],
+): EquipamentoHistoricoItem[] {
+  const currentKeys = new Set<string>();
+
+  return items.map((item) => {
+    const statusArchived =
+      item.anexoStatus === "substituido" ||
+      item.anexoStatus === "excluido" ||
+      item.arquivado === true;
+    const key = `${item.modulo ?? "anexo"}:${item.finalidade ?? item.tipo ?? ""}`;
+
+    if (statusArchived) return { ...item, arquivado: true };
+
+    if (currentKeys.has(key)) return { ...item, arquivado: true };
+
+    currentKeys.add(key);
+    return { ...item, arquivado: false, vigente: true };
+  });
 }

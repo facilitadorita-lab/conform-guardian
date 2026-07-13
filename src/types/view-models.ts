@@ -55,12 +55,15 @@ export interface EquipamentoResumo {
 
 export interface ManutencaoResumo {
   id: UUID;
+  equipamentoId?: UUID | null;
   equipamento: string;
+  natureza?: "preventiva" | "corretiva" | string | null;
   tipo: string;
   data: ISODate;
   responsavel: string;
   status: StatusConformidade;
   os: string;
+  statusExecucao?: string | null;
 }
 
 export interface AlertaResumo {

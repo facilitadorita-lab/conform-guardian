@@ -50,7 +50,7 @@ export const manutencoesService = {
     return extractRpcItems(data).map(normalizeManutencao);
   },
 
-  criar(empresaId: string, payload: Partial<Manutencao>) {
+  criar(empresaId: string, payload: Record<string, unknown>) {
     return invokeRpc<Manutencao>("api_criar_manutencao", {
       p_empresa_id: empresaId,
       p_payload: payload,
@@ -67,6 +67,7 @@ export const manutencoesService = {
 };
 
 type ApiManutencao = Partial<ManutencaoResumo> & {
+  equipamento_id?: string | null;
   equipamento_nome?: string | null;
   item_nome?: string | null;
   nome_servico?: string | null;
@@ -84,12 +85,14 @@ type ApiManutencao = Partial<ManutencaoResumo> & {
 function normalizeManutencao(manutencao: ApiManutencao): ManutencaoResumo {
   return {
     id: manutencao.id ?? crypto.randomUUID(),
+    equipamentoId: manutencao.equipamentoId ?? manutencao.equipamento_id ?? null,
     equipamento:
       manutencao.equipamento ??
       manutencao.equipamento_nome ??
       manutencao.item_nome ??
       manutencao.nome_servico ??
       "Serviço geral",
+    natureza: manutencao.natureza ?? null,
     tipo: manutencao.tipo ?? labelManutencao(manutencao.natureza, manutencao.tipo_servico),
     data: manutencao.data ?? manutencao.proxima_manutencao ?? manutencao.data_manutencao ?? "-",
     responsavel:
@@ -101,6 +104,7 @@ function normalizeManutencao(manutencao: ApiManutencao): ManutencaoResumo {
       manutencao.status ?? manutencao.status_calculado ?? manutencao.status_execucao,
     ),
     os: manutencao.os ?? manutencao.numero_ordem_servico ?? "-",
+    statusExecucao: manutencao.status_execucao ?? null,
   };
 }
 
