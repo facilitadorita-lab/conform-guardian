@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Bell, CreditCard, LockKeyhole, LogOut, Search, ShieldCheck } from "lucide-react";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
@@ -21,15 +22,14 @@ export function AppShell({
 }) {
   const { user, loading, signOut } = useAuth();
   const { data: authContext } = useAuthContext();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const navigate = useNavigate();
   const empresaNome = authContext?.empresaAtual.nome;
   const empresaCnpj = authContext?.empresaAtual.cnpj;
   const podeTrocarEmpresa = Boolean(authContext && authContext.empresasPermitidas.length > 1);
   const acessoBloqueado = Boolean(
-    authContext &&
-      !authContext.usuario.isMaster &&
-      authContext.empresaAtual.status !== "ativa",
+    authContext && !authContext.usuario.isMaster && authContext.empresaAtual.status !== "ativa",
   );
 
   useEffect(() => {
@@ -80,6 +80,11 @@ export function AppShell({
                   value={authContext?.empresaAtual.id}
                   onChange={async (event) => {
                     setSelectedCompanyId(event.target.value);
+                    await queryClient.invalidateQueries();
+                    await queryClient.refetchQueries({
+                      queryKey: ["auth", "contexto"],
+                      type: "active",
+                    });
                     await router.invalidate();
                     await router.navigate({ to: "/" });
                   }}

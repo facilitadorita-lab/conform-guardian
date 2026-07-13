@@ -1,4 +1,5 @@
 import { ArrowRight, Building2, CheckCircle2, ShieldCheck } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { useAuthContext } from "@/hooks/use-conform-data";
@@ -6,10 +7,16 @@ import { setSelectedCompanyId } from "@/services/authService";
 
 export function MasterEmpresasPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: authContext, isLoading, error } = useAuthContext();
 
   const entrarNaEmpresa = async (empresaId: string) => {
     setSelectedCompanyId(empresaId);
+    await queryClient.invalidateQueries();
+    await queryClient.refetchQueries({
+      queryKey: ["auth", "contexto"],
+      type: "active",
+    });
     await router.invalidate();
     await router.navigate({ to: "/" });
   };
