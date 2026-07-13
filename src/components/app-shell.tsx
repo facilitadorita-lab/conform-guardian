@@ -8,6 +8,7 @@ import { runtimeConfig } from "@/lib/runtime-config";
 import { setSelectedCompanyId } from "@/services/authService";
 import type { StatusConformidade } from "@/types";
 import { AppSidebar } from "./app-sidebar";
+import { CompanySwitcher } from "./company-switcher";
 import { FloatingAssistant } from "./floating-assistant";
 
 export function AppShell({
@@ -77,10 +78,11 @@ export function AppShell({
             </button>
             {podeTrocarEmpresa ? (
               <div className="hidden items-center gap-2 sm:flex">
-                <select
-                  value={authContext?.empresaAtual.id}
-                  onChange={async (event) => {
-                    setSelectedCompanyId(event.target.value);
+                <CompanySwitcher
+                  empresas={authContext.empresasPermitidas}
+                  empresaAtual={authContext.empresaAtual}
+                  onSelectEmpresa={async (empresaId) => {
+                    setSelectedCompanyId(empresaId);
                     await queryClient.invalidateQueries();
                     await queryClient.refetchQueries({
                       queryKey: ["auth", "contexto"],
@@ -89,15 +91,7 @@ export function AppShell({
                     await router.invalidate();
                     await router.navigate({ to: "/" });
                   }}
-                  className="h-9 max-w-[260px] rounded-md border border-border bg-background px-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-ring/40"
-                  aria-label="Selecionar empresa"
-                >
-                  {authContext?.empresasPermitidas.map((empresa) => (
-                    <option key={empresa.id} value={empresa.id}>
-                      {empresa.nome}
-                    </option>
-                  ))}
-                </select>
+                />
                 {authContext?.usuario.isMaster ? (
                   <Link
                     to="/master/empresas"
