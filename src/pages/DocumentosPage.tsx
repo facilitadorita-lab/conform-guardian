@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, Eye, Filter, Plus, X } from "lucide-react";
 import { useAuthContext, useDocumentos } from "@/hooks/use-conform-data";
@@ -20,6 +20,26 @@ export function DocumentosPage() {
   const [documentoPreview, setDocumentoPreview] = useState<DocumentoResumo | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
+
+  const documentosFiltrados = useMemo(() => {
+    const termo = normalizarBusca(busca);
+    if (!termo) return documentos;
+
+    return documentos.filter((documento) =>
+      normalizarBusca(
+        [
+          documento.nome,
+          documento.numero,
+          documento.orgao,
+          documento.categoria,
+          documento.tipo,
+          documento.setor,
+          documento.responsavel,
+        ].join(" "),
+      ).includes(termo),
+    );
+  }, [busca, documentos]);
 
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -110,6 +130,8 @@ export function DocumentosPage() {
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-4">
           <input
             placeholder="Buscar por nome, número, órgão..."
+            value={busca}
+            onChange={(event) => setBusca(event.target.value)}
             className="h-9 min-w-[240px] flex-1 rounded-md border border-input bg-background px-3 text-sm"
           />
           <select className="h-9 rounded-md border border-input bg-background px-2 text-sm">
@@ -141,7 +163,7 @@ export function DocumentosPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {documentos.map((documento) => (
+              {documentosFiltrados.map((documento) => (
                 <tr key={documento.id} className="hover:bg-muted/30">
                   <td className="px-6 py-3">
                     <div className="font-medium">{documento.nome}</div>
@@ -174,14 +196,20 @@ export function DocumentosPage() {
                   </td>
                 </tr>
               ))}
-              {documentos.length === 0 && (
+              {documentosFiltrados.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-6 py-10 text-center">
                     <div className="mx-auto max-w-md">
-                      <p className="font-medium text-foreground">Nenhum documento cadastrado.</p>
+                      <p className="font-medium text-foreground">
+                        {documentos.length === 0
+                          ? "Nenhum documento cadastrado."
+                          : "Nenhum documento encontrado para essa busca."}
+                      </p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        Ambiente atual: {empresaNome}. Cadastre um documento ou troque de empresa no
-                        seletor superior.
+                        Ambiente atual: {empresaNome}.{" "}
+                        {documentos.length === 0
+                          ? "Cadastre um documento ou troque de empresa no seletor superior."
+                          : "Revise o termo digitado ou limpe a busca para ver todos os documentos."}
                       </p>
                     </div>
                   </td>
@@ -193,7 +221,7 @@ export function DocumentosPage() {
 
         <div className="flex items-center justify-between border-t border-border px-6 py-3 text-xs text-muted-foreground">
           <span>
-            Mostrando {documentos.length} de {documentos.length} documentos
+            Mostrando {documentosFiltrados.length} de {documentos.length} documentos
           </span>
           <div className="flex items-center gap-1">
             <button className="h-7 rounded border border-border px-2 hover:bg-muted">
@@ -448,6 +476,14 @@ function required(formData: FormData, key: string): string {
 function optional(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizarBusca(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase("pt-BR")
+    .trim();
 }
 
 function SummaryTile({
