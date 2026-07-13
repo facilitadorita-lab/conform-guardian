@@ -13,7 +13,7 @@ const uploadAccept =
   "application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export function DocumentosPage() {
-  const { selectedCompanyId, selectedCompany } = useSession();
+  const { selectedCompanyId, selectedCompany, empresaAtual } = useSession();
   const { data: documentos = [] } = useDocumentos();
   const queryClient = useQueryClient();
   const [documentoPreview, setDocumentoPreview] = useState<DocumentoResumo | null>(null);
@@ -180,7 +180,7 @@ export function DocumentosPage() {
                       <p className="font-medium text-foreground">Nenhum documento cadastrado.</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         Ambiente atual:{" "}
-                        {selectedCompany?.nome_fantasia ?? "empresa não selecionada"}. Cadastre um
+                        {selectedCompany?.nome_fantasia ?? empresaAtual.nome_fantasia}. Cadastre um
                         documento ou troque de empresa no seletor superior.
                       </p>
                     </div>

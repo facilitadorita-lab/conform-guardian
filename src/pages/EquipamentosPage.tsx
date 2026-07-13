@@ -10,7 +10,7 @@ import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function EquipamentosPage() {
-  const { selectedCompanyId, selectedCompany } = useSession();
+  const { selectedCompanyId, selectedCompany, empresaAtual } = useSession();
   const { data: equipamentos = [], isLoading } = useEquipamentos();
   const queryClient = useQueryClient();
   const [modalAberto, setModalAberto] = useState(false);
@@ -141,8 +141,8 @@ export function EquipamentosPage() {
                   <div className="mx-auto max-w-md">
                     <p className="font-medium text-foreground">Nenhum equipamento cadastrado.</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      Ambiente atual: {selectedCompany?.nome_fantasia ?? "empresa não selecionada"}.
-                      Cadastre um equipamento ou troque de empresa no seletor superior.
+                      Ambiente atual: {selectedCompany?.nome_fantasia ?? empresaAtual.nome_fantasia}
+                      . Cadastre um equipamento ou troque de empresa no seletor superior.
                     </p>
                   </div>
                 </td>
