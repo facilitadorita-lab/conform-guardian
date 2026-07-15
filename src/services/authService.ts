@@ -1,6 +1,6 @@
 import { runtimeConfig } from "@/lib/runtime-config";
 import { authContextMock } from "@/mocks";
-import type { AuthContexto } from "@/types";
+import type { AuthContexto, EmpresaPlanoResumo } from "@/types";
 import { cloneMock, invokeRpc } from "./service-utils";
 
 export const SELECTED_COMPANY_STORAGE_KEY = "conformflow.selectedCompanyId";
@@ -18,6 +18,7 @@ interface ApiContextoUsuarioResponse {
     razao_social: string;
     cnpj: string;
     status: "ativa" | "bloqueada" | "cancelada";
+    plano?: EmpresaPlanoResumo | null;
     perfil:
       | "administrador"
       | "responsavel_tecnico"
@@ -73,14 +74,30 @@ export const authService = {
         nome: empresaAtual.razao_social || empresaAtual.nome_fantasia,
         cnpj: empresaAtual.cnpj,
         status: empresaAtual.status,
+        plano: normalizePlano(empresaAtual.plano),
       },
       empresasPermitidas: contexto.empresas.map((empresa) => ({
         id: empresa.id,
         nome: empresa.razao_social || empresa.nome_fantasia,
         cnpj: empresa.cnpj,
         status: empresa.status,
+        plano: normalizePlano(empresa.plano),
       })),
       perfilAtual: empresaAtual.perfil,
     };
   },
 };
+
+function normalizePlano(plano: EmpresaPlanoResumo | null | undefined): EmpresaPlanoResumo | null {
+  if (!plano) return null;
+  return {
+    id: plano.id ?? null,
+    nome: plano.nome ?? null,
+    codigo: plano.codigo ?? null,
+    recursos: plano.recursos ?? {},
+    limite_usuarios: plano.limite_usuarios ?? null,
+    limite_documentos: plano.limite_documentos ?? null,
+    limite_equipamentos: plano.limite_equipamentos ?? null,
+    limite_storage_mb: plano.limite_storage_mb ?? null,
+  };
+}

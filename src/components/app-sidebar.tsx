@@ -16,12 +16,15 @@ import {
   Building2,
 } from "lucide-react";
 import { useAuthContext } from "@/hooks/use-conform-data";
+import type { PlanoRecurso } from "@/types";
+import { hasPlanFeature } from "@/utils/plan-features";
 
 type NavItem = {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
+  recurso?: PlanoRecurso;
 };
 
 const groups: { label: string; items: NavItem[] }[] = [
@@ -32,29 +35,29 @@ const groups: { label: string; items: NavItem[] }[] = [
   {
     label: "Gestão",
     items: [
-      { to: "/documentos", label: "Documentos", icon: FileText },
-      { to: "/equipamentos", label: "Equipamentos", icon: Cog },
-      { to: "/manutencoes", label: "Manutenções", icon: Wrench },
-      { to: "/pendencias", label: "Pendências", icon: ClipboardList },
+      { to: "/documentos", label: "Documentos", icon: FileText, recurso: "documentos" },
+      { to: "/equipamentos", label: "Equipamentos", icon: Cog, recurso: "equipamentos" },
+      { to: "/manutencoes", label: "Manutenções", icon: Wrench, recurso: "manutencoes" },
+      { to: "/pendencias", label: "Pendências", icon: ClipboardList, recurso: "pendencias" },
     ],
   },
   {
     label: "Controle",
     items: [
-      { to: "/alertas", label: "Alertas", icon: Bell },
-      { to: "/vencimentos", label: "Vencimentos", icon: CalendarClock },
-      { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
-      { to: "/auditoria", label: "Auditoria", icon: ShieldCheck },
+      { to: "/alertas", label: "Alertas", icon: Bell, recurso: "alertas" },
+      { to: "/vencimentos", label: "Vencimentos", icon: CalendarClock, recurso: "vencimentos" },
+      { to: "/relatorios", label: "Relatórios", icon: BarChart3, recurso: "relatorios" },
+      { to: "/auditoria", label: "Auditoria", icon: ShieldCheck, recurso: "auditoria" },
     ],
   },
   {
     label: "Administração",
     items: [
-      { to: "/usuarios", label: "Usuários", icon: Users },
+      { to: "/usuarios", label: "Usuários", icon: Users, recurso: "usuarios" },
       { to: "/configuracoes", label: "Configurações", icon: Settings },
     ],
   },
-] as const;
+];
 
 const masterGroup: { label: string; items: NavItem[] } = {
   label: "Admin Master",
@@ -68,7 +71,12 @@ const masterGroup: { label: string; items: NavItem[] } = {
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { data: authContext } = useAuthContext();
-  const visibleGroups = authContext?.usuario.isMaster ? [...groups, masterGroup] : groups;
+  const visibleGroups = (authContext?.usuario.isMaster ? [...groups, masterGroup] : groups)
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.recurso || hasPlanFeature(authContext, item.recurso)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <aside className="hidden md:flex w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
@@ -87,13 +95,13 @@ export function AppSidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-        {visibleGroups.map((g: { label: string; items: NavItem[] }) => (
+        {visibleGroups.map((g) => (
           <div key={g.label}>
             <div className="px-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 mb-2">
               {g.label}
             </div>
             <ul className="space-y-0.5">
-              {g.items.map((item: NavItem) => {
+              {g.items.map((item) => {
                 const active = item.exact
                   ? pathname === item.to
                   : pathname === item.to || pathname.startsWith(item.to + "/");

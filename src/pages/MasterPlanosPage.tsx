@@ -8,6 +8,8 @@ import type { PlanoComercialResumo, PlanoRecurso } from "@/types";
 import { centsToInputValue, formatCurrencyFromCents } from "@/utils/money";
 
 const recursoLabels: Record<PlanoRecurso, string> = {
+  assistente_ia: "Assistente IA",
+  vencimentos: "Vencimentos",
   documentos: "Documentos",
   equipamentos: "Equipamentos",
   calibracoes: "Calibrações",

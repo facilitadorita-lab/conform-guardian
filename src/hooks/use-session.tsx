@@ -50,6 +50,15 @@ const empresasMock: EmpresaResumo[] = masterEmpresas.map((e) => ({
   desde: e.desde,
 }));
 
+function planoNome(raw: unknown) {
+  if (!raw) return "—";
+  if (typeof raw === "string") return raw;
+  if (typeof raw === "object" && "nome" in raw) {
+    return String((raw as { nome?: unknown }).nome ?? "—");
+  }
+  return "—";
+}
+
 function toEmpresaAtual(e: EmpresaResumo): EmpresaAtualMock {
   return {
     id: e.id,
@@ -140,7 +149,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           razao_social: String(e.razao_social ?? e.razao ?? e.nome ?? ""),
           nome_fantasia: String(e.nome_fantasia ?? e.fantasia ?? e.razao_social ?? e.nome ?? ""),
           cnpj: String(e.cnpj ?? ""),
-          plano: String(e.plano ?? "—"),
+          plano: planoNome(e.plano),
           status: ((e.status as EmpresaStatus) ?? "ativa"),
           usuarios: Number(e.usuarios ?? 0),
           documentos: Number(e.documentos ?? 0),

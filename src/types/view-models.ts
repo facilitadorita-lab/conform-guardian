@@ -100,6 +100,7 @@ export interface EmpresaResumo {
   nome: string;
   cnpj: string;
   status: "ativa" | "bloqueada" | "cancelada";
+  plano?: EmpresaPlanoResumo | null;
 }
 
 export interface AuthContexto {
@@ -130,6 +131,8 @@ export interface ConfiguracaoCatalogoItem {
 }
 
 export type PlanoRecurso =
+  | "assistente_ia"
+  | "vencimentos"
   | "documentos"
   | "equipamentos"
   | "calibracoes"
@@ -143,6 +146,17 @@ export type PlanoRecurso =
   | "anexos"
   | "multi_unidades"
   | "suporte_prioritario";
+
+export interface EmpresaPlanoResumo {
+  id?: UUID | null;
+  nome?: string | null;
+  codigo?: string | null;
+  recursos: Partial<Record<PlanoRecurso, boolean>>;
+  limite_usuarios?: number | null;
+  limite_documentos?: number | null;
+  limite_equipamentos?: number | null;
+  limite_storage_mb?: number | null;
+}
 
 export type StatusAssinatura =
   "trial" | "ativa" | "pagamento_pendente" | "inadimplente" | "bloqueada" | "cancelada";

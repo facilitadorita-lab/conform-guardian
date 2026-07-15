@@ -10,6 +10,7 @@ import type { StatusConformidade } from "@/types";
 import { AppSidebar } from "./app-sidebar";
 import { CompanySwitcher } from "./company-switcher";
 import { FloatingAssistant } from "./floating-assistant";
+import { hasPlanFeature } from "@/utils/plan-features";
 
 export function AppShell({
   title,
@@ -33,6 +34,7 @@ export function AppShell({
   const acessoBloqueado = Boolean(
     authContext && !authContext.usuario.isMaster && authContext.empresaAtual.status !== "ativa",
   );
+  const exibirAssistente = hasPlanFeature(authContext, "assistente_ia");
 
   useEffect(() => {
     if (runtimeConfig.useMocks || loading || user) return;
@@ -134,7 +136,7 @@ export function AppShell({
           {children}
         </main>
       </div>
-      <FloatingAssistant />
+      {exibirAssistente ? <FloatingAssistant /> : null}
     </div>
   );
 }

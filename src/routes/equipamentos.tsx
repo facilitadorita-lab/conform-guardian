@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
+import { PlanFeatureGate } from "@/components/plan-feature-gate";
 import { EquipamentosPage } from "@/pages/EquipamentosPage";
 
 export const Route = createFileRoute("/equipamentos")({
@@ -9,9 +10,9 @@ export const Route = createFileRoute("/equipamentos")({
 function EquipamentosRoute() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
-  if (pathname === "/equipamentos") {
-    return <EquipamentosPage />;
-  }
-
-  return <Outlet />;
+  return (
+    <PlanFeatureGate recurso="equipamentos" nomeRecurso="Equipamentos">
+      {pathname === "/equipamentos" ? <EquipamentosPage /> : <Outlet />}
+    </PlanFeatureGate>
+  );
 }
