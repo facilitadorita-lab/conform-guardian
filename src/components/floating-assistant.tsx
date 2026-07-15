@@ -19,7 +19,7 @@ type ChatMessage = {
   sourcesCount?: number;
 };
 
-const ASSISTANT_NAME = "NIA Flow";
+const ASSISTANT_NAME = "FlowIA";
 
 const sugestoes = [
   "Quando vence meu AVCB?",
@@ -40,7 +40,7 @@ export function FloatingAssistant() {
   const podeEnviar = Boolean(empresa?.id && pergunta.trim() && !enviando);
 
   const placeholder = useMemo(() => {
-    if (!empresa) return "Selecione uma empresa para conversar com a NIA...";
+    if (!empresa) return "Selecione uma empresa para conversar com o FlowIA...";
     return `Pergunte sobre ${empresa.nome}`;
   }, [empresa]);
 
@@ -80,7 +80,7 @@ export function FloatingAssistant() {
       ]);
     } catch (error) {
       const mensagem =
-        error instanceof Error ? error.message : "Não foi possível consultar a NIA Flow agora.";
+        error instanceof Error ? error.message : "Não foi possível consultar o FlowIA agora.";
       setErro(mensagem);
       setMensagens((atuais) => [
         ...atuais,
@@ -103,16 +103,16 @@ export function FloatingAssistant() {
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
       {aberto ? (
-        <section className="flex h-[min(680px,calc(100vh-7rem))] w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
-          <header className="flex items-center justify-between border-b border-border bg-sidebar px-4 py-3 text-sidebar-foreground">
+        <section className="flex h-[min(680px,calc(100vh-7rem))] w-[min(440px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-2xl">
+          <header className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary to-slate-900 px-4 py-3 text-primary-foreground">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/95 text-sidebar">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/95 text-primary">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
                 <div className="text-sm font-semibold">{ASSISTANT_NAME}</div>
                 <div className="text-[11px] text-sidebar-foreground/70">
-                  Assistente operacional seguro
+                  Assistente seguro de conformidade
                 </div>
               </div>
             </div>
@@ -120,7 +120,7 @@ export function FloatingAssistant() {
               type="button"
               onClick={() => setAberto(false)}
               className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10"
-              aria-label="Fechar NIA Flow"
+              aria-label="Fechar FlowIA"
             >
               <X className="h-4 w-4" />
             </button>
@@ -146,7 +146,7 @@ export function FloatingAssistant() {
                   <div className="flex gap-2">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                     <p>
-                      A {ASSISTANT_NAME} responde apenas sobre dados estruturados. Ela não lê
+                      O {ASSISTANT_NAME} responde apenas sobre dados estruturados. Ele não lê
                       anexos, PDFs, imagens ou documentos confidenciais.
                     </p>
                   </div>
@@ -198,7 +198,7 @@ export function FloatingAssistant() {
               <div className="flex justify-start">
                 <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  NIA Flow consultando dados...
+                  FlowIA consultando dados...
                 </div>
               </div>
             ) : null}
@@ -220,7 +220,7 @@ export function FloatingAssistant() {
               type="submit"
               disabled={!podeEnviar}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Enviar pergunta para NIA Flow"
+              aria-label="Enviar pergunta para o FlowIA"
             >
               <Send className="h-4 w-4" />
             </button>
@@ -231,12 +231,12 @@ export function FloatingAssistant() {
       <button
         type="button"
         onClick={() => setAberto((atual) => !atual)}
-        className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl ring-4 ring-primary/15 transition hover:-translate-y-0.5 hover:bg-primary/90"
-        aria-label="Abrir NIA Flow"
+        className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl ring-4 ring-primary/15 cf-transition hover:-translate-y-0.5 hover:bg-primary/90"
+        aria-label="Abrir FlowIA"
       >
         <MessageCircle className="h-6 w-6" />
         <span className="absolute -left-28 hidden rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm group-hover:block">
-          NIA Flow
+          FlowIA
         </span>
       </button>
     </div>

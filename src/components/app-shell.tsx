@@ -1,12 +1,24 @@
 import { useEffect, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, CreditCard, LockKeyhole, LogOut, Search, ShieldCheck } from "lucide-react";
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
+import {
+  Bell,
+  Building2,
+  ChevronRight,
+  CreditCard,
+  LockKeyhole,
+  LogOut,
+  Search,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useAuthContext } from "@/hooks/use-conform-data";
 import { runtimeConfig } from "@/lib/runtime-config";
 import { setSelectedCompanyId } from "@/services/authService";
 import type { StatusConformidade } from "@/types";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/conform/surface";
 import { AppSidebar } from "./app-sidebar";
 import { CompanySwitcher } from "./company-switcher";
 import { FloatingAssistant } from "./floating-assistant";
@@ -28,13 +40,13 @@ export function AppShell({
   const queryClient = useQueryClient();
   const router = useRouter();
   const navigate = useNavigate();
-  const empresaNome = authContext?.empresaAtual.nome;
-  const empresaCnpj = authContext?.empresaAtual.cnpj;
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const podeTrocarEmpresa = Boolean(authContext && authContext.empresasPermitidas.length > 1);
   const acessoBloqueado = Boolean(
     authContext && !authContext.usuario.isMaster && authContext.empresaAtual.status !== "ativa",
   );
   const exibirAssistente = hasPlanFeature(authContext, "assistente_ia");
+  const breadcrumbs = buildBreadcrumbs(pathname, title);
 
   useEffect(() => {
     if (runtimeConfig.useMocks || loading || user) return;
@@ -63,77 +75,100 @@ export function AppShell({
     <div className="flex min-h-screen w-full bg-background text-foreground">
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-card px-6">
-          <div className="relative max-w-md flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              placeholder="Buscar documentos, equipamentos, pendências..."
-              className="h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
-            />
-          </div>
-          <div className="ml-auto flex items-center gap-3">
-            <button className="relative flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-muted">
-              <Bell className="h-4 w-4" />
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
-                7
-              </span>
-            </button>
-            {podeTrocarEmpresa ? (
-              <div className="hidden items-center gap-2 sm:flex">
-                <CompanySwitcher
-                  empresas={authContext.empresasPermitidas}
-                  empresaAtual={authContext.empresaAtual}
-                  onSelectEmpresa={async (empresaId) => {
-                    setSelectedCompanyId(empresaId);
-                    await queryClient.invalidateQueries();
-                    await queryClient.refetchQueries({
-                      queryKey: ["auth", "contexto"],
-                      type: "active",
-                    });
-                    await router.invalidate();
-                    await router.navigate({ to: "/" });
-                  }}
-                />
-                {authContext?.usuario.isMaster ? (
-                  <Link
-                    to="/master/empresas"
-                    className="rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted"
-                  >
-                    Ver empresas
-                  </Link>
-                ) : null}
+        <header className="sticky top-0 z-20 border-b border-border/80 bg-card/90 backdrop-blur-xl">
+          <div className="flex h-16 items-center gap-4 px-4 md:px-6">
+            <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
+              <Breadcrumbs items={breadcrumbs} />
+            </div>
+
+            <div className="relative w-full max-w-xl flex-1 lg:flex-none">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                placeholder="Buscar documentos, equipamentos, pendências..."
+                className="h-10 w-full rounded-xl border border-input bg-background/80 pl-9 pr-3 text-sm shadow-sm placeholder:text-muted-foreground cf-transition focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10"
+                aria-label="Busca global"
+              />
+            </div>
+
+            <div className="ml-auto flex items-center gap-2">
+              {exibirAssistente ? (
+                <div className="hidden items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-2 text-xs font-medium text-accent xl:flex">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  FlowIA disponível
+                </div>
+              ) : null}
+
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm">
+                <Bell className="h-4 w-4" />
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+                  7
+                </span>
               </div>
-            ) : (
-              <div className="hidden flex-col items-end leading-tight sm:flex">
-                <span className="text-xs font-medium">{empresaNome}</span>
-                <span className="text-[11px] text-muted-foreground">CNPJ {empresaCnpj}</span>
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={async () => {
-                await signOut();
-                await navigate({ to: "/login", search: { msg: undefined } });
-              }}
-              className="flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-muted"
-              aria-label="Sair"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+
+              {podeTrocarEmpresa ? (
+                <div className="hidden items-center gap-2 md:flex">
+                  <CompanySwitcher
+                    empresas={authContext.empresasPermitidas}
+                    empresaAtual={authContext.empresaAtual}
+                    onSelectEmpresa={async (empresaId) => {
+                      setSelectedCompanyId(empresaId);
+                      await queryClient.invalidateQueries();
+                      await queryClient.refetchQueries({
+                        queryKey: ["auth", "contexto"],
+                        type: "active",
+                      });
+                      await router.invalidate();
+                      await router.navigate({ to: "/" });
+                    }}
+                  />
+                  {authContext.usuario.isMaster ? (
+                    <Link
+                      to="/master/empresas"
+                      className="hidden rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium shadow-sm cf-transition hover:border-accent/40 hover:bg-muted xl:inline-flex"
+                    >
+                      Ver empresas
+                    </Link>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="hidden items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 shadow-sm md:flex">
+                  <Building2 className="h-4 w-4 text-accent" />
+                  <div className="min-w-0 leading-tight">
+                    <span className="block max-w-[180px] truncate text-xs font-semibold">
+                      {authContext.empresaAtual.nome}
+                    </span>
+                    <span className="block text-[11px] text-muted-foreground">
+                      CNPJ {authContext.empresaAtual.cnpj}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={async () => {
+                  await signOut();
+                  await navigate({ to: "/login", search: { msg: undefined } });
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm cf-transition hover:border-danger/30 hover:bg-danger/5 hover:text-danger"
+                aria-label="Sair da plataforma"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 space-y-6 p-6 md:p-8">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-              {description ? (
-                <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-              ) : null}
-            </div>
-            {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        <main className="flex-1">
+          <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
+            <PageHeader
+              eyebrow={authContext.usuario.isMaster ? "Admin Master" : "Ambiente do cliente"}
+              title={title}
+              description={description}
+              actions={actions}
+            />
+            {children}
           </div>
-          {children}
         </main>
       </div>
       {exibirAssistente ? <FloatingAssistant /> : null}
@@ -141,18 +176,53 @@ export function AppShell({
   );
 }
 
+function Breadcrumbs({ items }: { items: string[] }) {
+  return (
+    <nav
+      className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground"
+      aria-label="Breadcrumb"
+    >
+      <span className="font-medium text-foreground">Conform Flow</span>
+      {items.map((item) => (
+        <span key={item} className="flex min-w-0 items-center gap-1">
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{item}</span>
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+function buildBreadcrumbs(pathname: string, title: string) {
+  if (pathname === "/") return [title];
+  const parts = pathname
+    .split("/")
+    .filter(Boolean)
+    .map((part) => humanizePath(part));
+  const last = parts.at(-1);
+  if (last?.toLowerCase() === title.toLowerCase()) return parts;
+  return [...parts.slice(0, -1), title];
+}
+
+function humanizePath(value: string) {
+  return value
+    .replaceAll("-", " ")
+    .replaceAll("_", " ")
+    .replace(/^\w/, (char) => char.toUpperCase());
+}
+
 function AccessValidationScreen() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-6">
-      <section className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+    <main className="cf-subtle-grid flex min-h-screen items-center justify-center bg-background p-6">
+      <section className="cf-page-card flex max-w-md flex-col items-center gap-4 p-8 text-center">
         <img
           src="/conform-flow-logo-transparent.png"
           alt="Conform Flow"
-          className="h-14 w-14 object-contain"
+          className="h-16 w-16 object-contain"
         />
         <div>
           <h1 className="text-base font-semibold">Validando acesso</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
             Conferindo empresa, plano e permissões antes de carregar a plataforma.
           </p>
         </div>
@@ -234,7 +304,7 @@ export function StatusBadge({
   tone,
   children,
 }: {
-  tone: StatusConformidade | "info";
+  tone: StatusConformidade | "info" | "neutral";
   children: ReactNode;
 }) {
   const styles: Record<string, string> = {
@@ -243,12 +313,17 @@ export function StatusBadge({
     atencao: "bg-warning/10 text-warning border-warning/40",
     ok: "bg-success/10 text-success border-success/40",
     info: "bg-accent/10 text-accent border-accent/30",
+    neutral: "border-border bg-muted text-muted-foreground",
     sem_validade: "border-border bg-muted text-muted-foreground",
   };
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${styles[tone]}`}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+        "leading-none tracking-[-0.01em]",
+        styles[tone],
+      )}
     >
       {children}
     </span>
