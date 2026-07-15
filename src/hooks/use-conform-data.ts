@@ -172,6 +172,17 @@ export function useAuditoria() {
   });
 }
 
+export function useAuditoriaAvancada() {
+  const { empresaId } = useResolvedCompanyId();
+
+  return useQuery({
+    queryKey: ["auditoria", "avancada", empresaId],
+    queryFn: () => auditoriaService.avancada(empresaId!),
+    enabled: Boolean(empresaId),
+    staleTime,
+  });
+}
+
 export function useUsuarios() {
   const { empresaId } = useResolvedCompanyId();
 
@@ -196,6 +207,28 @@ export function useConfiguracoes() {
   return useQuery({
     queryKey: ["configuracoes"],
     queryFn: () => configuracoesService.listar(),
+    staleTime,
+  });
+}
+
+export function useMatrizDocumental() {
+  const { empresaId } = useResolvedCompanyId();
+
+  return useQuery({
+    queryKey: ["configuracoes", "matriz-documental", empresaId],
+    queryFn: () => configuracoesService.matrizDocumental(empresaId!),
+    enabled: Boolean(empresaId),
+    staleTime,
+  });
+}
+
+export function useOnboardingEmpresa() {
+  const { empresaId } = useResolvedCompanyId();
+
+  return useQuery({
+    queryKey: ["configuracoes", "onboarding", empresaId],
+    queryFn: () => configuracoesService.onboarding(empresaId!),
+    enabled: Boolean(empresaId),
     staleTime,
   });
 }

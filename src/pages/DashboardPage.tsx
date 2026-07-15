@@ -7,13 +7,14 @@ import {
   TrendingUp,
   Wrench,
 } from "lucide-react";
-import { useDashboardData } from "@/hooks/use-conform-data";
+import { useDashboardData, useOnboardingEmpresa } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function DashboardPage() {
   const { data } = useDashboardData();
+  const { data: onboarding } = useOnboardingEmpresa();
   const dashboard = data ?? {
     indiceConformidade: 0,
     documentosVencidos: 0,
@@ -129,6 +130,51 @@ export function DashboardPage() {
           tone="ok"
         />
       </section>
+
+      {onboarding ? (
+        <section className="rounded-xl border border-border bg-card">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-4">
+            <div>
+              <h2 className="text-base font-semibold">Central de implantação</h2>
+              <p className="text-xs text-muted-foreground">
+                Checklist para deixar o ambiente pronto para operação e auditoria.
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-semibold text-primary">
+                {onboarding.progresso_percentual}%
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {onboarding.concluidos}/{onboarding.total} concluídos
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-3 p-5 md:grid-cols-2">
+            {onboarding.itens.map((item) => (
+              <div
+                key={item.id}
+                className={`rounded-lg border px-4 py-3 ${
+                  item.concluido
+                    ? "border-success/30 bg-success/5"
+                    : "border-warning/30 bg-warning/5"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <CheckCircle2
+                    className={`mt-0.5 h-4 w-4 ${
+                      item.concluido ? "text-success" : "text-warning"
+                    }`}
+                  />
+                  <div>
+                    <div className="text-sm font-medium">{item.titulo}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{item.descricao}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border px-6 py-4">

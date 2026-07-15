@@ -1,9 +1,21 @@
 import { configuracoesMock } from "@/mocks";
-import type { ConfiguracaoCatalogoItem } from "@/types";
-import { cloneMock } from "./service-utils";
+import type { ConfiguracaoCatalogoItem, MatrizDocumentalEmpresa, OnboardingEmpresa } from "@/types";
+import { cloneMock, invokeRpc } from "./service-utils";
 
 export const configuracoesService = {
   async listar(): Promise<ConfiguracaoCatalogoItem[]> {
     return cloneMock(configuracoesMock);
+  },
+
+  async matrizDocumental(empresaId: string): Promise<MatrizDocumentalEmpresa> {
+    return invokeRpc<MatrizDocumentalEmpresa>("api_matriz_documental_empresa", {
+      p_empresa_id: empresaId,
+    });
+  },
+
+  async onboarding(empresaId: string): Promise<OnboardingEmpresa> {
+    return invokeRpc<OnboardingEmpresa>("api_onboarding_empresa", {
+      p_empresa_id: empresaId,
+    });
   },
 };
