@@ -1,0 +1,34 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/backend-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start minimal Supabase stack
+        run: supabase start -x studio,imgproxy,inbucket,logflare,vector,supavisor
+      - name: Rebuild database from migrations
+        run: supabase db reset
+      - name: Lint database
+        run: supabase db lint --local --level warning
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
+
