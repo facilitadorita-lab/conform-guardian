@@ -1,9 +1,10 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, Eye, Filter, Plus, X } from "lucide-react";
+import { EvidenciasTimeline } from "@/components/evidencias-timeline";
 import { useAuthContext, useDocumentos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
-import { documentosService, edgeFunctionsService } from "@/services";
+import { documentosService, edgeFunctionsService, evidenciasTimelineService } from "@/services";
 import type { DocumentoResumo } from "@/types";
 import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
@@ -278,6 +279,7 @@ export function DocumentosPage() {
       {documentoPreview && (
         <DocumentPreviewModal
           documento={documentoPreview}
+          empresaId={selectedCompanyId}
           onClose={() => setDocumentoPreview(null)}
         />
       )}
@@ -303,11 +305,19 @@ export function DocumentosPage() {
 
 function DocumentPreviewModal({
   documento,
+  empresaId,
   onClose,
 }: {
   documento: DocumentoResumo;
+  empresaId: string | null;
   onClose: () => void;
 }) {
+  const { data: timeline = [], isLoading } = useQuery({
+    queryKey: ["evidencias-timeline", empresaId, "documentos", documento.id],
+    queryFn: () => evidenciasTimelineService.listar(empresaId!, "documentos", documento.id),
+    enabled: Boolean(empresaId && documento.id),
+  });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
       <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
@@ -342,6 +352,9 @@ function DocumentPreviewModal({
                 </dd>
               </div>
             </dl>
+            <div className="mt-5">
+              <EvidenciasTimeline items={timeline} isLoading={isLoading} />
+            </div>
           </aside>
 
           <section className="min-h-[420px] overflow-auto bg-muted/30 p-5">

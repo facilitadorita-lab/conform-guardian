@@ -7,6 +7,72 @@ import { useAuthContext } from "@/hooks/use-conform-data";
 import { adminMasterService } from "@/services/adminMasterService";
 import { setSelectedCompanyId } from "@/services/authService";
 
+const checklistDocumentalPorTipo: Record<string, string[]> = {
+  "Clínica": [
+    "Alvará Sanitário",
+    "Licença de Funcionamento",
+    "AVCB",
+    "PGRSS",
+    "Contrato de coleta de resíduos",
+  ],
+  "Laboratório": [
+    "Alvará Sanitário",
+    "Licença de Funcionamento",
+    "Certificado de calibração dos equipamentos críticos",
+    "Plano de controle de qualidade",
+    "PGRSS",
+  ],
+  "Farmácia": [
+    "Autorização de Funcionamento de Empresa",
+    "Alvará Sanitário",
+    "Certidão de Regularidade Técnica",
+    "Licença de Funcionamento",
+    "PGRSS",
+  ],
+  "Distribuidora": [
+    "AFE",
+    "Licença Sanitária",
+    "AVCB",
+    "Procedimento de transporte",
+    "Contrato de controle de pragas",
+  ],
+  "Clínica odontológica": [
+    "Alvará Sanitário",
+    "Licença de Funcionamento",
+    "PGRSS",
+    "Comprovante de responsável técnico",
+    "Controle radiológico quando aplicável",
+  ],
+  "Diagnóstico por imagem": [
+    "Alvará Sanitário",
+    "Licença CNEN quando aplicável",
+    "Plano de proteção radiológica",
+    "Laudos de controle de qualidade",
+    "PGRSS",
+  ],
+  "Armazenamento": [
+    "Licença de Funcionamento",
+    "AVCB",
+    "Mapeamento térmico",
+    "Procedimento de monitoramento ambiental",
+    "Controle de pragas",
+  ],
+  "Banco biológico": [
+    "Alvará Sanitário",
+    "Plano de contingência",
+    "Qualificação térmica de equipamentos",
+    "Registro de monitoramento",
+    "PGRSS",
+  ],
+  "Laboratório de alimentos": [
+    "Alvará Sanitário",
+    "Manual de boas práticas",
+    "Plano APPCC quando aplicável",
+    "Controle de calibração",
+    "Controle de pragas",
+  ],
+};
+
 export function MasterEmpresasPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -209,6 +275,10 @@ function NovaEmpresaModal({
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const [tipoSelecionado, setTipoSelecionado] = useState("Clínica");
+  const checklist =
+    checklistDocumentalPorTipo[tipoSelecionado] ?? checklistDocumentalPorTipo["Clínica"];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
       <form
@@ -244,8 +314,9 @@ function NovaEmpresaModal({
             </span>
             <select
               name="tipo_estabelecimento"
+              value={tipoSelecionado}
+              onChange={(event) => setTipoSelecionado(event.target.value)}
               className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              defaultValue="Clínica"
             >
               <option>Clínica</option>
               <option>Laboratório</option>
@@ -266,6 +337,30 @@ function NovaEmpresaModal({
           <Input label="Responsável legal" name="responsavel_legal" />
           <Input label="Responsável técnico" name="responsavel_tecnico" />
           <TextArea label="Observações" name="observacoes" />
+
+          <div className="md:col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">
+                  Checklist inteligente inicial
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  O ambiente será preparado com documentos sugeridos para{" "}
+                  <strong>{tipoSelecionado}</strong>. Documentos extras poderão ser adicionados
+                  depois e ficarão somente nesta empresa.
+                </p>
+                <ul className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+                  {checklist.map((documento) => (
+                    <li key={documento} className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      <span>{documento}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
 
           {erro ? (
             <div className="md:col-span-2 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">

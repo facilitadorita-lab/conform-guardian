@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VencimentosRouteImport } from './routes/vencimentos'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as PendenciasRouteImport } from './routes/pendencias'
@@ -33,6 +34,11 @@ import { Route as MasterEmpresasRouteImport } from './routes/master.empresas'
 import { Route as MasterAssinaturasRouteImport } from './routes/master.assinaturas'
 import { Route as EquipamentosIdRouteImport } from './routes/equipamentos.$id'
 
+const VencimentosRoute = VencimentosRouteImport.update({
+  id: '/vencimentos',
+  path: '/vencimentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsuariosRoute = UsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/pendencias': typeof PendenciasRoute
   '/relatorios': typeof RelatoriosRoute
   '/usuarios': typeof UsuariosRoute
+  '/vencimentos': typeof VencimentosRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/empresas': typeof MasterEmpresasRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/pendencias': typeof PendenciasRoute
   '/relatorios': typeof RelatoriosRoute
   '/usuarios': typeof UsuariosRoute
+  '/vencimentos': typeof VencimentosRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/empresas': typeof MasterEmpresasRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/pendencias': typeof PendenciasRoute
   '/relatorios': typeof RelatoriosRoute
   '/usuarios': typeof UsuariosRoute
+  '/vencimentos': typeof VencimentosRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/empresas': typeof MasterEmpresasRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/pendencias'
     | '/relatorios'
     | '/usuarios'
+    | '/vencimentos'
     | '/equipamentos/$id'
     | '/master/assinaturas'
     | '/master/empresas'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/pendencias'
     | '/relatorios'
     | '/usuarios'
+    | '/vencimentos'
     | '/equipamentos/$id'
     | '/master/assinaturas'
     | '/master/empresas'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/pendencias'
     | '/relatorios'
     | '/usuarios'
+    | '/vencimentos'
     | '/equipamentos/$id'
     | '/master/assinaturas'
     | '/master/empresas'
@@ -318,6 +330,7 @@ export interface RootRouteChildren {
   PendenciasRoute: typeof PendenciasRoute
   RelatoriosRoute: typeof RelatoriosRoute
   UsuariosRoute: typeof UsuariosRoute
+  VencimentosRoute: typeof VencimentosRoute
   MasterAssinaturasRoute: typeof MasterAssinaturasRoute
   MasterEmpresasRoute: typeof MasterEmpresasRoute
   MasterFinanceiroRoute: typeof MasterFinanceiroRoute
@@ -331,6 +344,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vencimentos': {
+      id: '/vencimentos'
+      path: '/vencimentos'
+      fullPath: '/vencimentos'
+      preLoaderRoute: typeof VencimentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/usuarios': {
       id: '/usuarios'
       path: '/usuarios'
@@ -521,6 +541,7 @@ const rootRouteChildren: RootRouteChildren = {
   PendenciasRoute: PendenciasRoute,
   RelatoriosRoute: RelatoriosRoute,
   UsuariosRoute: UsuariosRoute,
+  VencimentosRoute: VencimentosRoute,
   MasterAssinaturasRoute: MasterAssinaturasRoute,
   MasterEmpresasRoute: MasterEmpresasRoute,
   MasterFinanceiroRoute: MasterFinanceiroRoute,

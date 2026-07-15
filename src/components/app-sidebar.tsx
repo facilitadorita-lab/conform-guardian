@@ -6,6 +6,7 @@ import {
   Cog,
   ClipboardList,
   Bell,
+  CalendarClock,
   BarChart3,
   ShieldCheck,
   Users,
@@ -41,6 +42,7 @@ const groups: { label: string; items: NavItem[] }[] = [
     label: "Controle",
     items: [
       { to: "/alertas", label: "Alertas", icon: Bell },
+      { to: "/vencimentos", label: "Vencimentos", icon: CalendarClock },
       { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
       { to: "/auditoria", label: "Auditoria", icon: ShieldCheck },
     ],

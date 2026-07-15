@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, CheckCircle2, Eye, Paperclip, Plus, X } from "lucide-react";
+import { EvidenciasTimeline } from "@/components/evidencias-timeline";
 import { useAuthContext, useEquipamento } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
-import { edgeFunctionsService } from "@/services";
+import { edgeFunctionsService, evidenciasTimelineService } from "@/services";
 import {
   equipamentosService,
   type CriarCalibracaoPayload,
@@ -371,7 +372,13 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         />
       )}
 
-      {previewItem && <AttachmentPreview item={previewItem} onClose={() => setPreviewItem(null)} />}
+      {previewItem && (
+        <AttachmentPreview
+          item={previewItem}
+          empresaId={selectedCompanyId}
+          onClose={() => setPreviewItem(null)}
+        />
+      )}
     </AppShell>
   );
 }
@@ -733,11 +740,21 @@ function ManutencaoFields() {
 
 function AttachmentPreview({
   item,
+  empresaId,
   onClose,
 }: {
   item: EquipamentoHistoricoItem;
+  empresaId: string | null;
   onClose: () => void;
 }) {
+  const modulo = item.modulo ?? "";
+  const registroId = item.registroId ?? item.id ?? "";
+  const { data: timeline = [], isLoading } = useQuery({
+    queryKey: ["evidencias-timeline", empresaId, modulo, registroId],
+    queryFn: () => evidenciasTimelineService.listar(empresaId!, modulo, registroId),
+    enabled: Boolean(empresaId && modulo && registroId),
+  });
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
       <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl">
@@ -779,6 +796,9 @@ function AttachmentPreview({
               </div>
             </div>
           )}
+          <div className="mt-5">
+            <EvidenciasTimeline items={timeline} isLoading={isLoading} />
+          </div>
         </div>
       </div>
     </div>
