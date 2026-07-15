@@ -1,14 +1,27 @@
+import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowRight,
+  CalendarClock,
   CheckCircle2,
   ClipboardList,
+  FileCheck2,
   FileWarning,
-  TrendingUp,
+  ShieldCheck,
   Wrench,
 } from "lucide-react";
+import {
+  ActionItem,
+  ComplianceScore,
+  ExecutiveMetricCard,
+  RiskBar,
+  SectionHeader,
+  type ExecutiveTone,
+} from "@/components/conform/dashboard-widgets";
+import { EmptyState, Surface } from "@/components/conform/surface";
 import { useDashboardData, useOnboardingEmpresa } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import type { PendenciaResumo } from "@/types";
 import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
@@ -30,269 +43,436 @@ export function DashboardPage() {
     pendencias: [],
   };
 
+  const classification = getComplianceClassification(dashboard.indiceConformidade);
+  const priorities = buildPriorities(dashboard);
+  const riskItems = [
+    {
+      label: "Documentos",
+      value: dashboard.documentosVencidos + dashboard.vencendo30,
+      tone: dashboard.documentosVencidos > 0 ? "danger" : "warning",
+    },
+    {
+      label: "Equipamentos",
+      value: dashboard.equipamentosAtencao,
+      tone: "warning",
+    },
+    {
+      label: "Manutenções",
+      value: dashboard.manutencoesVencidas + dashboard.manutencoesProximas,
+      tone: dashboard.manutencoesVencidas > 0 ? "danger" : "warning",
+    },
+    {
+      label: "Pendências",
+      value: dashboard.pendenciasCriticas + dashboard.semResponsavel,
+      tone: dashboard.pendenciasCriticas > 0 ? "danger" : "info",
+    },
+  ] satisfies Array<{ label: string; value: number; tone: ExecutiveTone }>;
+  const riskMax = Math.max(...riskItems.map((item) => item.value), 1);
+
   return (
     <AppShell
       title="Dashboard"
-      description="Visão consolidada de conformidade, vencimentos e pendências críticas."
+      description="Central executiva para acompanhar conformidade, vencimentos, riscos e ações prioritárias da empresa."
       actions={
-        <button className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-          Exportar relatório <ArrowRight className="h-4 w-4" />
-        </button>
+        <Link
+          to="/relatorios"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm cf-transition hover:bg-primary/90"
+        >
+          Gerar relatório <ArrowRight className="h-4 w-4" />
+        </Link>
       }
     >
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-6 lg:col-span-1">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Índice de Conformidade
-            </span>
-            <TrendingUp className="h-4 w-4 text-success" />
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-5xl font-semibold tabular-nums text-primary">
-              {dashboard.indiceConformidade}%
-            </span>
-            <span className="text-sm font-medium text-success">+2,4 pts</span>
-          </div>
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full bg-success"
-              style={{ width: `${dashboard.indiceConformidade}%` }}
-            />
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Calculado no backend considerando documentos, equipamentos, manutenções e pendências.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:col-span-2">
-          <KpiCard
-            label="Documentos vencidos"
-            value={dashboard.documentosVencidos}
-            tone="vencido"
-            icon={FileWarning}
-          />
-          <KpiCard
-            label="Vencendo em 7d"
-            value={dashboard.vencendo7}
-            tone="critico"
-            icon={AlertTriangle}
-          />
-          <KpiCard
-            label="Vencendo em 30d"
-            value={dashboard.vencendo30}
-            tone="atencao"
-            icon={AlertTriangle}
-          />
-          <KpiCard
-            label="Vencendo em 60d"
-            value={dashboard.vencendo60}
-            tone="info"
-            icon={AlertTriangle}
-          />
-          <KpiCard
-            label="Equip. em atenção"
-            value={dashboard.equipamentosAtencao}
-            tone="atencao"
-            icon={AlertTriangle}
-          />
-          <KpiCard
-            label="Manut. vencidas"
-            value={dashboard.manutencoesVencidas}
-            tone="vencido"
-            icon={Wrench}
-          />
-          <KpiCard
-            label="Manut. próximas"
-            value={dashboard.manutencoesProximas}
-            tone="atencao"
-            icon={Wrench}
-          />
-          <KpiCard
-            label="Pendências críticas"
-            value={dashboard.pendenciasCriticas}
-            tone="critico"
-            icon={ClipboardList}
-          />
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <MiniStat
-          label="Registros sem responsável"
-          value={dashboard.semResponsavel}
-          hint="Atribuir para permitir rastreabilidade"
+      <section className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+        <ComplianceScore
+          value={dashboard.indiceConformidade}
+          classification={classification.label}
+          description={classification.description}
         />
-        <MiniStat
-          label="Conformidade geral"
-          value={`${dashboard.indiceConformidade}%`}
-          hint="Meta operacional: >= 95%"
-          tone="ok"
-        />
-      </section>
 
-      {onboarding ? (
-        <section className="rounded-xl border border-border bg-card">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-4">
-            <div>
-              <h2 className="text-base font-semibold">Central de implantação</h2>
-              <p className="text-xs text-muted-foreground">
-                Checklist para deixar o ambiente pronto para operação e auditoria.
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-semibold text-primary">
-                {onboarding.progresso_percentual}%
-              </div>
-              <div className="text-[11px] text-muted-foreground">
-                {onboarding.concluidos}/{onboarding.total} concluídos
-              </div>
-            </div>
-          </div>
-          <div className="grid gap-3 p-5 md:grid-cols-2">
-            {onboarding.itens.map((item) => (
-              <div
-                key={item.id}
-                className={`rounded-lg border px-4 py-3 ${
-                  item.concluido
-                    ? "border-success/30 bg-success/5"
-                    : "border-warning/30 bg-warning/5"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <CheckCircle2
-                    className={`mt-0.5 h-4 w-4 ${
-                      item.concluido ? "text-success" : "text-warning"
-                    }`}
-                  />
-                  <div>
-                    <div className="text-sm font-medium">{item.titulo}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{item.descricao}</div>
-                  </div>
-                </div>
-              </div>
+        <Surface className="flex flex-col gap-5">
+          <SectionHeader
+            title="Mapa de risco operacional"
+            description="Distribuição dos itens que exigem atenção, calculada com os dados atuais."
+          />
+          <div className="space-y-5">
+            {riskItems.map((item) => (
+              <RiskBar
+                key={item.label}
+                label={item.label}
+                value={item.value}
+                max={riskMax}
+                tone={item.tone}
+              />
             ))}
           </div>
-        </section>
-      ) : null}
+        </Surface>
+      </section>
 
-      <section className="rounded-xl border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div>
-            <h2 className="text-base font-semibold">Pendências Críticas</h2>
-            <p className="text-xs text-muted-foreground">Itens que exigem tratativa imediata.</p>
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <ExecutiveMetricCard
+          title="Documentos vencidos"
+          value={dashboard.documentosVencidos}
+          description="Regularize primeiro para reduzir risco imediato."
+          tone={dashboard.documentosVencidos > 0 ? "danger" : "success"}
+          icon={FileWarning}
+          href="/documentos"
+        />
+        <ExecutiveMetricCard
+          title="Vencendo em 7 dias"
+          value={dashboard.vencendo7}
+          description="Itens que precisam de ação no curto prazo."
+          tone={dashboard.vencendo7 > 0 ? "danger" : "success"}
+          icon={AlertTriangle}
+          href="/vencimentos"
+        />
+        <ExecutiveMetricCard
+          title="Vencendo em 30 dias"
+          value={dashboard.vencendo30}
+          description="Planejamento operacional do mês."
+          tone={dashboard.vencendo30 > 0 ? "warning" : "success"}
+          icon={CalendarClock}
+          href="/vencimentos"
+        />
+        <ExecutiveMetricCard
+          title="Vencendo em 60 dias"
+          value={dashboard.vencendo60}
+          description="Janela preventiva para evitar urgências."
+          tone={dashboard.vencendo60 > 0 ? "info" : "success"}
+          icon={FileCheck2}
+          href="/vencimentos"
+        />
+        <ExecutiveMetricCard
+          title="Equipamentos em atenção"
+          value={dashboard.equipamentosAtencao}
+          description="Equipamentos com calibração, qualificação ou status sensível."
+          tone={dashboard.equipamentosAtencao > 0 ? "warning" : "success"}
+          icon={ShieldCheck}
+          href="/equipamentos"
+        />
+        <ExecutiveMetricCard
+          title="Manutenções vencidas"
+          value={dashboard.manutencoesVencidas}
+          description="Atrasos com impacto operacional direto."
+          tone={dashboard.manutencoesVencidas > 0 ? "danger" : "success"}
+          icon={Wrench}
+          href="/manutencoes"
+        />
+        <ExecutiveMetricCard
+          title="Manutenções próximas"
+          value={dashboard.manutencoesProximas}
+          description="Serviços que devem entrar na programação."
+          tone={dashboard.manutencoesProximas > 0 ? "warning" : "success"}
+          icon={Wrench}
+          href="/manutencoes"
+        />
+        <ExecutiveMetricCard
+          title="Pendências críticas"
+          value={dashboard.pendenciasCriticas}
+          description="Tratativas que exigem resposta rápida."
+          tone={dashboard.pendenciasCriticas > 0 ? "danger" : "success"}
+          icon={ClipboardList}
+          href="/pendencias"
+        />
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+        <Surface>
+          <SectionHeader
+            title="Prioridades de hoje"
+            description="Ações sugeridas a partir dos riscos e vencimentos atuais."
+          />
+          <div className="mt-5 space-y-3">
+            {priorities.length > 0 ? (
+              priorities.map((item) => (
+                <ActionItem
+                  key={item.title}
+                  title={item.title}
+                  description={item.description}
+                  tone={item.tone}
+                  href={item.href}
+                />
+              ))
+            ) : (
+              <EmptyState
+                icon={CheckCircle2}
+                title="Nenhuma ação crítica para hoje"
+                description="Os dados atuais não indicam itens vencidos ou pendências críticas. Continue acompanhando os próximos vencimentos."
+              />
+            )}
           </div>
-          <button className="text-xs font-medium text-accent hover:underline">Ver todas</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs text-muted-foreground">
-              <tr>
-                <th className="px-6 py-2.5 text-left font-medium">Item</th>
-                <th className="px-4 py-2.5 text-left font-medium">Tipo</th>
-                <th className="px-4 py-2.5 text-left font-medium">Responsavel</th>
-                <th className="px-4 py-2.5 text-left font-medium">Vencimento</th>
-                <th className="px-4 py-2.5 text-left font-medium">Dias</th>
-                <th className="px-4 py-2.5 text-left font-medium">Status</th>
-                <th className="px-6 py-2.5 text-right font-medium">Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {dashboard.pendencias.map((pendencia) => (
-                <tr key={pendencia.id} className="hover:bg-muted/30">
-                  <td className="px-6 py-3 font-medium">{pendencia.item}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{pendencia.tipo}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{pendencia.responsavel}</td>
-                  <td className="px-4 py-3 tabular-nums">{formatDateBR(pendencia.vencimento)}</td>
-                  <td
-                    className={`px-4 py-3 font-medium tabular-nums ${
-                      pendencia.diasRestantes < 0
-                        ? "text-danger"
-                        : pendencia.diasRestantes < 7
-                          ? "text-warning"
-                          : ""
+        </Surface>
+
+        <Surface>
+          <SectionHeader
+            title="Central de implantação"
+            description="Acompanhe a preparação do ambiente para operação e auditoria."
+          />
+          {onboarding ? (
+            <>
+              <div className="mt-5 rounded-2xl border border-border bg-muted/30 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-semibold">Progresso da implantação</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {onboarding.concluidos}/{onboarding.total} etapas concluídas
+                    </div>
+                  </div>
+                  <div className="text-3xl font-semibold text-primary tabular-nums">
+                    {onboarding.progresso_percentual}%
+                  </div>
+                </div>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-card">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{
+                      width: `${Math.max(0, Math.min(onboarding.progresso_percentual, 100))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {onboarding.itens.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`rounded-2xl border px-4 py-3 ${
+                      item.concluido
+                        ? "border-success/25 bg-success/5"
+                        : "border-warning/25 bg-warning/5"
                     }`}
                   >
-                    {pendencia.diasRestantes < 0
-                      ? `${Math.abs(pendencia.diasRestantes)}d atraso`
-                      : `${pendencia.diasRestantes}d`}
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge tone={pendencia.status}>
-                      {statusLabel(pendencia.status)}
-                    </StatusBadge>
-                  </td>
-                  <td className="px-6 py-3 text-right">
-                    <button className="text-xs font-medium text-accent hover:underline">
-                      Abrir
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2
+                        className={`mt-0.5 h-4 w-4 ${
+                          item.concluido ? "text-success" : "text-warning"
+                        }`}
+                      />
+                      <div>
+                        <div className="text-sm font-medium">{item.titulo}</div>
+                        <div className="mt-1 text-xs leading-5 text-muted-foreground">
+                          {item.descricao}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <EmptyState
+              icon={ClipboardList}
+              title="Checklist ainda não disponível"
+              description="Assim que o backend retornar as etapas de implantação, o progresso será exibido aqui."
+            />
+          )}
+        </Surface>
       </section>
+
+      <Surface>
+        <SectionHeader
+          title="Pendências críticas"
+          description="Itens que exigem tratativa, responsável e prazo acompanhados de perto."
+          action={
+            <Link to="/pendencias" className="text-sm font-medium text-accent hover:underline">
+              Ver todas
+            </Link>
+          }
+        />
+        <div className="mt-5">
+          {dashboard.pendencias.length > 0 ? (
+            <>
+              <div className="hidden overflow-hidden rounded-2xl border border-border md:block">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/60 text-xs text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-3 text-left font-medium">Item</th>
+                      <th className="px-4 py-3 text-left font-medium">Origem</th>
+                      <th className="px-4 py-3 text-left font-medium">Responsável</th>
+                      <th className="px-4 py-3 text-left font-medium">Vencimento</th>
+                      <th className="px-4 py-3 text-left font-medium">Prazo</th>
+                      <th className="px-5 py-3 text-right font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border bg-card">
+                    {dashboard.pendencias.slice(0, 8).map((pendencia) => (
+                      <PendenciaRow key={pendencia.id} pendencia={pendencia} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="grid gap-3 md:hidden">
+                {dashboard.pendencias.slice(0, 8).map((pendencia) => (
+                  <PendenciaMobileCard key={pendencia.id} pendencia={pendencia} />
+                ))}
+              </div>
+            </>
+          ) : (
+            <EmptyState
+              icon={CheckCircle2}
+              title="Sem pendências críticas"
+              description="Não há pendências críticas cadastradas para a empresa selecionada neste momento."
+            />
+          )}
+        </div>
+      </Surface>
     </AppShell>
   );
 }
 
-function KpiCard({
-  label,
-  value,
-  tone,
-  icon: Icon,
-}: {
-  label: string;
-  value: number;
-  tone: "vencido" | "critico" | "atencao" | "ok" | "info";
-  icon: typeof CheckCircle2;
-}) {
-  const toneColor: Record<string, string> = {
-    vencido: "text-danger",
-    critico: "text-danger",
-    atencao: "text-warning",
-    ok: "text-success",
-    info: "text-accent",
-  };
-
+function PendenciaRow({ pendencia }: { pendencia: PendenciaResumo }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </span>
-        <Icon className={`h-4 w-4 ${toneColor[tone]}`} />
-      </div>
-      <div className={`mt-2 text-3xl font-semibold tabular-nums ${toneColor[tone]}`}>{value}</div>
-    </div>
+    <tr className="cf-transition hover:bg-muted/30">
+      <td className="px-5 py-4">
+        <div className="font-medium">{pendencia.item}</div>
+      </td>
+      <td className="px-4 py-4 text-muted-foreground">{pendencia.tipo}</td>
+      <td className="px-4 py-4 text-muted-foreground">{pendencia.responsavel}</td>
+      <td className="px-4 py-4 tabular-nums">{formatDateBR(pendencia.vencimento)}</td>
+      <td className="px-4 py-4">
+        <PrazoLabel diasRestantes={pendencia.diasRestantes} />
+      </td>
+      <td className="px-5 py-4 text-right">
+        <StatusBadge tone={pendencia.status}>{statusLabel(pendencia.status)}</StatusBadge>
+      </td>
+    </tr>
   );
 }
 
-function MiniStat({
-  label,
-  value,
-  hint,
-  tone,
-}: {
-  label: string;
-  value: number | string;
-  hint?: string;
-  tone?: "ok";
-}) {
+function PendenciaMobileCard({ pendencia }: { pendencia: PendenciaResumo }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
+    <article className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold">{pendencia.item}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{pendencia.tipo}</p>
+        </div>
+        <StatusBadge tone={pendencia.status}>{statusLabel(pendencia.status)}</StatusBadge>
       </div>
-      <div
-        className={`mt-2 text-2xl font-semibold tabular-nums ${
-          tone === "ok" ? "text-success" : "text-primary"
-        }`}
-      >
-        {value}
+      <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+        <div>
+          <div className="text-muted-foreground">Responsável</div>
+          <div className="mt-1 font-medium">{pendencia.responsavel}</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">Vencimento</div>
+          <div className="mt-1 font-medium">{formatDateBR(pendencia.vencimento)}</div>
+        </div>
       </div>
-      {hint ? <div className="mt-1 text-xs text-muted-foreground">{hint}</div> : null}
-    </div>
+    </article>
   );
+}
+
+function PrazoLabel({ diasRestantes }: { diasRestantes: number }) {
+  if (diasRestantes < 0) {
+    return (
+      <span className="font-semibold text-danger tabular-nums">
+        {Math.abs(diasRestantes)}d em atraso
+      </span>
+    );
+  }
+
+  if (diasRestantes <= 7) {
+    return (
+      <span className="font-semibold text-warning tabular-nums">{diasRestantes}d restantes</span>
+    );
+  }
+
+  return <span className="text-muted-foreground tabular-nums">{diasRestantes}d restantes</span>;
+}
+
+function getComplianceClassification(value: number) {
+  if (value >= 95) {
+    return {
+      label: "Conforme",
+      description:
+        "A empresa está dentro da meta operacional. Mantenha o acompanhamento de vencimentos e evidências.",
+    };
+  }
+
+  if (value >= 85) {
+    return {
+      label: "Atenção",
+      description:
+        "A empresa está próxima da meta, mas existem itens que podem gerar não conformidade se não forem tratados.",
+    };
+  }
+
+  return {
+    label: "Risco elevado",
+    description:
+      "A empresa exige plano de ação imediato. Priorize vencidos, pendências críticas e itens sem responsável.",
+  };
+}
+
+function buildPriorities(dashboard: {
+  documentosVencidos: number;
+  vencendo7: number;
+  equipamentosAtencao: number;
+  manutencoesVencidas: number;
+  semResponsavel: number;
+  pendenciasCriticas: number;
+}) {
+  const items: Array<{
+    title: string;
+    description: string;
+    tone: ExecutiveTone;
+    href: string;
+  }> = [];
+
+  if (dashboard.documentosVencidos > 0) {
+    items.push({
+      title: "Regularizar documentos vencidos",
+      description: `${dashboard.documentosVencidos} documento(s) vencido(s) impactando o índice de conformidade.`,
+      tone: "danger",
+      href: "/documentos",
+    });
+  }
+
+  if (dashboard.vencendo7 > 0) {
+    items.push({
+      title: "Resolver vencimentos dos próximos 7 dias",
+      description: `${dashboard.vencendo7} item(ns) estão na janela crítica de prazo.`,
+      tone: "danger",
+      href: "/vencimentos",
+    });
+  }
+
+  if (dashboard.manutencoesVencidas > 0) {
+    items.push({
+      title: "Tratar manutenções vencidas",
+      description: `${dashboard.manutencoesVencidas} manutenção(ões) vencida(s) precisam de registro ou execução.`,
+      tone: "danger",
+      href: "/manutencoes",
+    });
+  }
+
+  if (dashboard.pendenciasCriticas > 0) {
+    items.push({
+      title: "Acompanhar pendências críticas",
+      description: `${dashboard.pendenciasCriticas} pendência(s) exigem tratativa imediata.`,
+      tone: "warning",
+      href: "/pendencias",
+    });
+  }
+
+  if (dashboard.semResponsavel > 0) {
+    items.push({
+      title: "Atribuir responsáveis",
+      description: `${dashboard.semResponsavel} registro(s) sem responsável reduzem rastreabilidade operacional.`,
+      tone: "warning",
+      href: "/pendencias",
+    });
+  }
+
+  if (dashboard.equipamentosAtencao > 0) {
+    items.push({
+      title: "Revisar equipamentos em atenção",
+      description: `${dashboard.equipamentosAtencao} equipamento(s) devem ser revisados no módulo de equipamentos.`,
+      tone: "info",
+      href: "/equipamentos",
+    });
+  }
+
+  return items.slice(0, 5);
 }
