@@ -39,6 +39,7 @@ export interface DocumentoResumo {
   anexoId?: UUID | null;
   anexoUrl?: string | null;
   anexoNome?: string | null;
+  anexoMimeType?: string | null;
 }
 
 export interface EquipamentoResumo {

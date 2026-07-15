@@ -108,6 +108,7 @@ function normalizeDocumento(documento: ApiDocumento): DocumentoResumo {
     setor: documento.setor ?? documento.setor_unidade ?? "-",
     anexoUrl: documento.anexoUrl ?? null,
     anexoNome: documento.anexoNome ?? null,
+    anexoMimeType: documento.anexoMimeType ?? null,
   };
 }
 
@@ -160,6 +161,7 @@ async function hydrateDocumentAttachmentUrls(
       anexoId: anexo.id,
       anexoUrl: signedUrls.get(anexo.storage_path) ?? null,
       anexoNome: anexo.nome_original ?? "Anexo do documento",
+      anexoMimeType: anexo.mime_type ?? null,
     };
   });
 }

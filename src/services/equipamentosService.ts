@@ -135,6 +135,7 @@ export type EquipamentoHistoricoItem = {
   anexoId?: string | null;
   documentoUrl?: string | null;
   documentoNome?: string | null;
+  documentoMimeType?: string | null;
 };
 
 export type CriarCalibracaoPayload = {
@@ -357,6 +358,7 @@ function normalizeTimeline(items: unknown, kind: string): EquipamentoHistoricoIt
         typeof item.substitui_anexo_id === "string" ? item.substitui_anexo_id : null,
       documentoUrl: typeof item.url === "string" ? item.url : null,
       documentoNome: String(item.nome_original ?? item.nome ?? item.finalidade ?? ""),
+      documentoMimeType: typeof item.mime_type === "string" ? item.mime_type : null,
     };
   });
 }
@@ -437,6 +439,7 @@ type ApiAnexo = {
   nome_original?: string | null;
   status?: string | null;
   finalidade?: string | null;
+  mime_type?: string | null;
   versao?: number | null;
   substitui_anexo_id?: string | null;
 };
@@ -460,7 +463,7 @@ async function hydrateEquipamentoAttachmentUrls(
   const { data, error } = await supabase
     .from("anexos")
     .select(
-      "id, registro_id, modulo, storage_path, nome_original, status, finalidade, versao, substitui_anexo_id",
+      "id, registro_id, modulo, storage_path, nome_original, mime_type, status, finalidade, versao, substitui_anexo_id",
     )
     .eq("empresa_id", empresaId)
     .in("registro_id", registroIds)
@@ -497,6 +500,7 @@ async function hydrateEquipamentoAttachmentUrls(
       ...item,
       documentoUrl: signedUrls.get(preferred.id) ?? item.documentoUrl ?? null,
       documentoNome: preferred.nome_original ?? item.documentoNome ?? item.descricao,
+      documentoMimeType: preferred.mime_type ?? item.documentoMimeType ?? null,
       anexoId: preferred.id,
       finalidade: preferred.finalidade ?? item.finalidade ?? null,
       anexoStatus: preferred.status ?? item.anexoStatus ?? null,
@@ -520,6 +524,7 @@ async function hydrateEquipamentoAttachmentUrls(
       anexoId: anexo.id,
       documentoUrl: signedUrls.get(anexo.id) ?? null,
       documentoNome: anexo.nome_original ?? item.documentoNome ?? "Anexo",
+      documentoMimeType: anexo.mime_type ?? item.documentoMimeType ?? null,
     };
   });
 

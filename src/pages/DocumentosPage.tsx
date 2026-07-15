@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, Eye, Filter, Plus, X } from "lucide-react";
+import { AttachmentViewer } from "@/components/attachment-viewer";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
 import { useAuthContext, useDocumentos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
@@ -358,26 +359,13 @@ function DocumentPreviewModal({
           </aside>
 
           <section className="min-h-[420px] overflow-auto bg-muted/30 p-5">
-            {documento.anexoUrl ? (
-              <iframe
-                title={`Visualizacao de ${documento.nome}`}
-                src={documento.anexoUrl}
-                className="h-[70vh] min-h-[420px] w-full rounded-xl border border-border bg-background"
-              />
-            ) : (
-              <div className="flex h-full min-h-[420px] items-center justify-center rounded-xl border border-dashed border-border bg-background p-8 text-center">
-                <div className="max-w-md">
-                  <Eye className="mx-auto h-10 w-10 text-muted-foreground" />
-                  <h3 className="mt-4 text-base font-semibold text-foreground">
-                    Pre-visualizacao do registro
-                  </h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Este documento ainda nao possui arquivo disponivel para abrir no navegador.
-                    Mesmo assim, voce consegue conferir os dados principais sem baixar nada.
-                  </p>
-                </div>
-              </div>
-            )}
+            <AttachmentViewer
+              url={documento.anexoUrl}
+              name={documento.anexoNome}
+              mimeType={documento.anexoMimeType}
+              title={documento.nome}
+              emptyDescription="Este documento ainda não possui arquivo disponível para abrir no navegador. Mesmo assim, você consegue conferir os dados principais sem baixar nada."
+            />
           </section>
         </div>
       </div>

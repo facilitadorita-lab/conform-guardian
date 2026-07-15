@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowLeft, CheckCircle2, Eye, Paperclip, Plus, X } from "lucide-react";
+import { AttachmentViewer } from "@/components/attachment-viewer";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
 import { useAuthContext, useEquipamento } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
@@ -53,6 +54,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
     mutationFn: async ({ kind, formData }: { kind: FormKind; formData: FormData }) => {
       if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
       let upload: { anexoId?: string; signedUrl?: string } | null = null;
+      const file = formData.get("anexo");
       if (file instanceof File && file.size > 0) {
         edgeFunctionsService.validateAttachmentFile(file);
       }
@@ -120,7 +122,6 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         descricao = payload.nome_servico || "Manutenção";
       }
 
-      const file = formData.get("anexo");
       if (file instanceof File && file.size > 0) {
         setUploadProgress(0);
         upload = await edgeFunctionsService.uploadAnexoSeguro(file, {
@@ -776,26 +777,13 @@ function AttachmentPreview({
         </div>
 
         <div className="min-h-[420px] overflow-auto bg-muted/30 p-5">
-          {item.documentoUrl ? (
-            <iframe
-              title={`Visualização de ${item.documentoNome || item.descricao}`}
-              src={item.documentoUrl}
-              className="h-[70vh] min-h-[420px] w-full rounded-xl border border-border bg-background"
-            />
-          ) : (
-            <div className="flex min-h-[420px] items-center justify-center rounded-xl border border-dashed border-border bg-background p-8 text-center">
-              <div className="max-w-md">
-                <Eye className="mx-auto h-10 w-10 text-muted-foreground" />
-                <h3 className="mt-4 text-base font-semibold text-foreground">
-                  Pré-visualização do registro
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Este item ainda não possui arquivo disponível para abrir no navegador. Quando
-                  houver anexo real, ele será exibido aqui sem precisar baixar.
-                </p>
-              </div>
-            </div>
-          )}
+          <AttachmentViewer
+            url={item.documentoUrl}
+            name={item.documentoNome}
+            mimeType={item.documentoMimeType}
+            title={item.documentoNome || item.descricao}
+            emptyDescription="Este item ainda não possui arquivo disponível para abrir no navegador. Quando houver anexo real, ele será exibido aqui sem precisar baixar."
+          />
           <div className="mt-5">
             <EvidenciasTimeline items={timeline} isLoading={isLoading} />
           </div>
