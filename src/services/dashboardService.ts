@@ -7,6 +7,11 @@ export interface DashboardData extends DashboardResumo {
   pendencias: PendenciaResumo[];
 }
 
+type ApiPendenciasResumo = {
+  abertas?: number;
+  sem_responsavel?: number;
+};
+
 type ApiDashboardResponse = Partial<DashboardData> & {
   conformidade_percentual?: number;
   documentos?: {
@@ -25,12 +30,7 @@ type ApiDashboardResponse = Partial<DashboardData> & {
     vencidas?: number;
     a_vencer?: number;
   };
-  pendencias?:
-    | PendenciaResumo[]
-    | {
-        abertas?: number;
-        sem_responsavel?: number;
-      };
+  pendencias?: PendenciaResumo[] | ApiPendenciasResumo;
   pendencias_criticas?: Array<{
     id?: string;
     modulo?: string;
@@ -53,8 +53,9 @@ export const dashboardService = {
 };
 
 function normalizeDashboard(data: ApiDashboardResponse): DashboardData {
-  const pendencias = Array.isArray(data.pendencias)
-    ? data.pendencias
+  const pendenciasRaw = data.pendencias as PendenciaResumo[] | ApiPendenciasResumo | undefined;
+  const pendencias = Array.isArray(pendenciasRaw)
+    ? pendenciasRaw
     : normalizePendenciasCriticas(data.pendencias_criticas ?? []);
 
   return {
@@ -68,12 +69,11 @@ function normalizeDashboard(data: ApiDashboardResponse): DashboardData {
     manutencoesProximas: numberOrZero(data.manutencoesProximas ?? data.manutencoes?.a_vencer),
     pendenciasCriticas: numberOrZero(
       data.pendenciasCriticas ??
-        (Array.isArray(data.pendencias) ? data.pendencias.length : data.pendencias?.abertas),
+        (Array.isArray(pendenciasRaw) ? pendenciasRaw.length : pendenciasRaw?.abertas),
     ),
     semAnexo: numberOrZero(data.semAnexo ?? data.documentos?.pendentes_anexo),
     semResponsavel: numberOrZero(
-      data.semResponsavel ??
-        (Array.isArray(data.pendencias) ? 0 : data.pendencias?.sem_responsavel),
+      data.semResponsavel ?? (Array.isArray(pendenciasRaw) ? 0 : pendenciasRaw?.sem_responsavel),
     ),
     pendencias,
   };

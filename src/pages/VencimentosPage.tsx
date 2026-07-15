@@ -28,13 +28,7 @@ export function VencimentosPage() {
     () =>
       vencimentos.filter((item) => {
         const porModulo = modulo === "todos" || item.modulo === modulo;
-        const porPeriodo =
-          periodo === "todos" ||
-          (periodo === "vencidos" && item.diasRestantes < 0) ||
-          (periodo !== "vencidos" &&
-            periodo !== "todos" &&
-            item.diasRestantes >= 0 &&
-            item.diasRestantes <= Number(periodo));
+        const porPeriodo = correspondePeriodo(item, periodo);
         const termo = normalizar(busca);
         const porBusca =
           !termo ||
@@ -137,6 +131,12 @@ export function VencimentosPage() {
       </div>
     </AppShell>
   );
+}
+
+function correspondePeriodo(item: VencimentoConsolidado, periodo: FiltroPeriodo): boolean {
+  if (periodo === "todos") return true;
+  if (periodo === "vencidos") return item.diasRestantes < 0;
+  return item.diasRestantes >= 0 && item.diasRestantes <= Number(periodo);
 }
 
 function LinhaVencimento({ item }: { item: VencimentoConsolidado }) {

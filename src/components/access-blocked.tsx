@@ -49,7 +49,7 @@ export function AccessBlocked() {
             <button
               onClick={async () => {
                 if (!bypassAuth) await signOut();
-                navigate({ to: "/login" });
+                navigate({ to: "/login", search: { msg: undefined } });
               }}
               className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-muted"
             >

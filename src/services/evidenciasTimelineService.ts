@@ -17,7 +17,7 @@ type LogAuditoriaRow = {
   modulo: string;
   registro_id: string | null;
   novo_valor: Record<string, unknown> | null;
-  usuarios?: { nome: string | null } | null;
+  usuarios?: { nome: string | null } | Array<{ nome: string | null }> | null;
 };
 
 type AnexoRow = {
@@ -68,7 +68,7 @@ export const evidenciasTimelineService = {
         .order("created_at", { ascending: false }),
     ]);
 
-    const timelineLogs = ((logs ?? []) as LogAuditoriaRow[]).map(normalizeLog);
+    const timelineLogs = ((logs ?? []) as unknown as LogAuditoriaRow[]).map(normalizeLog);
     const timelineAnexos = ((anexos ?? []) as AnexoRow[]).map(normalizeAnexo);
 
     return [...timelineLogs, ...timelineAnexos].sort(
@@ -87,8 +87,14 @@ function normalizeLog(log: LogAuditoriaRow): EvidenciaTimelineItem {
     titulo: label.titulo,
     descricao: arquivo ? `${label.descricao}: ${arquivo}` : label.descricao,
     tipo: label.tipo,
-    usuario: log.usuarios?.nome ?? "Sistema",
+    usuario: firstUsuarioNome(log.usuarios) ?? "Sistema",
   };
+}
+
+function firstUsuarioNome(
+  usuario: LogAuditoriaRow["usuarios"],
+): string | null | undefined {
+  return Array.isArray(usuario) ? usuario[0]?.nome : usuario?.nome;
 }
 
 function normalizeAnexo(anexo: AnexoRow): EvidenciaTimelineItem {

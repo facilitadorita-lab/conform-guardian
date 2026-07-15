@@ -12,7 +12,13 @@ type UsuarioEmpresaRow = {
     email: string;
     cargo: string | null;
     status: "ativo" | "inativo";
-  } | null;
+  } | Array<{
+    id: string;
+    nome: string;
+    email: string;
+    cargo: string | null;
+    status: "ativo" | "inativo";
+  }> | null;
 };
 
 const perfilLabel: Record<UsuarioEmpresaRow["perfil"], UsuarioResumo["perfil"]> = {
@@ -35,15 +41,20 @@ export const usuariosService = {
 
     if (error) throw new Error(error.message);
 
-    return ((data ?? []) as UsuarioEmpresaRow[])
-      .filter((vinculo) => Boolean(vinculo.usuarios))
-      .map((vinculo) => ({
-        id: vinculo.usuarios!.id,
-        nome: vinculo.usuarios!.nome,
-        email: vinculo.usuarios!.email,
+    return ((data ?? []) as unknown as UsuarioEmpresaRow[])
+      .map((vinculo) => ({ vinculo, usuario: firstUsuario(vinculo.usuarios) }))
+      .filter((item) => Boolean(item.usuario))
+      .map(({ vinculo, usuario }) => ({
+        id: usuario!.id,
+        nome: usuario!.nome,
+        email: usuario!.email,
         perfil: perfilLabel[vinculo.perfil],
-        setor: vinculo.usuarios!.cargo ?? "-",
-        status: vinculo.usuarios!.status === "ativo" ? "Ativo" : "Inativo",
+        setor: usuario!.cargo ?? "-",
+        status: usuario!.status === "ativo" ? "Ativo" : "Inativo",
       }));
   },
 };
+
+function firstUsuario(usuario: UsuarioEmpresaRow["usuarios"]) {
+  return Array.isArray(usuario) ? usuario[0] : usuario;
+}

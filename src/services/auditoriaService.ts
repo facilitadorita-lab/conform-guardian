@@ -10,7 +10,7 @@ type LogAuditoriaRow = {
   acao: string;
   modulo: string;
   ip: string | null;
-  usuarios?: { nome: string | null } | null;
+  usuarios?: { nome: string | null } | Array<{ nome: string | null }> | null;
 };
 
 export const auditoriaService = {
@@ -26,13 +26,19 @@ export const auditoriaService = {
 
     if (error) throw new Error(error.message);
 
-    return ((data ?? []) as LogAuditoriaRow[]).map((log) => ({
+    return ((data ?? []) as unknown as LogAuditoriaRow[]).map((log) => ({
       id: log.id,
       data: new Date(log.created_at).toLocaleString("pt-BR"),
-      usuario: log.usuarios?.nome ?? "Sistema",
+      usuario: firstUsuarioNome(log.usuarios) ?? "Sistema",
       acao: log.acao,
       entidade: log.modulo,
       ip: log.ip ?? "-",
     }));
   },
 };
+
+function firstUsuarioNome(
+  usuario: LogAuditoriaRow["usuarios"],
+): string | null | undefined {
+  return Array.isArray(usuario) ? usuario[0]?.nome : usuario?.nome;
+}

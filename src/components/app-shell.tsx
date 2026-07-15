@@ -36,7 +36,7 @@ export function AppShell({
 
   useEffect(() => {
     if (runtimeConfig.useMocks || loading || user) return;
-    navigate({ to: "/login" });
+    navigate({ to: "/login", search: { msg: undefined } });
   }, [loading, navigate, user]);
 
   if (!runtimeConfig.useMocks && (loading || !user)) {
@@ -111,7 +111,7 @@ export function AppShell({
               type="button"
               onClick={async () => {
                 await signOut();
-                await navigate({ to: "/login" });
+                await navigate({ to: "/login", search: { msg: undefined } });
               }}
               className="flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-muted"
               aria-label="Sair"
