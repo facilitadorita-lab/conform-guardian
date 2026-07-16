@@ -20,6 +20,7 @@ import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import type { ConfiguracaoCatalogoItem, PlanoRecurso } from "@/types";
 import { statusLabel } from "@/utils/status";
+import { GovernanceSettings } from "@/components/governance-settings";
 
 const iconMap: Record<string, LucideIcon> = {
   "bell-ring": BellRing,
@@ -52,6 +53,10 @@ export function ConfiguracoesPage() {
   const { data: matriz } = useMatrizDocumental();
   const { data: authContext } = useAuthContext();
   const plano = authContext?.empresaAtual.plano;
+  const canAdmin = Boolean(
+    authContext?.usuario.isMaster ||
+    ["administrador", "administrador_provisorio"].includes(authContext?.perfilAtual ?? ""),
+  );
   const recursos = plano?.recursos ?? {};
   const recursosLiberados = recursosPrincipais.filter((recurso) => Boolean(recursos[recurso.key]));
 
@@ -233,6 +238,13 @@ export function ConfiguracoesPage() {
             )}
           </div>
         </Surface>
+      ) : null}
+      {authContext?.empresaAtual.id ? (
+        <GovernanceSettings
+          companyId={authContext.empresaAtual.id}
+          canAdmin={canAdmin}
+          userId={authContext.usuario.id}
+        />
       ) : null}
     </AppShell>
   );

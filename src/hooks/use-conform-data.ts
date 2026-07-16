@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
+import { useAppSession } from "@/hooks/use-app-session";
 import { MOCK_EMPRESA_ID, runtimeConfig } from "@/lib/runtime-config";
 import {
   alertasMock,
-  authContextMock,
   dashboardMock,
   documentosMock,
   equipamentosMock,
@@ -16,7 +15,6 @@ import {
   adminMasterService,
   alertasService,
   auditoriaService,
-  authService,
   configuracoesService,
   dashboardService,
   documentosService,
@@ -31,15 +29,13 @@ import type { EquipamentoDetalhe } from "@/services/equipamentosService";
 const staleTime = 60_000;
 
 export function useAuthContext() {
-  const { user, loading } = useAuth();
-
-  return useQuery({
-    queryKey: ["auth", "contexto"],
-    queryFn: () => authService.obterContexto(),
-    enabled: runtimeConfig.useMocks || (!loading && Boolean(user)),
-    initialData: runtimeConfig.useMocks ? authContextMock : undefined,
-    staleTime,
-  });
+  const { authContext, contextLoading, contextError, refreshContext } = useAppSession();
+  return {
+    data: authContext ?? undefined,
+    isLoading: contextLoading,
+    error: contextError,
+    refetch: refreshContext,
+  };
 }
 
 function useResolvedCompanyId() {

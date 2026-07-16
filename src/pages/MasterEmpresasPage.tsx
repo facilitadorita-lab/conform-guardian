@@ -4,32 +4,32 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { useAuthContext } from "@/hooks/use-conform-data";
+import { useAppSession } from "@/hooks/use-app-session";
 import { adminMasterService } from "@/services/adminMasterService";
-import { setSelectedCompanyId } from "@/services/authService";
 
 const checklistDocumentalPorTipo: Record<string, string[]> = {
-  "Clínica": [
+  Clínica: [
     "Alvará Sanitário",
     "Licença de Funcionamento",
     "AVCB",
     "PGRSS",
     "Contrato de coleta de resíduos",
   ],
-  "Laboratório": [
+  Laboratório: [
     "Alvará Sanitário",
     "Licença de Funcionamento",
     "Certificado de calibração dos equipamentos críticos",
     "Plano de controle de qualidade",
     "PGRSS",
   ],
-  "Farmácia": [
+  Farmácia: [
     "Autorização de Funcionamento de Empresa",
     "Alvará Sanitário",
     "Certidão de Regularidade Técnica",
     "Licença de Funcionamento",
     "PGRSS",
   ],
-  "Distribuidora": [
+  Distribuidora: [
     "AFE",
     "Licença Sanitária",
     "AVCB",
@@ -50,7 +50,7 @@ const checklistDocumentalPorTipo: Record<string, string[]> = {
     "Laudos de controle de qualidade",
     "PGRSS",
   ],
-  "Armazenamento": [
+  Armazenamento: [
     "Licença de Funcionamento",
     "AVCB",
     "Mapeamento térmico",
@@ -77,6 +77,7 @@ export function MasterEmpresasPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: authContext, isLoading, error } = useAuthContext();
+  const { selectCompany, refreshContext } = useAppSession();
   const [modalAberto, setModalAberto] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [erroCadastro, setErroCadastro] = useState<string | null>(null);
@@ -103,10 +104,7 @@ export function MasterEmpresasPage() {
         `${result.empresa.nome_fantasia} cadastrada com ${result.provisionamento_documentos.documentos_criados} documento(s) inicial(is) do perfil ${result.provisionamento_documentos.chaves.join(", ")}.`,
       );
       await queryClient.invalidateQueries();
-      await queryClient.refetchQueries({
-        queryKey: ["auth", "contexto"],
-        type: "active",
-      });
+      await refreshContext();
       await router.invalidate();
     },
     onError: (mutationError) => {
@@ -119,12 +117,8 @@ export function MasterEmpresasPage() {
   });
 
   const entrarNaEmpresa = async (empresaId: string) => {
-    setSelectedCompanyId(empresaId);
+    await selectCompany(empresaId);
     await queryClient.invalidateQueries();
-    await queryClient.refetchQueries({
-      queryKey: ["auth", "contexto"],
-      type: "active",
-    });
     await router.invalidate();
     await router.navigate({ to: "/" });
   };

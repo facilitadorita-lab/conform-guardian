@@ -1,15 +1,12 @@
-import { runtimeConfig } from "@/lib/runtime-config";
-import {
-  assinaturasEmpresasMock,
-  financeiroResumoMasterMock,
-  planosComerciaisMock,
-} from "@/mocks";
 import type {
   AssinaturaEmpresaResumo,
   FinanceiroResumoMaster,
   PlanoComercialResumo,
+  MasterSystemHealth,
+  CommercialHistoryEntry,
 } from "@/types";
-import { cloneMock, invokeRpc } from "./service-utils";
+import { getSupabaseClient } from "@/lib/supabaseClient";
+import { invokeRpc } from "./service-utils";
 
 export interface CriarEmpresaPayload {
   razao_social: string;
@@ -48,21 +45,34 @@ export interface CriarEmpresaResult {
 
 export const adminMasterService = {
   async financeiroResumo(): Promise<FinanceiroResumoMaster> {
-    if (runtimeConfig.useMocks) return cloneMock(financeiroResumoMasterMock);
     return invokeRpc<FinanceiroResumoMaster>("api_master_financeiro_resumo");
   },
 
   async listarAssinaturas(): Promise<AssinaturaEmpresaResumo[]> {
-    if (runtimeConfig.useMocks) return cloneMock(assinaturasEmpresasMock);
     return invokeRpc<AssinaturaEmpresaResumo[]>("api_master_listar_assinaturas");
   },
 
   async listarPlanos(): Promise<PlanoComercialResumo[]> {
-    if (runtimeConfig.useMocks) return cloneMock(planosComerciaisMock);
     return invokeRpc<PlanoComercialResumo[]>("api_master_listar_planos");
   },
 
-  salvarPlano(planoId: string | null, payload: Partial<PlanoComercialResumo>) {
+  saudeSistema(): Promise<MasterSystemHealth> {
+    return invokeRpc<MasterSystemHealth>("api_master_saude_sistema");
+  },
+
+  async historicoComercial(): Promise<CommercialHistoryEntry[]> {
+    const { data, error } = await getSupabaseClient()
+      .from("historico_comercial_imutavel")
+      .select(
+        "id, empresa_id, entidade, entidade_id, evento, valor_anterior, valor_novo, origem, actor_user_id, actor_role, created_at",
+      )
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw error;
+    return data as CommercialHistoryEntry[];
+  },
+
+  async salvarPlano(planoId: string | null, payload: Partial<PlanoComercialResumo>) {
     return invokeRpc<PlanoComercialResumo>("api_master_salvar_plano", {
       p_plano_id: planoId,
       p_payload: payload,

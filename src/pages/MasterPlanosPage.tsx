@@ -1,6 +1,6 @@
 import { CheckCircle2, Save, ShieldAlert, ToggleLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMasterPlanos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { adminMasterService } from "@/services";
@@ -28,11 +28,15 @@ const recursoLabels: Record<PlanoRecurso, string> = {
 const recursosOrdenados = Object.keys(recursoLabels) as PlanoRecurso[];
 
 export function MasterPlanosPage() {
+  const queryClient = useQueryClient();
   const { data: planos = [] } = useMasterPlanos();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, PlanoComercialResumo>>({});
   const planoSelecionado = useMemo(
-    () => drafts[selectedId ?? planos[0]?.id] ?? planos.find((plano) => plano.id === selectedId) ?? planos[0],
+    () =>
+      drafts[selectedId ?? planos[0]?.id] ??
+      planos.find((plano) => plano.id === selectedId) ??
+      planos[0],
     [drafts, planos, selectedId],
   );
 
@@ -47,8 +51,8 @@ export function MasterPlanosPage() {
   }, [planos]);
 
   const salvarPlano = useMutation({
-    mutationFn: (plano: PlanoComercialResumo) =>
-      adminMasterService.salvarPlano(plano.id, plano),
+    mutationFn: (plano: PlanoComercialResumo) => adminMasterService.salvarPlano(plano.id, plano),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["master", "planos"] }),
   });
 
   return (
@@ -65,6 +69,16 @@ export function MasterPlanosPage() {
         </button>
       }
     >
+      {salvarPlano.isSuccess ? (
+        <div className="rounded-xl border border-success/25 bg-success/5 px-4 py-3 text-sm text-success">
+          Plano atualizado no backend e pronto para refletir no catálogo público.
+        </div>
+      ) : null}
+      {salvarPlano.error ? (
+        <div className="rounded-xl border border-danger/25 bg-danger/5 px-4 py-3 text-sm text-danger">
+          {salvarPlano.error.message}
+        </div>
+      ) : null}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {planos.map((plano) => (
           <button
@@ -88,9 +102,8 @@ export function MasterPlanosPage() {
               <span className="text-xs font-normal text-muted-foreground"> / mês</span>
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
-              {plano.limite_usuarios} usuários ·{" "}
-              {plano.limite_documentos ?? "Ilimitado"} documentos ·{" "}
-              {plano.limite_equipamentos ?? "Ilimitado"} equipamentos
+              {plano.limite_usuarios} usuários · {plano.limite_documentos ?? "Ilimitado"} documentos
+              · {plano.limite_equipamentos ?? "Ilimitado"} equipamentos
             </div>
           </button>
         ))}
@@ -107,6 +120,14 @@ export function MasterPlanosPage() {
             <div className="mt-5 space-y-4">
               <Field label="Nome do plano" value={planoSelecionado.nome} />
               <Field label="Código interno" value={planoSelecionado.codigo} />
+              <Field
+                label="Público recomendado"
+                value={planoSelecionado.publico_recomendado ?? ""}
+                placeholder="Perfil de cliente ideal"
+                onChange={(value) =>
+                  updatePlano(planoSelecionado.id, "publico_recomendado", value || null)
+                }
+              />
               <Field
                 label="Valor mensal"
                 value={centsToInputValue(planoSelecionado.valor_mensal_centavos)}
@@ -128,6 +149,14 @@ export function MasterPlanosPage() {
                 value={String(planoSelecionado.limite_usuarios)}
                 onChange={(value) =>
                   updatePlano(planoSelecionado.id, "limite_usuarios", numberOrZero(value))
+                }
+              />
+              <Field
+                label="Limite de unidades"
+                value={String(planoSelecionado.limite_unidades ?? "")}
+                placeholder="Sem limite"
+                onChange={(value) =>
+                  updatePlano(planoSelecionado.id, "limite_unidades", numberOrNull(value))
                 }
               />
               <Field
@@ -153,6 +182,48 @@ export function MasterPlanosPage() {
                   updatePlano(planoSelecionado.id, "limite_storage_mb", numberOrZero(value))
                 }
               />
+              <label className="block">
+                <span className="text-xs font-medium text-muted-foreground">Nível de suporte</span>
+                <select
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 text-sm outline-none"
+                  value={planoSelecionado.nivel_suporte ?? "padrao"}
+                  onChange={(event) =>
+                    updatePlano(
+                      planoSelecionado.id,
+                      "nivel_suporte",
+                      event.target.value as PlanoComercialResumo["nivel_suporte"],
+                    )
+                  }
+                >
+                  <option value="padrao">Padrão</option>
+                  <option value="prioritario">Prioritário</option>
+                  <option value="dedicado">Dedicado</option>
+                </select>
+              </label>
+              <Field
+                label="Stripe Product ID"
+                value={planoSelecionado.stripe_product_id ?? ""}
+                placeholder="prod_..."
+                onChange={(value) =>
+                  updatePlano(planoSelecionado.id, "stripe_product_id", value || null)
+                }
+              />
+              <Field
+                label="Stripe Price ID mensal"
+                value={planoSelecionado.stripe_monthly_price_id ?? ""}
+                placeholder="price_..."
+                onChange={(value) =>
+                  updatePlano(planoSelecionado.id, "stripe_monthly_price_id", value || null)
+                }
+              />
+              <Field
+                label="Stripe Price ID anual"
+                value={planoSelecionado.stripe_yearly_price_id ?? ""}
+                placeholder="price_..."
+                onChange={(value) =>
+                  updatePlano(planoSelecionado.id, "stripe_yearly_price_id", value || null)
+                }
+              />
             </div>
           </div>
 
@@ -161,7 +232,8 @@ export function MasterPlanosPage() {
               <div>
                 <h2 className="text-sm font-semibold">Recursos liberados no plano</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  O frontend mostra/oculta módulos; o backend também bloqueia gravações fora do plano.
+                  O frontend mostra/oculta módulos; o backend também bloqueia gravações fora do
+                  plano.
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/5 px-3 py-2 text-xs text-warning">
@@ -186,9 +258,7 @@ export function MasterPlanosPage() {
                       }
                     }}
                     className={`flex items-center justify-between rounded-lg border px-4 py-3 ${
-                      enabled
-                        ? "border-success/30 bg-success/5"
-                        : "border-border bg-muted/20"
+                      enabled ? "border-success/30 bg-success/5" : "border-border bg-muted/20"
                     }`}
                   >
                     <div>

@@ -1,59 +1,80 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { MasterOnly } from "@/components/master-guard";
-import { masterAssinaturas } from "@/mocks/conformflow-mocks";
-import { AsaasSubscriptionDialog } from "@/components/asaas-subscription-dialog";
-import { Plus } from "lucide-react";
+import { useMasterAssinaturas } from "@/hooks/use-conform-data";
+import { StatusBadge } from "@/layouts/app-layout";
+import { formatDateBR } from "@/utils/date";
+import { formatCurrencyFromCents } from "@/utils/money";
 
-export const Route = createFileRoute("/master/assinaturas")({
-  component: MasterAssinaturas,
-});
+export const Route = createFileRoute("/master/assinaturas")({ component: MasterAssinaturas });
 
 function MasterAssinaturas() {
-  const [open, setOpen] = useState(false);
+  const query = useMasterAssinaturas();
+  const items = query.data ?? [];
   return (
-    <MasterOnly title="Assinaturas" description="Assinaturas ativas, suspensas e em atraso.">
-      <div className="flex justify-end">
-        <button
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" /> Nova assinatura Asaas
-        </button>
-      </div>
-      {open && <AsaasSubscriptionDialog onClose={() => setOpen(false)} />}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <MasterOnly
+      title="Assinaturas"
+      description="Dados reais de planos, cobrança e acesso das empresas."
+    >
+      {query.error ? <ErrorState message={query.error.message} /> : null}
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
-              <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Empresa</th>
               <th className="px-4 py-3">Plano</th>
-              <th className="px-4 py-3">Início</th>
+              <th className="px-4 py-3">Ciclo</th>
               <th className="px-4 py-3">Próxima cobrança</th>
               <th className="px-4 py-3">Valor</th>
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
           <tbody>
-            {masterAssinaturas.map((a) => (
-              <tr key={a.id} className="border-t border-border">
-                <td className="px-4 py-3 font-mono text-xs">{a.id}</td>
-                <td className="px-4 py-3 font-medium">{a.empresa}</td>
-                <td className="px-4 py-3">{a.plano}</td>
-                <td className="px-4 py-3 text-muted-foreground">{a.inicio}</td>
-                <td className="px-4 py-3">{a.proximaCobranca}</td>
-                <td className="px-4 py-3">R$ {a.valor}</td>
+            {items.map((item) => (
+              <tr key={item.empresa_id} className="border-t border-border">
                 <td className="px-4 py-3">
-                  <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-[11px] capitalize">
-                    {a.status}
-                  </span>
+                  <div className="font-medium">{item.nome_fantasia}</div>
+                  <div className="text-xs text-muted-foreground">{item.cnpj}</div>
+                </td>
+                <td className="px-4 py-3">{item.plano_nome ?? "Sem plano"}</td>
+                <td className="px-4 py-3 capitalize">{item.ciclo ?? "—"}</td>
+                <td className="px-4 py-3">{formatDateBR(item.proximo_vencimento)}</td>
+                <td className="px-4 py-3 font-medium">
+                  {formatCurrencyFromCents(item.valor_mensal_centavos)}
+                </td>
+                <td className="px-4 py-3">
+                  <StatusBadge
+                    tone={
+                      item.status === "ativa"
+                        ? "ok"
+                        : item.status === "inadimplente" || item.status === "bloqueada"
+                          ? "vencido"
+                          : "atencao"
+                    }
+                  >
+                    {item.status ?? "sem assinatura"}
+                  </StatusBadge>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {!query.isLoading && items.length === 0 ? <EmptyState /> : null}
       </div>
     </MasterOnly>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="p-8 text-center text-sm text-muted-foreground">
+      Nenhuma assinatura encontrada no backend.
+    </div>
+  );
+}
+function ErrorState({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger">
+      Não foi possível carregar as assinaturas: {message}
+    </div>
   );
 }

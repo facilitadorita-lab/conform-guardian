@@ -1,53 +1,64 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MasterOnly } from "@/components/master-guard";
-import { masterInadimplentes } from "@/mocks/conformflow-mocks";
+import { useMasterFinanceiroResumo } from "@/hooks/use-conform-data";
+import { formatDateBR } from "@/utils/date";
+import { formatCurrencyFromCents } from "@/utils/money";
 
-export const Route = createFileRoute("/master/inadimplentes")({
-  component: MasterInadimplentes,
-});
+export const Route = createFileRoute("/master/inadimplentes")({ component: MasterInadimplentes });
 
 function MasterInadimplentes() {
-  const total = masterInadimplentes.reduce((s, i) => s + i.valor, 0);
+  const query = useMasterFinanceiroResumo();
+  const items = query.data?.pagamentos_atrasados ?? [];
+  const total = items.reduce((sum, item) => sum + item.valor_centavos, 0);
   return (
-    <MasterOnly title="Inadimplentes" description="Empresas com faturas em aberto ou pagamento atrasado.">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Kpi label="Empresas" value={String(masterInadimplentes.length)} />
-        <Kpi label="Valor em aberto" value={`R$ ${total}`} />
-        <Kpi label="Maior atraso" value={`${Math.max(...masterInadimplentes.map((i) => i.diasAtraso))} dias`} />
+    <MasterOnly
+      title="Inadimplentes"
+      description="Faturas vencidas consultadas diretamente no backend."
+    >
+      <div className="grid gap-4 md:grid-cols-2">
+        <Kpi label="Empresas/faturas em atraso" value={String(items.length)} />
+        <Kpi label="Valor em aberto" value={formatCurrencyFromCents(total)} />
       </div>
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      {query.error ? <div className="text-sm text-danger">{query.error.message}</div> : null}
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Empresa</th>
-              <th className="px-4 py-3">Plano</th>
+              <th className="px-4 py-3">CNPJ</th>
+              <th className="px-4 py-3">Vencimento</th>
               <th className="px-4 py-3">Valor</th>
-              <th className="px-4 py-3">Dias em atraso</th>
-              <th className="px-4 py-3">Última tentativa</th>
+              <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
           <tbody>
-            {masterInadimplentes.map((i) => (
-              <tr key={i.empresa} className="border-t border-border">
-                <td className="px-4 py-3 font-medium">{i.empresa}</td>
-                <td className="px-4 py-3">{i.plano}</td>
-                <td className="px-4 py-3">R$ {i.valor}</td>
-                <td className="px-4 py-3 text-danger font-semibold">{i.diasAtraso}</td>
-                <td className="px-4 py-3 text-muted-foreground">{i.ultimaTentativa}</td>
+            {items.map((item) => (
+              <tr key={item.fatura_id} className="border-t border-border">
+                <td className="px-4 py-3 font-medium">{item.nome_fantasia}</td>
+                <td className="px-4 py-3">{item.cnpj}</td>
+                <td className="px-4 py-3">{formatDateBR(item.vencimento)}</td>
+                <td className="px-4 py-3 font-semibold text-danger">
+                  {formatCurrencyFromCents(item.valor_centavos)}
+                </td>
+                <td className="px-4 py-3 capitalize">{item.status}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        {!query.isLoading && items.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Nenhuma inadimplência encontrada.
+          </div>
+        ) : null}
       </div>
     </MasterOnly>
   );
 }
-
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="text-xl font-semibold mt-1">{value}</div>
+      <div className="mt-1 text-xl font-semibold">{value}</div>
     </div>
   );
 }

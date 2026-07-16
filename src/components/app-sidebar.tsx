@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   BarChart3,
+  Activity,
   Bell,
   Building2,
   CalendarClock,
@@ -9,6 +10,7 @@ import {
   ChevronRight,
   ClipboardList,
   Cog,
+  FileClock,
   FileText,
   LayoutDashboard,
   Settings,
@@ -142,6 +144,18 @@ const masterGroup: { label: string; items: NavItem[] } = {
       label: "Planos",
       description: "Recursos e limites",
       icon: SlidersHorizontal,
+    },
+    {
+      to: "/master/saude",
+      label: "Saúde do sistema",
+      description: "Falhas e integrações",
+      icon: Activity,
+    },
+    {
+      to: "/master/historico-comercial",
+      label: "Histórico comercial",
+      description: "Planos e cobranças",
+      icon: FileClock,
     },
   ],
 };

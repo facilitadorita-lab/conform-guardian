@@ -60,3 +60,27 @@ verify_jwt = true
 
 [functions.lookup-company-registration]
 verify_jwt = true
+
+[functions.prepare-signup]
+verify_jwt = false
+
+[functions.create-stripe-checkout]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.checkout-status]
+verify_jwt = false
+
+[functions.confirm-signup-email]
+verify_jwt = true
+
+[functions.system-health-check]
+verify_jwt = false
+
+[functions.process-lgpd-exports]
+verify_jwt = false
+
+[functions.download-lgpd-export]
+verify_jwt = true

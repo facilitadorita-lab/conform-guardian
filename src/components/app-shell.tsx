@@ -13,9 +13,10 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
+import { useAppSession } from "@/hooks/use-app-session";
+import { useMfaAssurance } from "@/hooks/use-mfa-assurance";
 import { useAuthContext } from "@/hooks/use-conform-data";
 import { runtimeConfig } from "@/lib/runtime-config";
-import { setSelectedCompanyId } from "@/services/authService";
 import type { StatusConformidade } from "@/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/conform/surface";
@@ -36,7 +37,9 @@ export function AppShell({
   children: ReactNode;
 }) {
   const { user, loading, signOut } = useAuth();
+  const { selectCompany } = useAppSession();
   const { data: authContext } = useAuthContext();
+  const mfa = useMfaAssurance();
   const queryClient = useQueryClient();
   const router = useRouter();
   const navigate = useNavigate();
@@ -47,6 +50,11 @@ export function AppShell({
   );
   const exibirAssistente = hasPlanFeature(authContext, "assistente_ia");
   const breadcrumbs = buildBreadcrumbs(pathname, title);
+  const privilegedProfile = ["master", "administrador", "administrador_provisorio"].includes(
+    authContext?.perfilAtual ?? "",
+  );
+  const mfaRequired =
+    !runtimeConfig.useMocks && privilegedProfile && mfa.data?.currentLevel !== "aal2";
 
   useEffect(() => {
     if (runtimeConfig.useMocks || loading || user) return;
@@ -111,12 +119,8 @@ export function AppShell({
                     empresas={authContext.empresasPermitidas}
                     empresaAtual={authContext.empresaAtual}
                     onSelectEmpresa={async (empresaId) => {
-                      setSelectedCompanyId(empresaId);
+                      await selectCompany(empresaId);
                       await queryClient.invalidateQueries();
-                      await queryClient.refetchQueries({
-                        queryKey: ["auth", "contexto"],
-                        type: "active",
-                      });
                       await router.invalidate();
                       await router.navigate({ to: "/dashboard" });
                     }}
@@ -161,6 +165,16 @@ export function AppShell({
 
         <main className="flex-1">
           <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
+            {mfaRequired ? (
+              <div className="flex flex-col gap-3 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  Confirme a autenticação em duas etapas para executar ações administrativas.
+                </span>
+                <Link to="/seguranca/mfa" className="font-semibold underline underline-offset-4">
+                  Proteger sessão
+                </Link>
+              </div>
+            ) : null}
             <PageHeader
               eyebrow={authContext.usuario.isMaster ? "Admin Master" : "Ambiente do cliente"}
               title={title}

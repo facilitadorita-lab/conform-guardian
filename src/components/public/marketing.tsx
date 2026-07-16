@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -27,7 +28,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { usePublicCatalog } from "@/hooks/use-public-catalog";
 import { cn } from "@/lib/utils";
+import { formatCurrencyFromCents } from "@/utils/money";
+import type { BillingInterval, PublicPlanCatalogItem } from "@/types";
 
 export const publicModules = [
   {
@@ -59,54 +64,6 @@ export const publicModules = [
     title: "Auditoria",
     description: "Rastreabilidade de ações, alterações, uploads e visualizações.",
     icon: ShieldCheck,
-  },
-];
-
-export const publicPlans = [
-  {
-    name: "Essencial",
-    price: "R$ 119,90",
-    description: "Para operações que precisam organizar documentos, anexos e vencimentos.",
-    users: "Até 2 usuários",
-    units: "1 unidade",
-    highlight: false,
-    features: [
-      "Dashboard completo",
-      "Assistente IA",
-      "Documentos e anexos",
-      "Vencimentos e alertas",
-      "Controle por empresa",
-    ],
-  },
-  {
-    name: "Completo",
-    price: "R$ 159,90",
-    description: "Para empresas que também controlam equipamentos e rotinas operacionais.",
-    users: "Até 4 usuários",
-    units: "1 unidade",
-    highlight: true,
-    features: [
-      "Tudo do Essencial",
-      "Equipamentos",
-      "Calibrações e qualificações",
-      "Manutenções",
-      "Pendências e tratativas",
-    ],
-  },
-  {
-    name: "Plano Rede",
-    price: "R$ 289,90",
-    description: "Para redes, grupos e operações com visão multiunidade.",
-    users: "Até 8 usuários",
-    units: "Até 3 unidades",
-    highlight: false,
-    features: [
-      "Tudo do Completo",
-      "Visão multiunidade",
-      "Relatórios por unidade",
-      "Visão consolidada",
-      "Governança para expansão",
-    ],
   },
 ];
 
@@ -339,60 +296,160 @@ export function ModuleCard({
 }
 
 export function PricingGrid({ compact = false }: { compact?: boolean }) {
+  const catalog = usePublicCatalog();
+  const [interval, setInterval] = useState<BillingInterval>("monthly");
+
+  if (catalog.isLoading) {
+    return (
+      <div className="grid gap-5 lg:grid-cols-3" aria-label="Carregando planos">
+        {[0, 1, 2].map((item) => (
+          <Skeleton key={item} className="h-[430px] rounded-3xl" />
+        ))}
+      </div>
+    );
+  }
+
+  if (catalog.error || !catalog.data?.plans.length) {
+    return (
+      <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center">
+        <h3 className="font-semibold text-slate-950">Planos temporariamente indisponíveis</h3>
+        <p className="mt-2 text-sm text-slate-600">
+          Não exibimos valores desatualizados. Tente novamente ou fale com nosso time comercial.
+        </p>
+        <Button type="button" variant="outline" className="mt-5" onClick={() => catalog.refetch()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-5 lg:grid-cols-3">
-      {publicPlans.map((plan) => (
-        <article
-          key={plan.name}
-          className={cn(
-            "relative flex rounded-3xl border bg-white p-6 shadow-[0_20px_55px_-42px_rgba(15,23,42,0.5)]",
-            plan.highlight ? "border-cyan-400 ring-4 ring-cyan-100" : "border-slate-200",
-          )}
-        >
-          {plan.highlight ? (
-            <div className="absolute right-5 top-5 rounded-full bg-cyan-600 px-3 py-1 text-xs font-semibold text-white">
-              Recomendado
-            </div>
-          ) : null}
-          <div className="flex w-full flex-col">
-            <h3 className="text-lg font-semibold text-slate-950">{plan.name}</h3>
-            <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">{plan.description}</p>
-            <div className="mt-6 flex items-end gap-1">
-              <span className="text-3xl font-semibold tracking-tight text-slate-950">
-                {plan.price}
-              </span>
-              <span className="pb-1 text-sm text-slate-500">/mês</span>
-            </div>
-            <div className="mt-5 grid gap-2 text-sm text-slate-600">
-              <PlanMeta icon={Users}>{plan.users}</PlanMeta>
-              <PlanMeta icon={Building2}>{plan.units}</PlanMeta>
-            </div>
-            <div className={cn("mt-6 space-y-3", compact && "mt-5")}>
-              {plan.features.map((feature) => (
-                <div key={feature} className="flex items-start gap-2 text-sm text-slate-700">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                  <span>{feature}</span>
-                </div>
-              ))}
-            </div>
-            <Button
-              asChild
-              className={cn(
-                "mt-7 rounded-xl",
-                plan.highlight
-                  ? "bg-slate-950 text-white hover:bg-slate-800"
-                  : "bg-white text-slate-950 ring-1 ring-slate-200 hover:bg-slate-50",
-              )}
-            >
-              <a href="mailto:comercial@conformflow.com.br?subject=Quero contratar o Conform Flow">
-                Falar com especialista
-              </a>
-            </Button>
+    <div>
+      {!compact ? (
+        <div className="mb-8 flex justify-center" aria-label="Periodicidade da cobrança">
+          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+            {(["monthly", "yearly"] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setInterval(value)}
+                className={cn(
+                  "rounded-lg px-5 py-2 text-sm font-semibold transition",
+                  interval === value
+                    ? "bg-white text-slate-950 shadow-sm"
+                    : "text-slate-500 hover:text-slate-950",
+                )}
+              >
+                {value === "monthly" ? "Mensal" : "Anual"}
+              </button>
+            ))}
           </div>
-        </article>
-      ))}
+        </div>
+      ) : null}
+      <div className="grid gap-5 lg:grid-cols-3">
+        {catalog.data.plans.map((plan) => (
+          <article
+            key={plan.id}
+            className={cn(
+              "relative flex rounded-3xl border bg-white p-6 shadow-[0_20px_55px_-42px_rgba(15,23,42,0.5)]",
+              plan.mais_escolhido ? "border-cyan-400 ring-4 ring-cyan-100" : "border-slate-200",
+            )}
+          >
+            {plan.mais_escolhido ? (
+              <div className="absolute right-5 top-5 rounded-full bg-cyan-600 px-3 py-1 text-xs font-semibold text-white">
+                Mais escolhido
+              </div>
+            ) : null}
+            <div className="flex w-full flex-col">
+              <h3 className="text-lg font-semibold text-slate-950">{plan.nome}</h3>
+              <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">{plan.descricao}</p>
+              <div className="mt-6 flex items-end gap-1">
+                <span className="text-3xl font-semibold tracking-tight text-slate-950">
+                  {formatPlanPrice(plan, interval)}
+                </span>
+                <span className="pb-1 text-sm text-slate-500">
+                  /{interval === "monthly" ? "mês" : "ano"}
+                </span>
+              </div>
+              {interval === "yearly" ? <AnnualSavings plan={plan} /> : null}
+              <div className="mt-5 grid gap-2 text-sm text-slate-600">
+                <PlanMeta icon={Users}>
+                  {limitLabel(plan.limites.usuarios, "usuário", "usuários")}
+                </PlanMeta>
+                <PlanMeta icon={Building2}>
+                  {limitLabel(plan.limites.unidades, "unidade", "unidades")}
+                </PlanMeta>
+              </div>
+              <div className={cn("mt-6 space-y-3", compact && "mt-5")}>
+                {enabledFeatureLabels(plan)
+                  .slice(0, compact ? 5 : 8)
+                  .map((feature) => (
+                    <div key={feature} className="flex items-start gap-2 text-sm text-slate-700">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+              </div>
+              <Button
+                asChild
+                className={cn(
+                  "mt-7 rounded-xl",
+                  plan.mais_escolhido
+                    ? "bg-slate-950 text-white hover:bg-slate-800"
+                    : "bg-white text-slate-950 ring-1 ring-slate-200 hover:bg-slate-50",
+                )}
+              >
+                <a href={`/cadastro?plan=${encodeURIComponent(plan.codigo)}&interval=${interval}`}>
+                  Assinar {plan.nome}
+                </a>
+              </Button>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
+}
+
+export function enabledFeatureLabels(plan: PublicPlanCatalogItem) {
+  const labels: Record<string, string> = {
+    assistente_ia: "Assistente IA",
+    documentos: "Documentos e anexos",
+    vencimentos: "Vencimentos e alertas",
+    equipamentos: "Equipamentos",
+    calibracoes: "Calibrações",
+    qualificacoes: "Qualificações",
+    manutencoes: "Manutenções",
+    pendencias: "Pendências e tratativas",
+    relatorios: "Relatórios",
+    auditoria: "Auditoria avançada",
+    multi_unidades: "Visão multiunidade",
+    suporte_prioritario: "Suporte prioritário",
+  };
+  return Object.entries(labels)
+    .filter(([key]) => plan.recursos[key])
+    .map(([, label]) => label);
+}
+
+function formatPlanPrice(plan: PublicPlanCatalogItem, interval: BillingInterval) {
+  const cents = interval === "yearly" ? plan.valor_anual_centavos : plan.valor_mensal_centavos;
+  return cents === null ? "Sob consulta" : formatCurrencyFromCents(cents);
+}
+
+function AnnualSavings({ plan }: { plan: PublicPlanCatalogItem }) {
+  if (!plan.valor_anual_centavos) return null;
+  const savings = plan.valor_mensal_centavos * 12 - plan.valor_anual_centavos;
+  if (savings <= 0) return null;
+  return (
+    <p className="mt-2 text-xs font-medium text-emerald-700">
+      Economia anual de {formatCurrencyFromCents(savings)}
+    </p>
+  );
+}
+
+function limitLabel(value: number | null, singular: string, plural: string) {
+  if (value === null) return "Sem limite definido";
+  return `Até ${value} ${value === 1 ? singular : plural}`;
 }
 
 function PlanMeta({ icon: Icon, children }: { icon: LucideIcon; children: React.ReactNode }) {

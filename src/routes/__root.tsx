@@ -11,8 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AuthProvider } from "@/hooks/use-auth";
-import { SessionProvider } from "@/hooks/use-session";
+import { AppSessionProvider } from "@/hooks/use-app-session";
 
 function NotFoundComponent() {
   return (
@@ -80,10 +79,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Conform Flow — Gestão de Conformidade Operacional" },
-      { name: "description", content: "Plataforma SaaS B2B para gestão de documentos, equipamentos, manutenções, alertas e auditoria em empresas reguladas." },
+      {
+        name: "description",
+        content:
+          "Plataforma SaaS B2B para gestão de documentos, equipamentos, manutenções, alertas e auditoria em empresas reguladas.",
+      },
       { name: "author", content: "Conform Flow" },
       { property: "og:title", content: "Conform Flow — Gestão de Conformidade" },
-      { property: "og:description", content: "Centralize documentos, equipamentos, manutenções e auditorias em um único ambiente seguro." },
+      {
+        property: "og:description",
+        content:
+          "Centralize documentos, equipamentos, manutenções e auditorias em um único ambiente seguro.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -103,7 +110,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <head>
         <HeadContent />
       </head>
@@ -120,12 +127,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <SessionProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </SessionProvider>
-      </AuthProvider>
+      <AppSessionProvider>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+      </AppSessionProvider>
     </QueryClientProvider>
   );
 }

@@ -61,14 +61,19 @@ export const authService = {
 
     const contexto = await invokeRpc<ApiContextoUsuarioResponse>("api_contexto_usuario");
     const selectedCompanyId = getSelectedCompanyId();
-    const empresaAtual =
-      contexto.empresas.find((empresa) => empresa.id === selectedCompanyId) ?? contexto.empresas[0];
+    const empresaSelecionada = contexto.empresas.find(
+      (empresa) => empresa.id === selectedCompanyId,
+    );
+    const empresaAtual = empresaSelecionada ?? contexto.empresas[0];
 
     if (!empresaAtual) {
       throw new Error("Nenhuma empresa vinculada ao usuario autenticado.");
     }
 
-    if (!selectedCompanyId || selectedCompanyId !== empresaAtual.id) {
+    if (
+      !contexto.usuario.is_master &&
+      (!selectedCompanyId || selectedCompanyId !== empresaAtual.id)
+    ) {
       setSelectedCompanyId(empresaAtual.id);
     }
 

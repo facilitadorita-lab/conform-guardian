@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button";
 import {
   AddOn,
   CtaSection,
+  enabledFeatureLabels,
   PricingGrid,
   PublicFooter,
   PublicHeader,
   SectionTitle,
 } from "@/components/public/marketing";
+import { usePublicCatalog } from "@/hooks/use-public-catalog";
+import { formatCurrencyFromCents } from "@/utils/money";
 
 export const Route = createFileRoute("/planos")({
   head: () => ({
@@ -25,6 +28,9 @@ export const Route = createFileRoute("/planos")({
 });
 
 function PlanosPage() {
+  const catalog = usePublicCatalog();
+  const addOns = catalog.data?.add_ons;
+
   return (
     <main className="min-h-screen bg-white text-slate-950">
       <PublicHeader />
@@ -48,8 +54,8 @@ function PlanosPage() {
                   asChild
                   className="h-12 rounded-xl bg-slate-950 px-6 text-white hover:bg-slate-800"
                 >
-                  <a href="mailto:comercial@conformflow.com.br?subject=Quero contratar o Conform Flow">
-                    Falar com especialista <ArrowRight className="h-4 w-4" />
+                  <a href="#comparativo">
+                    Escolher plano <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
                 <Button asChild variant="outline" className="h-12 rounded-xl bg-white px-6">
@@ -63,25 +69,31 @@ function PlanosPage() {
             <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.7)]">
               <h2 className="text-base font-semibold text-slate-950">Adicionais disponíveis</h2>
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <AddOn title="Usuário extra" price="R$ 29,90/mês" />
-                <AddOn title="Unidade extra" price="R$ 59,90/mês" />
+                <AddOn
+                  title="Usuário extra"
+                  price={formatOptionalPrice(addOns?.usuario_extra_centavos, addOns?.moeda)}
+                />
+                <AddOn
+                  title="Unidade extra"
+                  price={formatOptionalPrice(addOns?.unidade_extra_centavos, addOns?.moeda)}
+                />
               </div>
               <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-                Os bloqueios por plano são aplicados no backend para refletir corretamente no
-                frontend e proteger o ambiente de cada cliente.
+                Valores, limites e permissões são carregados do backend. O navegador nunca decide
+                quais recursos uma empresa pode utilizar.
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-white px-5 py-20 lg:px-8">
+      <section id="comparativo" className="scroll-mt-24 bg-white px-5 py-20 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <SectionTitle
             align="center"
             eyebrow="Comparativo"
             title="Escolha o plano pelo nível de maturidade da operação."
-            description="A precificação foi pensada para entrada acessível e crescimento por módulos, usuários e unidades."
+            description="Preços, usuários, unidades e módulos vêm do catálogo comercial oficial do Conform Flow."
           />
           <div className="mt-12">
             <PricingGrid />
@@ -89,57 +101,43 @@ function PlanosPage() {
         </div>
       </section>
 
-      <section className="bg-slate-50 px-5 py-20 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <SectionTitle
-            eyebrow="O que cada plano destrava"
-            title="Permissões comerciais conectadas ao uso real da plataforma."
-            description="A experiência do cliente muda conforme o plano: o que não está contratado fica bloqueado de forma clara."
-          />
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
-            {[
-              ["Essencial", ["Dashboard completo", "IA", "Documentos", "Anexos", "Alertas"]],
-              [
-                "Completo",
-                [
-                  "Tudo do Essencial",
-                  "Equipamentos",
-                  "Calibrações",
-                  "Qualificações",
-                  "Manutenções",
-                ],
-              ],
-              [
-                "Plano Rede",
-                [
-                  "Tudo do Completo",
-                  "Até 3 unidades",
-                  "Visão multiunidade",
-                  "Relatórios por unidade",
-                ],
-              ],
-            ].map(([name, features]) => (
-              <article
-                key={name as string}
-                className="rounded-3xl border border-slate-200 bg-white p-6"
-              >
-                <h3 className="text-lg font-semibold text-slate-950">{name}</h3>
-                <div className="mt-5 space-y-3">
-                  {(features as string[]).map((feature) => (
-                    <div key={feature} className="flex items-start gap-2 text-sm text-slate-700">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                      {feature}
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ))}
+      {catalog.data?.plans.length ? (
+        <section className="bg-slate-50 px-5 py-20 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <SectionTitle
+              eyebrow="O que cada plano destrava"
+              title="Permissões comerciais conectadas ao uso real da plataforma."
+              description="O backend aplica os módulos e limites correspondentes ao plano contratado."
+            />
+            <div className="mt-10 grid gap-5 lg:grid-cols-3">
+              {catalog.data.plans.map((plan) => (
+                <article key={plan.id} className="rounded-3xl border border-slate-200 bg-white p-6">
+                  <h3 className="text-lg font-semibold text-slate-950">{plan.nome}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {plan.publico_recomendado}
+                  </p>
+                  <div className="mt-5 space-y-3">
+                    {enabledFeatureLabels(plan).map((feature) => (
+                      <div key={feature} className="flex items-start gap-2 text-sm text-slate-700">
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                        {feature}
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <CtaSection />
       <PublicFooter />
     </main>
   );
+}
+
+function formatOptionalPrice(value: number | null | undefined, currency = "BRL") {
+  if (value === null || value === undefined) return "Consulte condições";
+  return `${formatCurrencyFromCents(value, currency)}/mês`;
 }

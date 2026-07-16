@@ -286,6 +286,12 @@ export interface PlanoComercialResumo {
   disponivel_venda: boolean;
   ativo: boolean;
   recursos: Partial<Record<PlanoRecurso, boolean>>;
+  limite_unidades?: number | null;
+  publico_recomendado?: string | null;
+  nivel_suporte?: "padrao" | "prioritario" | "dedicado";
+  stripe_product_id?: string | null;
+  stripe_monthly_price_id?: string | null;
+  stripe_yearly_price_id?: string | null;
 }
 
 export interface AssinaturaEmpresaResumo {

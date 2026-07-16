@@ -1,0 +1,49 @@
+name: Encrypted backup and restore test
+
+on:
+  schedule:
+    - cron: "20 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup-and-restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production-backup
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      RESTORE_TEST_DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
+      BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate protected configuration
+        run: test -n "$SUPABASE_DB_URL" && test -n "$RESTORE_TEST_DB_URL" && test -n "$BACKUP_ENCRYPTION_PASSWORD"
+      - name: Create logical backup
+        run: pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file=conform-flow.dump
+      - name: Encrypt and fingerprint backup
+        run: |
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in conform-flow.dump -out conform-flow.dump.enc -pass env:BACKUP_ENCRYPTION_PASSWORD
+          sha256sum conform-flow.dump.enc > conform-flow.dump.enc.sha256
+      - name: Restore into disposable validation database
+        run: pg_restore --dbname="$RESTORE_TEST_DB_URL" --clean --if-exists --no-owner --no-acl conform-flow.dump
+      - name: Validate restored structure
+        run: |
+          psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) from public.empresas;"
+          psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) from public.documentos;"
+          psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) from public.logs_auditoria;"
+      - name: Record successful restore drill
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "insert into public.ensaios_restauracao_backup(ambiente, backup_reference, status, initiated_at, completed_at, evidence_reference, notes) values ('github-disposable', 'github-run-${GITHUB_RUN_ID}', 'passed', now(), now(), 'github-run-${GITHUB_RUN_ID}', 'Restauração e consultas de integridade concluídas automaticamente.');"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: conform-flow-encrypted-backup-${{ github.run_id }}
+          path: |
+            conform-flow.dump.enc
+            conform-flow.dump.enc.sha256
+          retention-days: 30
+          if-no-files-found: error
+      - name: Remove plaintext backup
+        if: always()
+        run: rm -f conform-flow.dump

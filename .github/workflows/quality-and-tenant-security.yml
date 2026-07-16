@@ -1,0 +1,50 @@
+name: Quality and tenant security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: TypeScript
+        run: pnpm exec tsc --noEmit
+      - name: Production build
+        run: pnpm build
+
+  tenant-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase
+        run: supabase start --workdir backend -x studio,imgproxy,inbucket,logflare,vector,supavisor
+      - name: Rebuild schema from migrations
+        run: supabase db reset --workdir backend
+      - name: Execute tenant boundary test
+        env:
+          PGPASSWORD: postgres
+        run: psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/supabase/tests/tenant_isolation.sql
+      - name: Database lint
+        run: supabase db lint --workdir backend --local --level warning
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --workdir backend --no-backup
