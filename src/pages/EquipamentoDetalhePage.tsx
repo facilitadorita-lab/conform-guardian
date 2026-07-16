@@ -1,11 +1,28 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent, type ReactNode } from "react";
-import { ArrowLeft, CheckCircle2, Eye, Paperclip, Plus, X } from "lucide-react";
+import {
+  Archive,
+  ArrowLeft,
+  CalendarClock,
+  CheckCircle2,
+  ClipboardList,
+  Eye,
+  FileArchive,
+  Info,
+  Paperclip,
+  Plus,
+  ShieldCheck,
+  Wrench,
+  X,
+} from "lucide-react";
 import { AttachmentViewer } from "@/components/attachment-viewer";
+import { SectionHeader } from "@/components/conform/dashboard-widgets";
+import { EmptyState, Surface } from "@/components/conform/surface";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
 import { useAuthContext, useEquipamento } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { cn } from "@/lib/utils";
 import { edgeFunctionsService, evidenciasTimelineService } from "@/services";
 import {
   equipamentosService,
@@ -226,6 +243,29 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         />
       )}
 
+      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr]">
+        <EquipmentSummaryCard
+          icon={ShieldCheck}
+          label="Status consolidado"
+          value={statusLabel(equipamento.status)}
+          helper="Calculado pelo backend considerando registros atuais."
+        >
+          <StatusBadge tone={equipamento.status}>{statusLabel(equipamento.status)}</StatusBadge>
+        </EquipmentSummaryCard>
+        <EquipmentSummaryCard
+          icon={Info}
+          label="Criticidade"
+          value={criticidadeLabel(equipamento.criticidade)}
+          helper="Use criticidade para priorizar rotina e evidências."
+        />
+        <EquipmentSummaryCard
+          icon={CalendarClock}
+          label="Próximo vencimento"
+          value={formatDateBR(equipamento.proximoVenc)}
+          helper="Menor data entre calibração, qualificação e manutenção."
+        />
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <StatusBadge tone={equipamento.status}>{statusLabel(equipamento.status)}</StatusBadge>
         <span className="text-xs text-muted-foreground">
@@ -237,23 +277,24 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         </span>
       </div>
 
-      <div className="rounded-xl border border-border bg-card">
-        <div className="flex flex-wrap gap-1 border-b border-border px-2 pt-2">
+      <Surface className="overflow-hidden p-0">
+        <div className="flex gap-1 overflow-x-auto border-b border-border bg-muted/25 px-3 pt-3">
           {tabs.map((item) => (
             <button
               key={item}
               onClick={() => setTab(item)}
-              className={`-mb-px rounded-t-md border-b-2 px-3 py-2 text-sm ${
+              className={cn(
+                "-mb-px whitespace-nowrap rounded-t-xl border-b-2 px-4 py-3 text-sm font-semibold cf-transition",
                 tab === item
-                  ? "border-accent font-medium text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
+                  ? "border-accent bg-background text-primary shadow-sm"
+                  : "border-transparent text-muted-foreground hover:bg-background/60 hover:text-foreground",
+              )}
             >
-              {item}
+              {tabLabel(item)}
             </button>
           ))}
         </div>
-        <div className="p-6">
+        <div className="p-5 md:p-6">
           {tab === "Dados gerais" && (
             <dl className="grid grid-cols-1 gap-x-8 gap-y-4 text-sm md:grid-cols-2">
               <Field k="Nome" v={equipamento.nome} />
@@ -353,7 +394,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
             />
           )}
         </div>
-      </div>
+      </Surface>
 
       {activeForm && (
         <OperationalModal
@@ -388,10 +429,79 @@ function BackButton() {
   return (
     <Link
       to="/equipamentos"
-      className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-muted"
+      className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium shadow-sm cf-transition hover:border-accent/30 hover:bg-muted/40"
     >
       <ArrowLeft className="h-4 w-4" /> Voltar
     </Link>
+  );
+}
+
+function tabLabel(tab: Tab) {
+  const labels: Record<number, string> = {
+    0: "Dados gerais",
+    1: "Calibrações",
+    2: "Qualificações",
+    3: "Manutenções",
+    4: "Anexos",
+    5: "Pendências",
+    6: "Histórico",
+    7: "Arquivados",
+  };
+
+  return labels[tabs.indexOf(tab)] ?? String(tab);
+}
+
+function tabLabelFromTitle(value: string) {
+  const lower = value.toLowerCase();
+  if (lower.includes("calibra")) {
+    return lower.includes("inserir") ? "Inserir nova calibração" : "Calibrações";
+  }
+  if (lower.includes("qualifica")) {
+    return lower.includes("inserir") ? "Inserir nova qualificação" : "Qualificações";
+  }
+  if (lower.includes("manuten")) {
+    return lower.includes("inserir") ? "Inserir nova manutenção" : "Manutenções";
+  }
+  if (lower.includes("hist")) return "Histórico";
+  if (lower.includes("pend")) return "Pendências";
+  return value;
+}
+
+function criticidadeLabel(value: string) {
+  if (value === "Critica") return "Crítica";
+  if (value === "Media") return "Média";
+  return value || "-";
+}
+
+function EquipmentSummaryCard({
+  icon: Icon,
+  label,
+  value,
+  helper,
+  children,
+}: {
+  icon: typeof ShieldCheck;
+  label: string;
+  value: string;
+  helper: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="cf-page-card flex min-h-36 flex-col justify-between p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          {label}
+        </div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-accent/20 bg-accent/5 text-accent">
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+      <div>
+        <div className="mt-3 text-2xl font-semibold tracking-[-0.03em]">{value}</div>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">{helper}</p>
+        {children ? <div className="mt-3">{children}</div> : null}
+      </div>
+    </div>
   );
 }
 
@@ -408,20 +518,19 @@ function TimelineSection({
 }) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          <p className="text-xs text-muted-foreground">
-            Registros vinculados apenas a este equipamento.
-          </p>
-        </div>
-        <button
-          onClick={onAdd}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" /> {actionLabel}
-        </button>
-      </div>
+      <SectionHeader
+        title={tabLabelFromTitle(title)}
+        description="Registros vinculados apenas a este equipamento e separados por empresa."
+        action={
+          <button
+            type="button"
+            onClick={onAdd}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm cf-transition hover:-translate-y-0.5 hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" /> {tabLabelFromTitle(actionLabel)}
+          </button>
+        }
+      />
       {children}
     </div>
   );
@@ -471,25 +580,30 @@ function TimelineList({
 }) {
   if (!items.length) {
     return (
-      <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-        {empty}
-      </div>
+      <EmptyState
+        icon={archivedView ? FileArchive : ClipboardList}
+        title="Nenhum registro encontrado"
+        description={humanizeTexto(empty)}
+      />
     );
   }
 
   return (
-    <div className="divide-y divide-border rounded-lg border border-border">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
       {items.map((item, index) => (
-        <div key={item.id ?? index} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+        <div
+          key={item.id ?? index}
+          className="flex flex-col gap-3 border-b border-border p-4 last:border-b-0 cf-transition hover:bg-muted/25 sm:flex-row sm:items-center"
+        >
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-medium text-foreground">{item.descricao}</p>
+              <p className="font-semibold text-foreground">{humanizeTexto(item.descricao)}</p>
               {item.status && (
                 <StatusBadge tone={item.status}>{statusLabel(item.status)}</StatusBadge>
               )}
               {(archivedView || item.arquivado) && (
-                <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                  Arquivado
+                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                  <Archive className="h-3 w-3" /> Arquivado
                 </span>
               )}
             </div>
@@ -501,8 +615,9 @@ function TimelineList({
           </div>
 
           <button
+            type="button"
             onClick={() => onPreview(item)}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-accent hover:bg-muted"
+            className="inline-flex items-center justify-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-accent cf-transition hover:border-accent/30 hover:bg-accent/5"
           >
             <Eye className="h-3.5 w-3.5" /> Visualizar
           </button>
@@ -536,20 +651,23 @@ function OperationalModal({
   }[kind];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
       <form
         onSubmit={onSubmit}
-        className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-2xl border border-border bg-background shadow-2xl"
+        className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-3xl border border-border bg-background shadow-2xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+        <div className="flex items-start justify-between gap-4 border-b border-border bg-muted/30 p-5">
           <div>
-            <h2 className="text-lg font-semibold">{title}</h2>
+            <div className="mb-2 inline-flex rounded-full border border-accent/20 bg-accent/5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent">
+              Registro operacional
+            </div>
+            <h2 className="text-lg font-semibold">{tabLabelFromTitle(title)}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{equipamentoNome}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted"
+            className="rounded-xl border border-border p-2 text-muted-foreground cf-transition hover:bg-muted"
             aria-label="Fechar"
           >
             <X className="h-4 w-4" />
@@ -562,11 +680,11 @@ function OperationalModal({
           {kind === "manutencao" && <ManutencaoFields />}
 
           <label className="md:col-span-2">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
               Anexo / evidência
             </span>
-            <div className="mt-1 flex items-center gap-2 rounded-md border border-dashed border-border bg-muted/30 px-3 py-3">
-              <Paperclip className="h-4 w-4 text-muted-foreground" />
+            <div className="mt-1 flex items-center gap-3 rounded-2xl border border-dashed border-border bg-muted/30 px-4 py-4">
+              <Paperclip className="h-4 w-4 text-accent" />
               <input name="anexo" type="file" accept={uploadAccept} className="text-sm" />
             </div>
             <span className="mt-1 block text-xs text-muted-foreground">
@@ -575,7 +693,7 @@ function OperationalModal({
           </label>
 
           {error && (
-            <div className="md:col-span-2 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+            <div className="md:col-span-2 rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
               {error}
             </div>
           )}
@@ -585,21 +703,29 @@ function OperationalModal({
           )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border p-5">
+        <div className="flex flex-wrap justify-end gap-2 border-t border-border p-5">
           <button
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+            className="rounded-xl border border-border px-4 py-2 text-sm font-medium cf-transition hover:bg-muted disabled:opacity-60"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={isSaving}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground cf-transition hover:bg-primary/90 disabled:opacity-60"
           >
-            {isSaving ? "Salvando..." : "Salvar registro"}
+            {isSaving ? (
+              <>
+                <Wrench className="h-4 w-4 animate-pulse" /> Salvando...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" /> Salvar registro
+              </>
+            )}
           </button>
         </div>
       </form>
@@ -609,8 +735,8 @@ function OperationalModal({
 
 function UploadProgress({ value, label }: { value: number; label: string }) {
   return (
-    <div className="md:col-span-2 rounded-md border border-border bg-muted/30 p-3">
-      <div className="mb-2 flex items-center justify-between text-xs font-medium text-muted-foreground">
+    <div className="md:col-span-2 rounded-2xl border border-accent/20 bg-accent/5 p-4">
+      <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
         <span>{label}</span>
         <span>{value}%</span>
       </div>
@@ -636,7 +762,7 @@ function UploadSuccessBanner({
   onVisualizar: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-success/10 p-4 text-sm">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-success/30 bg-success/10 p-4 text-sm shadow-sm">
       <div className="flex items-center gap-2 text-success">
         <CheckCircle2 className="h-4 w-4" />
         <span>
@@ -650,7 +776,7 @@ function UploadSuccessBanner({
             target="_blank"
             rel="noreferrer"
             onClick={onVisualizar}
-            className="rounded-md border border-success/30 bg-background px-3 py-1.5 text-xs font-medium text-success hover:bg-muted"
+            className="rounded-xl border border-success/30 bg-background px-3 py-1.5 text-xs font-semibold text-success cf-transition hover:bg-muted"
           >
             Visualizar anexo
           </a>
@@ -658,7 +784,7 @@ function UploadSuccessBanner({
         <button
           type="button"
           onClick={onDismiss}
-          className="rounded-md border border-border px-3 py-1.5 text-xs hover:bg-muted"
+          className="rounded-xl border border-border px-3 py-1.5 text-xs font-medium cf-transition hover:bg-muted"
         >
           Fechar
         </button>
@@ -806,14 +932,14 @@ function Input({
 }) {
   return (
     <label>
-      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </span>
       <input
         name={name}
         type={type}
         required={required}
-        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+        className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none cf-transition focus:border-accent focus:ring-4 focus:ring-accent/10"
       />
     </label>
   );
@@ -832,13 +958,13 @@ function Select({
 }) {
   return (
     <label>
-      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </span>
       <select
         name={name}
         required={required}
-        className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+        className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none cf-transition focus:border-accent focus:ring-4 focus:ring-accent/10"
       >
         {children}
       </select>
@@ -849,13 +975,13 @@ function Select({
 function TextArea({ label, name }: { label: string; name: string }) {
   return (
     <label className="md:col-span-2">
-      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </span>
       <textarea
         name={name}
         rows={3}
-        className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none cf-transition focus:border-accent focus:ring-4 focus:ring-accent/10"
       />
     </label>
   );
@@ -863,15 +989,30 @@ function TextArea({ label, name }: { label: string; name: string }) {
 
 function Field({ k, v }: { k: string; v: string }) {
   return (
-    <div>
-      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{k}</dt>
-      <dd className="mt-0.5 font-medium">{v}</dd>
+    <div className="rounded-2xl border border-border bg-muted/25 p-4">
+      <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {humanizeTexto(k)}
+      </dt>
+      <dd className="mt-2 font-semibold">{humanizeTexto(v || "-")}</dd>
     </div>
   );
 }
 
 function humanizeTipo(value: string) {
   return value.replaceAll("_", " ");
+}
+
+function humanizeTexto(value: string) {
+  return value
+    .replaceAll("CalibraÃ§Ã£o", "Calibração")
+    .replaceAll("QualificaÃ§Ã£o", "Qualificação")
+    .replaceAll("ManutenÃ§Ã£o", "Manutenção")
+    .replaceAll("laboratÃ³rio", "laboratório")
+    .replaceAll("tÃ©cnico", "técnico")
+    .replaceAll("Â·", "·")
+    .replaceAll("PrÃ³ximo", "Próximo")
+    .replaceAll("HistÃ³rico", "Histórico")
+    .replaceAll("PendÃªncias", "Pendências");
 }
 
 function required(formData: FormData, key: string) {
