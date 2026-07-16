@@ -5,6 +5,7 @@ import type {
   UUID,
 } from "@/types";
 import { invokeRpc } from "./service-utils";
+import { lookupCompanyRegistration } from "./edgeFunctionsService";
 
 export interface AdminVerificationFilters {
   status?: string;
@@ -27,6 +28,10 @@ export interface AdminVerificationDetail {
 }
 
 export const companyVerificationService = {
+  consultarCnpj(cnpj: string) {
+    return lookupCompanyRegistration(cnpj);
+  },
+
   obterPermissoes(empresaId: UUID) {
     return invokeRpc<EffectiveCompanyPermissions>("get_effective_company_permissions", {
       p_empresa_id: empresaId,

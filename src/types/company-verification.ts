@@ -23,6 +23,40 @@ export type CompanyRole =
 
 export type VerificationRiskLevel = "normal" | "atencao" | "alto" | "critico";
 
+export interface CompanyRegistrationLookup {
+  data: {
+    cnpj: string;
+    legal_name: string;
+    trade_name: string | null;
+    registration_status: string | null;
+    registration_status_date: string | null;
+    opened_at: string | null;
+    headquarters_or_branch: string | null;
+    legal_nature: string | null;
+    company_size: string | null;
+    main_activity: { code: string | null; description: string | null };
+    secondary_activities: Array<{ code: string | null; description: string | null }>;
+    official_address: {
+      street: string | null;
+      number: string | null;
+      complement: string | null;
+      district: string | null;
+      city: string | null;
+      state: string | null;
+      postal_code: string | null;
+    };
+    official_phone: string | null;
+    official_email: string | null;
+  } | null;
+  provider: string | null;
+  cache_hit: boolean;
+  checked_at: ISODateTime;
+  company_exists: boolean;
+  registration_active: boolean | null;
+  can_create: boolean;
+  availability: "available" | "already_registered" | "registration_not_active";
+}
+
 export interface CompanyUsageLimits {
   max_users: number | null;
   max_units: number | null;

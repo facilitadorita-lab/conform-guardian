@@ -2,6 +2,7 @@
 // Todas as chamadas passam pelo supabase.functions.invoke, que anexa o JWT do
 // usuario autenticado. NUNCA chamar asaas-webhook daqui: e webhook externo.
 import { requireSupabase } from "./_supabase";
+import type { CompanyRegistrationLookup } from "@/types";
 
 export const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 export const SIGNED_PREVIEW_SECONDS = 10 * 60;
@@ -67,8 +68,30 @@ function translateFunctionError(message: string): string {
   if (normalized.includes("failed to fetch") || normalized.includes("cors")) {
     return "O navegador bloqueou a comunicacao com o backend. Verifique a funcao de upload no Supabase.";
   }
+  if (normalized.includes("invalid_cnpj")) {
+    return "CNPJ invalido. Confira os 14 digitos informados.";
+  }
+  if (normalized.includes("registration_not_found")) {
+    return "CNPJ nao encontrado na base cadastral consultada.";
+  }
+  if (normalized.includes("rate_limit_exceeded")) {
+    return "Muitas consultas em pouco tempo. Aguarde alguns minutos e tente novamente.";
+  }
+  if (
+    normalized.includes("provider_unavailable") ||
+    normalized.includes("provider_rate_limited") ||
+    normalized.includes("lookup_unavailable") ||
+    normalized.includes("rate_limit_unavailable")
+  ) {
+    return "A consulta cadastral esta temporariamente indisponivel. Tente novamente em instantes.";
+  }
 
   return message;
+}
+
+// ---- lookup-company-registration ----
+export function lookupCompanyRegistration(cnpj: string) {
+  return invoke<CompanyRegistrationLookup>("lookup-company-registration", { cnpj });
 }
 
 // ---- invite-company-user ----
@@ -293,6 +316,7 @@ export function createAsaasSubscription(input: CreateAsaasSubscriptionInput) {
 }
 
 export const edgeFunctionsService = {
+  lookupCompanyRegistration,
   inviteCompanyUser,
   createEvidenceUpload,
   uploadAnexoSeguro,

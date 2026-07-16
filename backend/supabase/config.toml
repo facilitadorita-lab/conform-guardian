@@ -57,3 +57,6 @@ verify_jwt = true
 
 [functions.create-test-profiles]
 verify_jwt = true
+
+[functions.lookup-company-registration]
+verify_jwt = true
