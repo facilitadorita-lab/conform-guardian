@@ -1,9 +1,22 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Eye, Plus, Search, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarClock,
+  CheckCircle2,
+  ClipboardList,
+  Eye,
+  Plus,
+  Search,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { SectionHeader } from "@/components/conform/dashboard-widgets";
+import { Surface } from "@/components/conform/surface";
 import { useAuthContext, useEquipamentos, useManutencoes } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
+import { cn } from "@/lib/utils";
 import { edgeFunctionsService, manutencoesService } from "@/services";
 import type { ManutencaoResumo } from "@/types";
 import { formatDateBR } from "@/utils/date";
@@ -41,6 +54,7 @@ export function ManutencoesPage() {
 
   const { data: manutencoes = [], isLoading } = useManutencoes(params);
   const { data: equipamentos = [] } = useEquipamentos();
+  const resumo = useMemo(() => calcularResumo(manutencoes), [manutencoes]);
 
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -149,109 +163,149 @@ export function ManutencoesPage() {
         />
       )}
 
-      <div className="grid gap-3 rounded-xl border border-border bg-card p-4 lg:grid-cols-[1fr_auto]">
-        <label className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={busca}
-            onChange={(event) => setBusca(event.target.value)}
-            placeholder="Buscar por equipamento, OS, técnico ou serviço..."
-            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm"
-          />
-        </label>
-
-        <div className="flex flex-wrap gap-2">
-          {[
-            { id: "todas", label: "Todas" },
-            { id: "preventiva", label: "Preventiva" },
-            { id: "corretiva", label: "Corretiva" },
-          ].map((filtro) => (
-            <button
-              key={filtro.id}
-              onClick={() => setNatureza(filtro.id as FiltroNatureza)}
-              className={`rounded-md border px-3 py-2 text-sm ${
-                natureza === filtro.id
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background hover:bg-muted"
-              }`}
-            >
-              {filtro.label}
-            </button>
-          ))}
-        </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <ResumoCard
+          title="Manutenções"
+          value={manutencoes.length}
+          description={`${resumo.vinculadas} vinculada${resumo.vinculadas === 1 ? "" : "s"} a equipamentos`}
+          icon={ClipboardList}
+          tone="info"
+        />
+        <ResumoCard
+          title="Vencidas / críticas"
+          value={resumo.risco}
+          description="Itens que merecem ação imediata"
+          icon={AlertTriangle}
+          tone={resumo.risco > 0 ? "danger" : "success"}
+        />
+        <ResumoCard
+          title="Em atenção"
+          value={resumo.atencao}
+          description="Próximas ou pendentes de acompanhamento"
+          icon={CalendarClock}
+          tone={resumo.atencao > 0 ? "warning" : "neutral"}
+        />
+        <ResumoCard
+          title="Concluídas / em dia"
+          value={resumo.emDia}
+          description="Registros sem atraso calculado"
+          icon={ShieldCheck}
+          tone="success"
+        />
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-card">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-xs text-muted-foreground">
-            <tr>
-              <th className="px-6 py-2.5 text-left font-medium">Equipamento / Serviço</th>
-              <th className="px-4 py-2.5 text-left font-medium">Tipo</th>
-              <th className="px-4 py-2.5 text-left font-medium">Data</th>
-              <th className="px-4 py-2.5 text-left font-medium">Responsável</th>
-              <th className="px-4 py-2.5 text-left font-medium">OS</th>
-              <th className="px-4 py-2.5 text-left font-medium">Status</th>
-              <th className="px-6 py-2.5 text-right font-medium">Ação</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {isLoading && (
-              <tr>
-                <td colSpan={7} className="px-6 py-6 text-center text-muted-foreground">
-                  Carregando manutenções...
-                </td>
-              </tr>
-            )}
+      <Surface className="space-y-4">
+        <SectionHeader
+          title="Controle de manutenções"
+          description="Preventivas, corretivas e serviços gerais com vínculo direto ao histórico do equipamento."
+        />
 
-            {!isLoading &&
-              manutencoes.map((manutencao) => (
-                <tr key={manutencao.id} className="hover:bg-muted/30">
-                  <td className="px-6 py-3">
-                    {manutencao.equipamentoId ? (
-                      <Link
-                        to="/equipamentos/$id"
-                        params={{ id: manutencao.equipamentoId }}
-                        className="font-medium text-foreground hover:text-accent hover:underline"
-                      >
-                        {manutencao.equipamento}
-                      </Link>
-                    ) : (
-                      <span className="font-medium text-foreground">{manutencao.equipamento}</span>
-                    )}
-                    <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                      {manutencao.id}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{manutencao.tipo}</td>
-                  <td className="px-4 py-3 tabular-nums">{formatDateBR(manutencao.data)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{manutencao.responsavel}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{manutencao.os}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge tone={manutencao.status}>
-                      {statusLabel(manutencao.status)}
-                    </StatusBadge>
-                  </td>
-                  <td className="px-6 py-3 text-right">
-                    <button
-                      onClick={() => setPreview(manutencao)}
-                      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-accent hover:bg-muted"
-                    >
-                      <Eye className="h-3.5 w-3.5" /> Detalhes
-                    </button>
+        <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+          <label className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+              placeholder="Buscar por equipamento, OS, técnico ou serviço..."
+              className="h-11 w-full rounded-xl border border-input bg-background pl-9 pr-3 text-sm outline-none cf-transition focus:border-accent focus:ring-4 focus:ring-accent/10"
+            />
+          </label>
+
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: "todas", label: "Todas" },
+              { id: "preventiva", label: "Preventiva" },
+              { id: "corretiva", label: "Corretiva" },
+            ].map((filtro) => (
+              <button
+                key={filtro.id}
+                onClick={() => setNatureza(filtro.id as FiltroNatureza)}
+                className={`rounded-xl border px-3 py-2 text-sm font-semibold cf-transition ${
+                  natureza === filtro.id
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background hover:bg-muted/60"
+                }`}
+              >
+                {filtro.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-xs uppercase tracking-[0.14em] text-muted-foreground">
+              <tr>
+                <th className="px-6 py-2.5 text-left font-medium">Equipamento / Serviço</th>
+                <th className="px-4 py-2.5 text-left font-medium">Tipo</th>
+                <th className="px-4 py-2.5 text-left font-medium">Data</th>
+                <th className="px-4 py-2.5 text-left font-medium">Responsável</th>
+                <th className="px-4 py-2.5 text-left font-medium">OS</th>
+                <th className="px-4 py-2.5 text-left font-medium">Status</th>
+                <th className="px-6 py-2.5 text-right font-medium">Ação</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {isLoading && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-6 text-center text-muted-foreground">
+                    Carregando manutenções...
                   </td>
                 </tr>
-              ))}
+              )}
 
-            {!isLoading && manutencoes.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
-                  Nenhuma manutenção encontrada para os filtros selecionados.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              {!isLoading &&
+                manutencoes.map((manutencao) => (
+                  <tr key={manutencao.id} className="cf-transition hover:bg-muted/30">
+                    <td className="px-6 py-3">
+                      {manutencao.equipamentoId ? (
+                        <Link
+                          to="/equipamentos/$id"
+                          params={{ id: manutencao.equipamentoId }}
+                          className="font-medium text-foreground hover:text-accent hover:underline"
+                        >
+                          {manutencao.equipamento}
+                        </Link>
+                      ) : (
+                        <span className="font-medium text-foreground">
+                          {manutencao.equipamento}
+                        </span>
+                      )}
+                      <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                        {manutencao.id}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-muted-foreground">{manutencao.tipo}</td>
+                    <td className="px-4 py-3 tabular-nums">{formatDateBR(manutencao.data)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{manutencao.responsavel}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{manutencao.os}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge tone={manutencao.status}>
+                        {statusLabel(manutencao.status)}
+                      </StatusBadge>
+                    </td>
+                    <td className="px-6 py-3 text-right">
+                      <button
+                        onClick={() => setPreview(manutencao)}
+                        className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-accent cf-transition hover:border-accent/30 hover:bg-accent/5"
+                      >
+                        <Eye className="h-3.5 w-3.5" /> Detalhes
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+              {!isLoading && manutencoes.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
+                    Nenhuma manutenção encontrada para os filtros selecionados.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Surface>
 
       {modalAberto && (
         <NovaManutencaoModal
@@ -426,6 +480,60 @@ function UploadProgress({ value, label }: { value: number; label: string }) {
         />
       </div>
     </div>
+  );
+}
+
+function ResumoCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  tone,
+}: {
+  title: string;
+  value: number;
+  description: string;
+  icon: typeof ClipboardList;
+  tone: "success" | "warning" | "danger" | "info" | "neutral";
+}) {
+  const toneClass = {
+    success: "border-success/20 bg-success/5 text-success",
+    warning: "border-warning/25 bg-warning/5 text-warning",
+    danger: "border-danger/25 bg-danger/5 text-danger",
+    info: "border-accent/20 bg-accent/5 text-accent",
+    neutral: "border-border bg-muted/30 text-muted-foreground",
+  }[tone];
+
+  return (
+    <div className="cf-page-card flex min-h-36 flex-col justify-between p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          {title}
+        </div>
+        <div
+          className={cn("flex h-10 w-10 items-center justify-center rounded-2xl border", toneClass)}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+      <div>
+        <div className="text-4xl font-semibold tracking-[-0.04em] tabular-nums">{value}</div>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function calcularResumo(manutencoes: ManutencaoResumo[]) {
+  return manutencoes.reduce(
+    (acc, manutencao) => {
+      if (manutencao.equipamentoId) acc.vinculadas += 1;
+      if (manutencao.status === "ok") acc.emDia += 1;
+      if (manutencao.status === "atencao") acc.atencao += 1;
+      if (manutencao.status === "vencido" || manutencao.status === "critico") acc.risco += 1;
+      return acc;
+    },
+    { vinculadas: 0, emDia: 0, atencao: 0, risco: 0 },
   );
 }
 
