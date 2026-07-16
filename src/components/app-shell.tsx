@@ -118,7 +118,7 @@ export function AppShell({
                         type: "active",
                       });
                       await router.invalidate();
-                      await router.navigate({ to: "/" });
+                      await router.navigate({ to: "/dashboard" });
                     }}
                   />
                   {authContext.usuario.isMaster ? (
@@ -194,7 +194,7 @@ function Breadcrumbs({ items }: { items: string[] }) {
 }
 
 function buildBreadcrumbs(pathname: string, title: string) {
-  if (pathname === "/") return [title];
+  if (pathname === "/dashboard") return [title];
   const parts = pathname
     .split("/")
     .filter(Boolean)

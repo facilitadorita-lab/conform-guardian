@@ -12,12 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VencimentosRouteImport } from './routes/vencimentos'
 import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as PendenciasRouteImport } from './routes/pendencias'
 import { Route as ManutencoesRouteImport } from './routes/manutencoes'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as DocumentosRouteImport } from './routes/documentos'
 import { Route as DefinirSenhaRouteImport } from './routes/definir-senha'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as AuditoriaRouteImport } from './routes/auditoria'
 import { Route as AssistenteRouteImport } from './routes/assistente'
@@ -49,6 +51,11 @@ const RelatoriosRoute = RelatoriosRouteImport.update({
   path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlanosRoute = PlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PendenciasRoute = PendenciasRouteImport.update({
   id: '/pendencias',
   path: '/pendencias',
@@ -77,6 +84,11 @@ const DocumentosRoute = DocumentosRouteImport.update({
 const DefinirSenhaRoute = DefinirSenhaRouteImport.update({
   id: '/definir-senha',
   path: '/definir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
@@ -162,12 +174,14 @@ export interface FileRoutesByFullPath {
   '/assistente': typeof AssistenteRoute
   '/auditoria': typeof AuditoriaRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/dashboard': typeof DashboardRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
   '/login': typeof LoginRoute
   '/manutencoes': typeof ManutencoesRoute
   '/pendencias': typeof PendenciasRoute
+  '/planos': typeof PlanosRoute
   '/relatorios': typeof RelatoriosRoute
   '/usuarios': typeof UsuariosRoute
   '/vencimentos': typeof VencimentosRoute
@@ -188,12 +202,14 @@ export interface FileRoutesByTo {
   '/assistente': typeof AssistenteRoute
   '/auditoria': typeof AuditoriaRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/dashboard': typeof DashboardRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
   '/login': typeof LoginRoute
   '/manutencoes': typeof ManutencoesRoute
   '/pendencias': typeof PendenciasRoute
+  '/planos': typeof PlanosRoute
   '/relatorios': typeof RelatoriosRoute
   '/usuarios': typeof UsuariosRoute
   '/vencimentos': typeof VencimentosRoute
@@ -215,12 +231,14 @@ export interface FileRoutesById {
   '/assistente': typeof AssistenteRoute
   '/auditoria': typeof AuditoriaRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/dashboard': typeof DashboardRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
   '/login': typeof LoginRoute
   '/manutencoes': typeof ManutencoesRoute
   '/pendencias': typeof PendenciasRoute
+  '/planos': typeof PlanosRoute
   '/relatorios': typeof RelatoriosRoute
   '/usuarios': typeof UsuariosRoute
   '/vencimentos': typeof VencimentosRoute
@@ -243,12 +261,14 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/auditoria'
     | '/configuracoes'
+    | '/dashboard'
     | '/definir-senha'
     | '/documentos'
     | '/equipamentos'
     | '/login'
     | '/manutencoes'
     | '/pendencias'
+    | '/planos'
     | '/relatorios'
     | '/usuarios'
     | '/vencimentos'
@@ -269,12 +289,14 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/auditoria'
     | '/configuracoes'
+    | '/dashboard'
     | '/definir-senha'
     | '/documentos'
     | '/equipamentos'
     | '/login'
     | '/manutencoes'
     | '/pendencias'
+    | '/planos'
     | '/relatorios'
     | '/usuarios'
     | '/vencimentos'
@@ -295,12 +317,14 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/auditoria'
     | '/configuracoes'
+    | '/dashboard'
     | '/definir-senha'
     | '/documentos'
     | '/equipamentos'
     | '/login'
     | '/manutencoes'
     | '/pendencias'
+    | '/planos'
     | '/relatorios'
     | '/usuarios'
     | '/vencimentos'
@@ -322,12 +346,14 @@ export interface RootRouteChildren {
   AssistenteRoute: typeof AssistenteRoute
   AuditoriaRoute: typeof AuditoriaRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
+  DashboardRoute: typeof DashboardRoute
   DefinirSenhaRoute: typeof DefinirSenhaRoute
   DocumentosRoute: typeof DocumentosRoute
   EquipamentosRoute: typeof EquipamentosRouteWithChildren
   LoginRoute: typeof LoginRoute
   ManutencoesRoute: typeof ManutencoesRoute
   PendenciasRoute: typeof PendenciasRoute
+  PlanosRoute: typeof PlanosRoute
   RelatoriosRoute: typeof RelatoriosRoute
   UsuariosRoute: typeof UsuariosRoute
   VencimentosRoute: typeof VencimentosRoute
@@ -363,6 +389,13 @@ declare module '@tanstack/react-router' {
       path: '/relatorios'
       fullPath: '/relatorios'
       preLoaderRoute: typeof RelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planos': {
+      id: '/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof PlanosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pendencias': {
@@ -405,6 +438,13 @@ declare module '@tanstack/react-router' {
       path: '/definir-senha'
       fullPath: '/definir-senha'
       preLoaderRoute: typeof DefinirSenhaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes': {
@@ -533,12 +573,14 @@ const rootRouteChildren: RootRouteChildren = {
   AssistenteRoute: AssistenteRoute,
   AuditoriaRoute: AuditoriaRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
+  DashboardRoute: DashboardRoute,
   DefinirSenhaRoute: DefinirSenhaRoute,
   DocumentosRoute: DocumentosRoute,
   EquipamentosRoute: EquipamentosRouteWithChildren,
   LoginRoute: LoginRoute,
   ManutencoesRoute: ManutencoesRoute,
   PendenciasRoute: PendenciasRoute,
+  PlanosRoute: PlanosRoute,
   RelatoriosRoute: RelatoriosRoute,
   UsuariosRoute: UsuariosRoute,
   VencimentosRoute: VencimentosRoute,

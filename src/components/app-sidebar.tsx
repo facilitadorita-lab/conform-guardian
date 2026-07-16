@@ -38,7 +38,7 @@ const groups: { label: string; items: NavItem[] }[] = [
     label: "Operação",
     items: [
       {
-        to: "/",
+        to: "/dashboard",
         label: "Dashboard",
         description: "Visão executiva",
         icon: LayoutDashboard,
@@ -173,9 +173,11 @@ export function AppSidebar() {
         collapsed ? "w-[88px]" : "w-[280px]",
       )}
     >
-      <div className={cn("border-b border-sidebar-border p-4", collapsed && "px-3")}>
+      <div
+        className={cn("border-b border-sidebar-border bg-white/[0.035] p-5", collapsed && "px-3")}
+      >
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 shadow-sm">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 shadow-lg shadow-black/10 ring-1 ring-white/20">
             <img
               src="/conform-flow-logo-transparent.png"
               alt="Conform Flow"
@@ -184,8 +186,10 @@ export function AppSidebar() {
           </div>
           {!collapsed ? (
             <div className="min-w-0 leading-tight">
-              <div className="truncate text-sm font-semibold tracking-tight">Conform Flow</div>
-              <div className="truncate text-[11px] text-sidebar-foreground/60">
+              <div className="truncate text-base font-bold tracking-tight text-white">
+                Conform Flow
+              </div>
+              <div className="truncate text-[11px] font-medium uppercase tracking-[0.16em] text-cyan-100/70">
                 Gestão de conformidade
               </div>
             </div>
