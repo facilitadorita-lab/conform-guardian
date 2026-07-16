@@ -28,8 +28,7 @@ async function invoke<T = unknown>(name: string, body?: unknown): Promise<T> {
 }
 
 async function extractFunctionErrorMessage(error: unknown): Promise<string> {
-  const fallback =
-    (error as { message?: string })?.message || "Falha ao chamar funcao do backend.";
+  const fallback = (error as { message?: string })?.message || "Falha ao chamar funcao do backend.";
   const context = (error as { context?: Response })?.context;
 
   if (!context) return translateFunctionError(fallback);
@@ -74,6 +73,7 @@ function translateFunctionError(message: string): string {
 
 // ---- invite-company-user ----
 export interface InviteCompanyUserInput {
+  empresaId: string;
   email: string;
   nome: string;
   perfil: "administrador" | "responsavel_tecnico" | "colaborador" | "somente_leitura";
@@ -87,7 +87,13 @@ export interface InviteCompanyUserResult {
 }
 
 export function inviteCompanyUser(input: InviteCompanyUserInput) {
-  return invoke<InviteCompanyUserResult>("invite-company-user", input);
+  return invoke<InviteCompanyUserResult>("invite-company-user", {
+    empresa_id: input.empresaId,
+    email: input.email,
+    nome: input.nome,
+    perfil: input.perfil,
+    cargo: input.setor,
+  });
 }
 
 // ---- create-evidence-upload ----
@@ -95,12 +101,7 @@ export function inviteCompanyUser(input: InviteCompanyUserInput) {
 export interface CreateEvidenceUploadRequest {
   empresaId: string;
   modulo:
-    | "documentos"
-    | "equipamentos"
-    | "calibracoes"
-    | "qualificacoes"
-    | "manutencoes"
-    | "pendencias";
+    "documentos" | "equipamentos" | "calibracoes" | "qualificacoes" | "manutencoes" | "pendencias";
   registroId: string;
   nomeOriginal: string;
   mimeType: string;
@@ -225,7 +226,9 @@ function uploadFileToSignedUrl(
         return;
       }
 
-      reject(new Error(translateFunctionError(xhr.responseText || `Falha no upload (${xhr.status}).`)));
+      reject(
+        new Error(translateFunctionError(xhr.responseText || `Falha no upload (${xhr.status}).`)),
+      );
     };
 
     xhr.onerror = () => reject(new Error("Falha de rede durante o upload do arquivo."));

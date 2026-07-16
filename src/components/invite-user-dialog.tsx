@@ -4,7 +4,13 @@ import { edgeFunctionsService } from "@/services";
 
 type Perfil = "administrador" | "responsavel_tecnico" | "colaborador" | "somente_leitura";
 
-export function InviteUserDialog({ onClose }: { onClose: () => void }) {
+export function InviteUserDialog({
+  empresaId,
+  onClose,
+}: {
+  empresaId: string;
+  onClose: () => void;
+}) {
   const [email, setEmail] = useState("");
   const [nome, setNome] = useState("");
   const [setor, setSetor] = useState("");
@@ -18,7 +24,13 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
     setErro(null);
     setLoading(true);
     try {
-      await edgeFunctionsService.inviteCompanyUser({ email, nome, perfil, setor: setor || undefined });
+      await edgeFunctionsService.inviteCompanyUser({
+        empresaId,
+        email,
+        nome,
+        perfil,
+        setor: setor || undefined,
+      });
       setOk(true);
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Falha ao enviar convite.");
@@ -38,28 +50,48 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
         </div>
         {ok ? (
           <div className="p-6 space-y-4">
-            <p className="text-sm">Convite enviado para <strong>{email}</strong>.</p>
-            <button onClick={onClose} className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <p className="text-sm">
+              Convite enviado para <strong>{email}</strong>.
+            </p>
+            <button
+              onClick={onClose}
+              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
               Fechar
             </button>
           </div>
         ) : (
           <form onSubmit={submit} className="p-5 space-y-4">
             <Field label="Nome">
-              <input required value={nome} onChange={(e) => setNome(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+              <input
+                required
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              />
             </Field>
             <Field label="E-mail">
-              <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+              <input
+                required
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              />
             </Field>
             <Field label="Setor (opcional)">
-              <input value={setor} onChange={(e) => setSetor(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+              <input
+                value={setor}
+                onChange={(e) => setSetor(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              />
             </Field>
             <Field label="Perfil">
-              <select value={perfil} onChange={(e) => setPerfil(e.target.value as Perfil)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+              <select
+                value={perfil}
+                onChange={(e) => setPerfil(e.target.value as Perfil)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
                 <option value="administrador">Administrador</option>
                 <option value="responsavel_tecnico">Responsável técnico</option>
                 <option value="colaborador">Colaborador</option>
@@ -68,11 +100,18 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
             </Field>
             {erro && <p className="text-xs text-destructive">{erro}</p>}
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={onClose} className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
+              >
                 Cancelar
               </button>
-              <button type="submit" disabled={loading}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+              >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Enviar convite
               </button>

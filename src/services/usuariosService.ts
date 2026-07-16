@@ -2,23 +2,29 @@ import { runtimeConfig } from "@/lib/runtime-config";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { usuariosMock } from "@/mocks";
 import type { UsuarioResumo } from "@/types";
-import { cloneMock } from "./service-utils";
+import { cloneMock, invokeRpc } from "./service-utils";
+
+export type PerfilUsuarioEmpresa =
+  "administrador" | "responsavel_tecnico" | "colaborador" | "somente_leitura";
 
 type UsuarioEmpresaRow = {
-  perfil: "administrador" | "responsavel_tecnico" | "colaborador" | "somente_leitura";
-  usuarios?: {
-    id: string;
-    nome: string;
-    email: string;
-    cargo: string | null;
-    status: "ativo" | "inativo";
-  } | Array<{
-    id: string;
-    nome: string;
-    email: string;
-    cargo: string | null;
-    status: "ativo" | "inativo";
-  }> | null;
+  perfil: PerfilUsuarioEmpresa;
+  usuarios?:
+    | {
+        id: string;
+        nome: string;
+        email: string;
+        cargo: string | null;
+        status: "ativo" | "inativo";
+      }
+    | Array<{
+        id: string;
+        nome: string;
+        email: string;
+        cargo: string | null;
+        status: "ativo" | "inativo";
+      }>
+    | null;
 };
 
 const perfilLabel: Record<UsuarioEmpresaRow["perfil"], UsuarioResumo["perfil"]> = {
@@ -52,6 +58,23 @@ export const usuariosService = {
         setor: usuario!.cargo ?? "-",
         status: usuario!.status === "ativo" ? "Ativo" : "Inativo",
       }));
+  },
+
+  atualizarPerfil(
+    empresaId: string,
+    usuarioId: string,
+    payload: { perfil: PerfilUsuarioEmpresa; ativo: boolean },
+  ) {
+    return invokeRpc<{
+      usuario_id: string;
+      empresa_id: string;
+      perfil: PerfilUsuarioEmpresa;
+      ativo: boolean;
+    }>("api_atualizar_usuario_empresa", {
+      p_empresa_id: empresaId,
+      p_usuario_id: usuarioId,
+      p_payload: payload,
+    });
   },
 };
 
