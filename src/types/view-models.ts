@@ -1,4 +1,9 @@
 import type { ISODate, StatusConformidade, UUID } from "./domain";
+import type {
+  CompanyAccessStatus,
+  CompanyVerificationStatus,
+  SubscriptionStatusNormalized,
+} from "./company-verification";
 
 export interface DashboardResumo {
   indiceConformidade: number;
@@ -104,6 +109,9 @@ export interface EmpresaResumo {
   nome: string;
   cnpj: string;
   status: "ativa" | "bloqueada" | "cancelada";
+  verificationStatus?: CompanyVerificationStatus;
+  accessStatus?: CompanyAccessStatus;
+  subscriptionStatus?: SubscriptionStatusNormalized;
   plano?: EmpresaPlanoResumo | null;
 }
 
@@ -117,7 +125,12 @@ export interface AuthContexto {
   empresaAtual: EmpresaResumo;
   empresasPermitidas: EmpresaResumo[];
   perfilAtual:
-    "administrador" | "responsavel_tecnico" | "colaborador" | "somente_leitura" | "master";
+    | "administrador_provisorio"
+    | "administrador"
+    | "responsavel_tecnico"
+    | "colaborador"
+    | "somente_leitura"
+    | "master";
 }
 
 export interface RelatorioCatalogoItem {

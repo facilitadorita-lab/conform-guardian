@@ -1,6 +1,12 @@
 import { runtimeConfig } from "@/lib/runtime-config";
 import { authContextMock } from "@/mocks";
-import type { AuthContexto, EmpresaPlanoResumo } from "@/types";
+import type {
+  AuthContexto,
+  CompanyAccessStatus,
+  CompanyVerificationStatus,
+  EmpresaPlanoResumo,
+  SubscriptionStatusNormalized,
+} from "@/types";
 import { cloneMock, invokeRpc } from "./service-utils";
 
 export const SELECTED_COMPANY_STORAGE_KEY = "conformflow.selectedCompanyId";
@@ -18,8 +24,12 @@ interface ApiContextoUsuarioResponse {
     razao_social: string;
     cnpj: string;
     status: "ativa" | "bloqueada" | "cancelada";
+    verification_status?: CompanyVerificationStatus;
+    access_status?: CompanyAccessStatus;
+    subscription_status?: SubscriptionStatusNormalized;
     plano?: EmpresaPlanoResumo | null;
     perfil:
+      | "administrador_provisorio"
       | "administrador"
       | "responsavel_tecnico"
       | "colaborador"
@@ -51,7 +61,7 @@ export const authService = {
 
     const contexto = await invokeRpc<ApiContextoUsuarioResponse>("api_contexto_usuario");
     const selectedCompanyId = getSelectedCompanyId();
-    let empresaAtual =
+    const empresaAtual =
       contexto.empresas.find((empresa) => empresa.id === selectedCompanyId) ?? contexto.empresas[0];
 
     if (!empresaAtual) {
@@ -74,6 +84,9 @@ export const authService = {
         nome: empresaAtual.razao_social || empresaAtual.nome_fantasia,
         cnpj: empresaAtual.cnpj,
         status: empresaAtual.status,
+        verificationStatus: empresaAtual.verification_status,
+        accessStatus: empresaAtual.access_status,
+        subscriptionStatus: empresaAtual.subscription_status,
         plano: normalizePlano(empresaAtual.plano),
       },
       empresasPermitidas: contexto.empresas.map((empresa) => ({
@@ -81,6 +94,9 @@ export const authService = {
         nome: empresa.razao_social || empresa.nome_fantasia,
         cnpj: empresa.cnpj,
         status: empresa.status,
+        verificationStatus: empresa.verification_status,
+        accessStatus: empresa.access_status,
+        subscriptionStatus: empresa.subscription_status,
         plano: normalizePlano(empresa.plano),
       })),
       perfilAtual: empresaAtual.perfil,
