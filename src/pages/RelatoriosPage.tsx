@@ -1,23 +1,29 @@
+import { useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   BarChart3,
   ClipboardList,
   Cog,
   FileDown,
-  FileSpreadsheet,
   FileText,
   Loader2,
+  Search,
   ShieldCheck,
   Sparkles,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { SectionHeader } from "@/components/conform/dashboard-widgets";
+import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAuthContext, useRelatorios } from "@/hooks/use-conform-data";
 import { AppShell } from "@/layouts/app-layout";
+import { cn } from "@/lib/utils";
 import { relatoriosService } from "@/services";
-import type { RelatorioExecutivoIA } from "@/types";
+import type { RelatorioCatalogoItem, RelatorioExecutivoIA } from "@/types";
 import { formatDateBR, formatDateTimeBR } from "@/utils/date";
 
-const iconMap = {
+const iconMap: Record<string, LucideIcon> = {
   "bar-chart-3": BarChart3,
   "clipboard-list": ClipboardList,
   cog: Cog,
@@ -29,6 +35,15 @@ const iconMap = {
 export function RelatoriosPage() {
   const { data: relatorios = [] } = useRelatorios();
   const { data: authContext } = useAuthContext();
+  const [busca, setBusca] = useState("");
+  const relatoriosFiltrados = useMemo(() => {
+    const termo = normalizar(busca);
+    if (!termo) return relatorios;
+    return relatorios.filter((relatorio) =>
+      normalizar(`${relatorio.title} ${relatorio.desc}`).includes(termo),
+    );
+  }, [busca, relatorios]);
+
   const gerarRelatorio = useMutation({
     mutationFn: () => relatoriosService.gerarExecutivoIA(authContext!.empresaAtual.id),
     onSuccess: (relatorio) => abrirRelatorioPrint(relatorio),
@@ -43,7 +58,7 @@ export function RelatoriosPage() {
           type="button"
           onClick={() => gerarRelatorio.mutate()}
           disabled={!authContext?.empresaAtual.id || gerarRelatorio.isPending}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm cf-transition hover:-translate-y-0.5 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {gerarRelatorio.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -55,56 +70,189 @@ export function RelatoriosPage() {
       }
     >
       {gerarRelatorio.error ? (
-        <div className="rounded-xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
+        <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
           {gerarRelatorio.error instanceof Error
             ? gerarRelatorio.error.message
             : "Não foi possível gerar o relatório."}
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {relatorios.map((relatorio) => {
-          const Icon = iconMap[relatorio.icon as keyof typeof iconMap];
-
-          return (
-            <div key={relatorio.id} className="flex flex-col rounded-xl border border-border bg-card p-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/5 text-primary">
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold">{relatorio.title}</div>
-                  <div className="text-xs text-muted-foreground">{relatorio.desc}</div>
-                </div>
-              </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => gerarRelatorio.mutate()}
-                  disabled={gerarRelatorio.isPending}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted disabled:opacity-60"
-                >
-                  <FileDown className="h-3.5 w-3.5" /> PDF IA
-                </button>
-                <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted">
-                  <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
-                </button>
-                <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs hover:bg-muted">
-                  <FileDown className="h-3.5 w-3.5" /> CSV
-                </button>
-              </div>
-            </div>
-          );
-        })}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <ResumoCard
+          title="Modelos disponíveis"
+          value={relatorios.length}
+          description="Catálogo preparado para operação"
+          icon={FileText}
+          tone="info"
+        />
+        <ResumoCard
+          title="IA segura"
+          value="Sem anexos"
+          description="A IA usa apenas dados estruturados"
+          icon={ShieldCheck}
+          tone="success"
+        />
+        <ResumoCard
+          title="Exportação"
+          value="PDF"
+          description="Saída pronta para salvar ou imprimir"
+          icon={FileDown}
+          tone="neutral"
+        />
+        <ResumoCard
+          title="Atenção"
+          value="Pop-up"
+          description="Libere pop-ups para gerar o PDF"
+          icon={AlertTriangle}
+          tone="warning"
+        />
       </div>
+
+      <Surface className="space-y-4">
+        <SectionHeader
+          title="Catálogo de relatórios"
+          description="Escolha o relatório e gere uma saída executiva com rastreabilidade."
+          action={
+            <button
+              type="button"
+              onClick={() => exportarCatalogoCsv(relatoriosFiltrados)}
+              disabled={relatoriosFiltrados.length === 0}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold cf-transition hover:border-accent/30 hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FileDown className="h-3.5 w-3.5" /> Exportar catálogo CSV
+            </button>
+          }
+        />
+
+        <label className="relative block">
+          <span className="sr-only">Buscar relatório</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={busca}
+            onChange={(event) => setBusca(event.target.value)}
+            placeholder="Buscar por relatório, módulo ou finalidade..."
+            className="h-11 w-full rounded-xl border border-input bg-background pl-9 pr-3 text-sm outline-none cf-transition focus:border-accent focus:ring-4 focus:ring-accent/10"
+          />
+        </label>
+
+        {relatoriosFiltrados.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title="Nenhum relatório encontrado"
+            description="Ajuste a busca para voltar ao catálogo completo de relatórios."
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {relatoriosFiltrados.map((relatorio) => (
+              <RelatorioCard
+                key={relatorio.id}
+                relatorio={relatorio}
+                isGenerating={gerarRelatorio.isPending}
+                onGenerate={() => gerarRelatorio.mutate()}
+              />
+            ))}
+          </div>
+        )}
+      </Surface>
     </AppShell>
+  );
+}
+
+function RelatorioCard({
+  relatorio,
+  isGenerating,
+  onGenerate,
+}: {
+  relatorio: RelatorioCatalogoItem;
+  isGenerating: boolean;
+  onGenerate: () => void;
+}) {
+  const Icon = iconMap[relatorio.icon] ?? FileText;
+
+  return (
+    <article className="flex min-h-52 flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-sm cf-transition hover:-translate-y-0.5 hover:border-accent/35 hover:shadow-[var(--cf-shadow-soft)]">
+      <div className="flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold">{relatorio.title}</h3>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{relatorio.desc}</p>
+        </div>
+      </div>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onGenerate}
+          disabled={isGenerating}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground cf-transition hover:bg-primary/90 disabled:opacity-60"
+        >
+          {isGenerating ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <FileDown className="h-3.5 w-3.5" />
+          )}
+          PDF IA
+        </button>
+        <button
+          type="button"
+          onClick={() => exportarCatalogoCsv([relatorio])}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-xs font-semibold cf-transition hover:border-accent/30 hover:bg-muted/40"
+        >
+          <FileDown className="h-3.5 w-3.5" /> CSV
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function ResumoCard({
+  title,
+  value,
+  description,
+  icon: Icon,
+  tone,
+}: {
+  title: string;
+  value: number | string;
+  description: string;
+  icon: LucideIcon;
+  tone: "success" | "warning" | "danger" | "info" | "neutral";
+}) {
+  const toneClass = {
+    success: "border-success/20 bg-success/5 text-success",
+    warning: "border-warning/25 bg-warning/5 text-warning",
+    danger: "border-danger/25 bg-danger/5 text-danger",
+    info: "border-accent/20 bg-accent/5 text-accent",
+    neutral: "border-border bg-muted/30 text-muted-foreground",
+  }[tone];
+
+  return (
+    <div className="cf-page-card flex min-h-36 flex-col justify-between p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          {title}
+        </div>
+        <div
+          className={cn("flex h-10 w-10 items-center justify-center rounded-2xl border", toneClass)}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+      <div>
+        <div className="text-3xl font-semibold tracking-[-0.04em] tabular-nums">{value}</div>
+        <p className="mt-2 text-xs leading-5 text-muted-foreground">{description}</p>
+      </div>
+    </div>
   );
 }
 
 function abrirRelatorioPrint(relatorio: RelatorioExecutivoIA) {
   const printWindow = window.open("", "_blank", "noopener,noreferrer,width=980,height=1200");
   if (!printWindow) {
-    throw new Error("O navegador bloqueou a janela do relatório. Libere pop-ups para exportar PDF.");
+    throw new Error(
+      "O navegador bloqueou a janela do relatório. Libere pop-ups para exportar PDF.",
+    );
   }
 
   printWindow.document.write(renderRelatorioHtml(relatorio));
@@ -115,8 +263,6 @@ function abrirRelatorioPrint(relatorio: RelatorioExecutivoIA) {
 
 function renderRelatorioHtml(relatorio: RelatorioExecutivoIA) {
   const resumo = relatorio.resumo;
-  const recomendacoes = relatorio.recomendacoes ?? [];
-  const analise = relatorio.analise_ia ?? [];
   const matriz = relatorio.matriz_documental;
 
   return `<!doctype html>
@@ -170,10 +316,10 @@ function renderRelatorioHtml(relatorio: RelatorioExecutivoIA) {
   </div>
 
   <h2>Análise da IA</h2>
-  <ul>${analise.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+  <ul>${(relatorio.analise_ia ?? []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
 
   <h2>Recomendações prioritárias</h2>
-  <ul>${recomendacoes.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
+  <ul>${(relatorio.recomendacoes ?? []).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
 
   <h2>Matriz documental</h2>
   <p class="muted">Exigidos: ${matriz.resumo.exigidos} · cadastrados: ${matriz.resumo.cadastrados}</p>
@@ -207,10 +353,43 @@ function renderRelatorioHtml(relatorio: RelatorioExecutivoIA) {
 </html>`;
 }
 
+function exportarCatalogoCsv(relatorios: RelatorioCatalogoItem[]) {
+  const rows = [
+    ["Relatório", "Descrição"],
+    ...relatorios.map((relatorio) => [relatorio.title, relatorio.desc]),
+  ];
+  const csv = rows.map((row) => row.map(escapeCsv).join(";")).join("\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "catalogo-relatorios-conform-flow.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 function kpi(label: string, value: string | number) {
   return `<div class="card"><div class="muted">${escapeHtml(label)}</div><div class="kpi">${escapeHtml(String(value))}</div></div>`;
 }
 
+function escapeCsv(value: string | number | null | undefined) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
 function escapeHtml(value: string) {
-  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function normalizar(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
