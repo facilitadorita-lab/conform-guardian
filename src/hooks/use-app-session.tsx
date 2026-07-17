@@ -56,6 +56,7 @@ export function AppSessionProvider({ children }: { children: ReactNode }) {
     getSelectedCompanyId(),
   );
   const contextRequest = useRef(0);
+  const sessionUserId = useRef<string | null>(null);
   const user = session?.user ?? null;
 
   useEffect(() => {
@@ -75,15 +76,34 @@ export function AppSessionProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     void supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
+      sessionUserId.current = data.session?.user.id ?? null;
       setSession(data.session);
       setAuthLoading(false);
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      if (sessionUserId.current !== nextUserId) {
+        contextRequest.current += 1;
+        setAuthContext(null);
+        setPermissions(null);
+        setContextError(null);
+        setContextLoading(Boolean(nextSession));
+        setSelectedCompanyState(null);
+      }
+      sessionUserId.current = nextUserId;
       setSession(nextSession);
       setAuthLoading(false);
       if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
-      if (event === "SIGNED_OUT") setPasswordRecovery(false);
+      if (event === "SIGNED_OUT") {
+        contextRequest.current += 1;
+        setPasswordRecovery(false);
+        setAuthContext(null);
+        setPermissions(null);
+        setContextError(null);
+        setContextLoading(false);
+        setSelectedCompanyState(null);
+      }
     });
 
     return () => {
@@ -156,8 +176,27 @@ export function AppSessionProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(
     async (email: string, password: string) => {
       if (useMocks) throw new Error("Login real indisponível enquanto os mocks estiverem ativos.");
-      const { error } = await getSupabaseClient().auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      contextRequest.current += 1;
+      clearSelectedCompanyId();
+      setSelectedCompanyState(null);
+      setAuthContext(null);
+      setPermissions(null);
+      setContextError(null);
+      setContextLoading(true);
+      setAuthLoading(true);
+
+      const { data, error } = await getSupabaseClient().auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        setAuthLoading(false);
+        setContextLoading(false);
+        throw error;
+      }
+      setSession(data.session);
+      sessionUserId.current = data.session?.user.id ?? null;
+      setAuthLoading(false);
     },
     [useMocks],
   );
@@ -166,9 +205,17 @@ export function AppSessionProvider({ children }: { children: ReactNode }) {
     contextRequest.current += 1;
     clearSelectedCompanyId();
     setSelectedCompanyState(null);
+    sessionUserId.current = null;
+    setSession(null);
+    setAuthLoading(false);
+    setContextLoading(false);
+    setContextError(null);
     setAuthContext(useMocks ? authContextMock : null);
     setPermissions(null);
-    if (!useMocks) await getSupabaseClient().auth.signOut();
+    if (!useMocks) {
+      const { error } = await getSupabaseClient().auth.signOut();
+      if (error) throw error;
+    }
   }, [useMocks]);
 
   const selectCompany = useCallback(

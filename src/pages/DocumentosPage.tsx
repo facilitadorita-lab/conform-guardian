@@ -19,6 +19,7 @@ import { EmptyState, Surface } from "@/components/conform/surface";
 import { AttachmentViewer } from "@/components/attachment-viewer";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
 import { useAuthContext, useDocumentos } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { documentosService, edgeFunctionsService, evidenciasTimelineService } from "@/services";
 import type { DocumentoResumo, StatusConformidade } from "@/types";
@@ -37,9 +38,10 @@ const pageSize = 12;
 
 export function DocumentosPage() {
   const { data: authContext } = useAuthContext();
+  const { podeEscrever } = useSession();
   const selectedCompanyId = authContext?.empresaAtual.id ?? null;
   const empresaNome = authContext?.empresaAtual.nome ?? "empresa não selecionada";
-  const { data: documentos = [] } = useDocumentos();
+  const { data: documentos = [], isLoading } = useDocumentos();
   const queryClient = useQueryClient();
   const [documentoPreview, setDocumentoPreview] = useState<DocumentoResumo | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
@@ -132,6 +134,7 @@ export function DocumentosPage() {
 
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      if (!podeEscrever) throw new Error("Seu perfil possui acesso somente para consulta.");
       if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
 
       const file = formData.get("anexo");
@@ -224,7 +227,9 @@ export function DocumentosPage() {
           <button
             type="button"
             onClick={() => setModalAberto(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm cf-transition hover:bg-primary/90"
+            disabled={!podeEscrever}
+            title={!podeEscrever ? "Seu perfil possui acesso somente para consulta" : undefined}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm cf-transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus className="h-4 w-4" /> Novo documento
           </button>
@@ -358,7 +363,16 @@ export function DocumentosPage() {
           </div>
         </div>
 
-        {documentosPaginados.length > 0 ? (
+        {isLoading ? (
+          <div className="grid gap-3 p-5">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={index}
+                className="h-20 animate-pulse rounded-2xl border border-border bg-muted/40"
+              />
+            ))}
+          </div>
+        ) : documentosPaginados.length > 0 ? (
           <>
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full text-sm">
@@ -418,7 +432,7 @@ export function DocumentosPage() {
                   : "Ajuste os filtros ou limpe a busca para visualizar os documentos cadastrados."
               }
               action={
-                documentos.length === 0 ? (
+                documentos.length === 0 && podeEscrever ? (
                   <button
                     type="button"
                     onClick={() => setModalAberto(true)}
@@ -449,7 +463,7 @@ export function DocumentosPage() {
         />
       ) : null}
 
-      {modalAberto ? (
+      {modalAberto && podeEscrever ? (
         <NovoDocumentoModal
           erro={erro}
           isSaving={createMutation.isPending}

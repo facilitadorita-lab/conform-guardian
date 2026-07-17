@@ -2,12 +2,7 @@ export type UUID = string;
 export type ISODate = string;
 export type ISODateTime = string;
 
-export type StatusConformidade =
-  | "ok"
-  | "atencao"
-  | "critico"
-  | "vencido"
-  | "sem_validade";
+export type StatusConformidade = "ok" | "atencao" | "critico" | "vencido" | "sem_validade";
 
 export interface EntidadeAuditavel {
   id: UUID;
@@ -54,11 +49,7 @@ export interface Usuario extends EntidadeAuditavel {
 export interface UsuarioEmpresa extends EntidadeAuditavel {
   usuario_id: UUID;
   empresa_id: UUID;
-  perfil:
-    | "administrador"
-    | "responsavel_tecnico"
-    | "colaborador"
-    | "somente_leitura";
+  perfil: "administrador" | "responsavel_tecnico" | "colaborador" | "somente_leitura";
   ativo: boolean;
 }
 
@@ -109,14 +100,7 @@ export interface Manutencao extends EntidadeAuditavel {
   equipamento_id?: UUID | null;
   nome_servico?: string | null;
   natureza: "preventiva" | "corretiva";
-  tipo_servico:
-    | "inspecao"
-    | "limpeza"
-    | "validacao"
-    | "reparo"
-    | "troca_peca"
-    | "ajuste"
-    | "outro";
+  tipo_servico: "inspecao" | "limpeza" | "validacao" | "reparo" | "troca_peca" | "ajuste" | "outro";
   status_execucao: "programada" | "em_andamento" | "concluida" | "cancelada";
   data_manutencao: ISODate;
   proxima_manutencao?: ISODate | null;
@@ -169,12 +153,7 @@ export interface Alerta extends EntidadeAuditavel {
 export interface Anexo extends EntidadeAuditavel {
   empresa_id: UUID;
   modulo:
-    | "documentos"
-    | "equipamentos"
-    | "calibracoes"
-    | "qualificacoes"
-    | "manutencoes"
-    | "pendencias";
+    "documentos" | "equipamentos" | "calibracoes" | "qualificacoes" | "manutencoes" | "pendencias";
   registro_id: UUID;
   finalidade: string;
   storage_path: string;

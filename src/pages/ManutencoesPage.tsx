@@ -15,6 +15,7 @@ import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { Surface } from "@/components/conform/surface";
 import { useAuthContext, useEquipamentos, useManutencoes } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import { edgeFunctionsService, manutencoesService } from "@/services";
@@ -29,6 +30,7 @@ type FiltroNatureza = "todas" | "preventiva" | "corretiva";
 
 export function ManutencoesPage() {
   const { data: authContext } = useAuthContext();
+  const { podeEscrever } = useSession();
   const selectedCompanyId = authContext?.empresaAtual.id ?? null;
   const [busca, setBusca] = useState("");
   const [natureza, setNatureza] = useState<FiltroNatureza>("todas");
@@ -58,6 +60,7 @@ export function ManutencoesPage() {
 
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      if (!podeEscrever) throw new Error("Seu perfil possui acesso somente para consulta.");
       if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
       const file = formData.get("anexo");
       if (file instanceof File && file.size > 0) {
@@ -144,7 +147,9 @@ export function ManutencoesPage() {
       actions={
         <button
           onClick={() => setModalAberto(true)}
-          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          disabled={!podeEscrever}
+          title={!podeEscrever ? "Seu perfil possui acesso somente para consulta" : undefined}
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus className="h-4 w-4" /> Nova manutenção
         </button>
@@ -307,7 +312,7 @@ export function ManutencoesPage() {
         </div>
       </Surface>
 
-      {modalAberto && (
+      {modalAberto && podeEscrever && (
         <NovaManutencaoModal
           equipamentos={equipamentos}
           erro={erro}

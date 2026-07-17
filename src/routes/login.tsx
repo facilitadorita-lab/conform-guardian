@@ -1,10 +1,4 @@
-import {
-  createFileRoute,
-  Link,
-  useNavigate,
-  useRouterState,
-  useSearch,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -19,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogoSignature } from "@/components/public/marketing";
 import { useAuth } from "@/hooks/use-auth";
+import { useAppSession } from "@/hooks/use-app-session";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { useSession } from "@/hooks/use-session";
 
@@ -32,9 +27,9 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { signIn, user, loading, passwordRecovery } = useAuth();
+  const { authContext, contextLoading } = useAppSession();
   const { isMaster, selectedCompanyId, empresasDisponiveis } = useSession();
   const navigate = useNavigate();
-  const isLoading = useRouterState({ select: (s) => s.status === "pending" });
   const search = useSearch({ from: "/login" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,12 +43,13 @@ function LoginPage() {
   const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || contextLoading) return;
     if (passwordRecovery) {
       navigate({ to: "/definir-senha" });
       return;
     }
     if (!user) return;
+    if (!authContext || authContext.usuario.id !== user.id) return;
     if (isMaster && !selectedCompanyId) {
       navigate({ to: "/master/empresas" });
       return;
@@ -62,7 +58,17 @@ function LoginPage() {
       return;
     }
     navigate({ to: "/dashboard" });
-  }, [loading, user, passwordRecovery, isMaster, selectedCompanyId, empresasDisponiveis, navigate]);
+  }, [
+    loading,
+    contextLoading,
+    user,
+    authContext,
+    passwordRecovery,
+    isMaster,
+    selectedCompanyId,
+    empresasDisponiveis,
+    navigate,
+  ]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,7 +201,7 @@ function LoginPage() {
 
                 <Button
                   type="submit"
-                  disabled={submitting || isLoading}
+                  disabled={submitting}
                   className="h-12 w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800"
                 >
                   {submitting ? "Entrando..." : "Entrar na plataforma"}

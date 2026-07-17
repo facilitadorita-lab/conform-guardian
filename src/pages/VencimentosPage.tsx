@@ -32,9 +32,9 @@ export function VencimentosPage() {
         const termo = normalizar(busca);
         const porBusca =
           !termo ||
-          normalizar([item.titulo, item.subtitulo, item.responsavel, item.modulo].join(" ")).includes(
-            termo,
-          );
+          normalizar(
+            [item.titulo, item.subtitulo, item.responsavel, item.modulo].join(" "),
+          ).includes(termo);
 
         return porModulo && porPeriodo && porBusca;
       }),
@@ -44,8 +44,10 @@ export function VencimentosPage() {
   const resumo = {
     vencidos: vencimentos.filter((item) => item.diasRestantes < 0).length,
     sete: vencimentos.filter((item) => item.diasRestantes >= 0 && item.diasRestantes <= 7).length,
-    trinta: vencimentos.filter((item) => item.diasRestantes >= 0 && item.diasRestantes <= 30).length,
-    sessenta: vencimentos.filter((item) => item.diasRestantes >= 0 && item.diasRestantes <= 60).length,
+    trinta: vencimentos.filter((item) => item.diasRestantes >= 0 && item.diasRestantes <= 30)
+      .length,
+    sessenta: vencimentos.filter((item) => item.diasRestantes >= 0 && item.diasRestantes <= 60)
+      .length,
   };
 
   return (

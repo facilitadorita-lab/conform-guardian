@@ -5,6 +5,7 @@ import { InviteUserDialog } from "@/components/invite-user-dialog";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAuthContext, useUsuarios } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import { usuariosService, type PerfilUsuarioEmpresa } from "@/services/usuariosService";
@@ -47,6 +48,7 @@ const perfis: Array<{
 export function UsuariosPage() {
   const { data: usuarios = [], isLoading } = useUsuarios();
   const { data: authContext } = useAuthContext();
+  const { podeAdministrar } = useSession();
   const queryClient = useQueryClient();
   const selectedCompanyId = authContext?.empresaAtual.id ?? null;
   const [busca, setBusca] = useState("");
@@ -54,8 +56,7 @@ export function UsuariosPage() {
   const [editingUser, setEditingUser] = useState<UsuarioResumo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
-  const podeGerenciar =
-    authContext?.usuario.isMaster || authContext?.perfilAtual === "administrador";
+  const podeGerenciar = podeAdministrar;
   const limiteUsuarios = authContext?.empresaAtual.plano?.limite_usuarios ?? null;
   const usuariosAtivos = usuarios.filter((usuario) => usuario.status === "Ativo").length;
   const atingiuLimite = limiteUsuarios !== null && usuariosAtivos >= limiteUsuarios;
@@ -72,6 +73,7 @@ export function UsuariosPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      if (!podeGerenciar) throw new Error("Seu perfil não permite gerenciar usuários.");
       if (!selectedCompanyId || !editingUser) throw new Error("Selecione uma empresa e usuário.");
 
       return usuariosService.atualizarPerfil(selectedCompanyId, editingUser.id, {
@@ -248,7 +250,7 @@ export function UsuariosPage() {
         )}
       </Surface>
 
-      {inviteOpen && selectedCompanyId ? (
+      {inviteOpen && selectedCompanyId && podeGerenciar ? (
         <InviteUserDialog
           empresaId={selectedCompanyId}
           onClose={() => {

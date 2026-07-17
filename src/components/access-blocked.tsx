@@ -83,8 +83,8 @@ export function AccessBlocked() {
 
             <div className="rounded-md border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
               Enquanto a situação não for regularizada, o acesso ao dashboard, aos módulos
-              operacionais e aos dados da empresa permanece bloqueado. Nenhuma informação
-              sensível é carregada nesta tela.
+              operacionais e aos dados da empresa permanece bloqueado. Nenhuma informação sensível é
+              carregada nesta tela.
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">

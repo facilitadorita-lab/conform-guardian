@@ -100,6 +100,8 @@ export function useSession() {
     usuarioAtual,
     isMaster: usuarioAtual.isMaster,
     empresaAtiva: empresaAtual.status === "ativa",
+    podeEscrever: usuarioAtual.isMaster || permissions?.can_write === true,
+    podeAdministrar: usuarioAtual.isMaster || permissions?.can_admin_company === true,
     acessoLiberado:
       usuarioAtual.isMaster ||
       permissions?.can_open_operational_modules ||

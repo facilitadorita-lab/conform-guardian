@@ -2,12 +2,12 @@ import {
   CompanyRegistrationProviderError,
   type CompanyRegistrationProvider,
   type NormalizedCompanyRegistration,
-} from "../provider.ts"
+} from "../provider.ts";
 
-type JsonObject = Record<string, unknown>
+type JsonObject = Record<string, unknown>;
 
 export class BrasilApiCompanyRegistrationProvider implements CompanyRegistrationProvider {
-  readonly name = "brasilapi"
+  readonly name = "brasilapi";
 
   constructor(
     private readonly baseUrl = "https://brasilapi.com.br/api",
@@ -15,43 +15,46 @@ export class BrasilApiCompanyRegistrationProvider implements CompanyRegistration
   ) {}
 
   async lookup(cnpj: string): Promise<NormalizedCompanyRegistration> {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
       const response = await fetch(`${this.baseUrl.replace(/\/$/, "")}/cnpj/v1/${cnpj}`, {
         method: "GET",
         headers: { accept: "application/json", "user-agent": "ConformFlow/1.0" },
         signal: controller.signal,
-      })
+      });
 
       if (response.status === 404) {
-        throw new CompanyRegistrationProviderError("REGISTRATION_NOT_FOUND", 404)
+        throw new CompanyRegistrationProviderError("REGISTRATION_NOT_FOUND", 404);
       }
       if (response.status === 429) {
-        throw new CompanyRegistrationProviderError("PROVIDER_RATE_LIMITED", 503)
+        throw new CompanyRegistrationProviderError("PROVIDER_RATE_LIMITED", 503);
       }
       if (!response.ok) {
-        throw new CompanyRegistrationProviderError("PROVIDER_UNAVAILABLE", 503)
+        throw new CompanyRegistrationProviderError("PROVIDER_UNAVAILABLE", 503);
       }
 
-      const payload = await response.json() as JsonObject
-      return normalizeBrasilApiResponse(payload, cnpj)
+      const payload = (await response.json()) as JsonObject;
+      return normalizeBrasilApiResponse(payload, cnpj);
     } catch (error) {
-      if (error instanceof CompanyRegistrationProviderError) throw error
-      throw new CompanyRegistrationProviderError("PROVIDER_UNAVAILABLE", 503)
+      if (error instanceof CompanyRegistrationProviderError) throw error;
+      throw new CompanyRegistrationProviderError("PROVIDER_UNAVAILABLE", 503);
     } finally {
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId);
     }
   }
 }
 
-function normalizeBrasilApiResponse(payload: JsonObject, requestedCnpj: string): NormalizedCompanyRegistration {
-  const legalName = text(payload.razao_social)
-  const returnedCnpj = digits(payload.cnpj)
+function normalizeBrasilApiResponse(
+  payload: JsonObject,
+  requestedCnpj: string,
+): NormalizedCompanyRegistration {
+  const legalName = text(payload.razao_social);
+  const returnedCnpj = digits(payload.cnpj);
 
   if (!legalName || returnedCnpj !== requestedCnpj) {
-    throw new CompanyRegistrationProviderError("PROVIDER_INVALID_RESPONSE", 502)
+    throw new CompanyRegistrationProviderError("PROVIDER_INVALID_RESPONSE", 502);
   }
 
   const secondaryActivities = Array.isArray(payload.cnaes_secundarios)
@@ -62,7 +65,7 @@ function normalizeBrasilApiResponse(payload: JsonObject, requestedCnpj: string):
           code: text(activity.codigo),
           description: text(activity.descricao),
         }))
-    : []
+    : [];
 
   return {
     cnpj: returnedCnpj,
@@ -90,20 +93,19 @@ function normalizeBrasilApiResponse(payload: JsonObject, requestedCnpj: string):
     },
     official_phone: text(payload.ddd_telefone_1),
     official_email: text(payload.email)?.toLowerCase() ?? null,
-  }
+  };
 }
 
 function text(value: unknown): string | null {
-  if (value === null || value === undefined) return null
-  const normalized = String(value).trim()
-  return normalized || null
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).trim();
+  return normalized || null;
 }
 
 function digits(value: unknown): string {
-  return String(value ?? "").replace(/\D/g, "")
+  return String(value ?? "").replace(/\D/g, "");
 }
 
 function isObject(value: unknown): value is JsonObject {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
-

@@ -114,8 +114,6 @@ function normalizeRisco(value?: string | null): "baixo" | "medio" | "alto" {
   return "baixo";
 }
 
-function firstUsuarioNome(
-  usuario: LogAuditoriaRow["usuarios"],
-): string | null | undefined {
+function firstUsuarioNome(usuario: LogAuditoriaRow["usuarios"]): string | null | undefined {
   return Array.isArray(usuario) ? usuario[0]?.nome : usuario?.nome;
 }

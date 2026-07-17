@@ -9,7 +9,8 @@ export const planosComerciaisMock: PlanoComercialResumo[] = [
     id: "plano-essencial",
     nome: "Essencial",
     codigo: "essencial",
-    descricao: "Para empresas que precisam controlar documentos, anexos, vencimentos, alertas, dashboard completo e IA.",
+    descricao:
+      "Para empresas que precisam controlar documentos, anexos, vencimentos, alertas, dashboard completo e IA.",
     valor_mensal_centavos: 11990,
     valor_anual_centavos: 119900,
     moeda: "BRL",
@@ -42,7 +43,8 @@ export const planosComerciaisMock: PlanoComercialResumo[] = [
     id: "plano-completo",
     nome: "Completo",
     codigo: "completo",
-    descricao: "Plano principal com documentos, equipamentos, calibrações, qualificações, manutenções e pendências.",
+    descricao:
+      "Plano principal com documentos, equipamentos, calibrações, qualificações, manutenções e pendências.",
     valor_mensal_centavos: 15990,
     valor_anual_centavos: 159900,
     moeda: "BRL",
@@ -75,7 +77,8 @@ export const planosComerciaisMock: PlanoComercialResumo[] = [
     id: "plano-rede",
     nome: "Plano Rede",
     codigo: "rede",
-    descricao: "Para redes com até 3 unidades, visão multiunidade, relatórios por unidade e visão consolidada.",
+    descricao:
+      "Para redes com até 3 unidades, visão multiunidade, relatórios por unidade e visão consolidada.",
     valor_mensal_centavos: 28990,
     valor_anual_centavos: 289900,
     moeda: "BRL",

@@ -28,8 +28,9 @@ export function PlanFeatureGate({ recurso, nomeRecurso, children }: PlanFeatureG
         </div>
         <h2 className="mt-5 text-xl font-semibold">{nomeRecurso} não está liberado</h2>
         <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-          Esta empresa está no plano <span className="font-medium text-foreground">{getPlanName(authContext)}</span>.
-          Para usar este recurso, altere o plano no Admin Master ou libere o recurso no cadastro do plano.
+          Esta empresa está no plano{" "}
+          <span className="font-medium text-foreground">{getPlanName(authContext)}</span>. Para usar
+          este recurso, altere o plano no Admin Master ou libere o recurso no cadastro do plano.
         </p>
         <div className="mt-6 rounded-xl border border-success/30 bg-success/5 px-4 py-3 text-left text-sm text-success">
           <div className="flex gap-2">

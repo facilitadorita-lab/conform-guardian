@@ -10,7 +10,10 @@ export function AsaasSubscriptionDialog({ onClose }: { onClose: () => void }) {
   const [valor, setValor] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<{ subscriptionId?: string; invoiceUrl?: string } | null>(null);
+  const [resultado, setResultado] = useState<{
+    subscriptionId?: string;
+    invoiceUrl?: string;
+  } | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,32 +48,52 @@ export function AsaasSubscriptionDialog({ onClose }: { onClose: () => void }) {
           <div className="p-6 space-y-3 text-sm">
             <p>Assinatura criada com sucesso.</p>
             {resultado.subscriptionId && (
-              <p className="text-xs text-muted-foreground">ID: <span className="font-mono">{resultado.subscriptionId}</span></p>
+              <p className="text-xs text-muted-foreground">
+                ID: <span className="font-mono">{resultado.subscriptionId}</span>
+              </p>
             )}
             {resultado.invoiceUrl && (
-              <a href={resultado.invoiceUrl} target="_blank" rel="noreferrer"
-                className="inline-flex text-accent hover:underline text-xs">
+              <a
+                href={resultado.invoiceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex text-accent hover:underline text-xs"
+              >
                 Abrir fatura
               </a>
             )}
-            <button onClick={onClose} className="mt-2 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <button
+              onClick={onClose}
+              className="mt-2 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
               Fechar
             </button>
           </div>
         ) : (
           <form onSubmit={submit} className="p-5 space-y-4">
             <Field label="Empresa (ID)">
-              <input required value={empresaId} onChange={(e) => setEmpresaId(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+              <input
+                required
+                value={empresaId}
+                onChange={(e) => setEmpresaId(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              />
             </Field>
             <Field label="Plano (ID)">
-              <input required value={planoId} onChange={(e) => setPlanoId(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+              <input
+                required
+                value={planoId}
+                onChange={(e) => setPlanoId(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Ciclo">
-                <select value={ciclo} onChange={(e) => setCiclo(e.target.value as typeof ciclo)}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                <select
+                  value={ciclo}
+                  onChange={(e) => setCiclo(e.target.value as typeof ciclo)}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                >
                   <option value="mensal">Mensal</option>
                   <option value="trimestral">Trimestral</option>
                   <option value="semestral">Semestral</option>
@@ -78,8 +101,11 @@ export function AsaasSubscriptionDialog({ onClose }: { onClose: () => void }) {
                 </select>
               </Field>
               <Field label="Forma">
-                <select value={formaPagamento} onChange={(e) => setFormaPagamento(e.target.value as typeof formaPagamento)}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                <select
+                  value={formaPagamento}
+                  onChange={(e) => setFormaPagamento(e.target.value as typeof formaPagamento)}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                >
                   <option value="boleto">Boleto</option>
                   <option value="cartao">Cartão</option>
                   <option value="pix">Pix</option>
@@ -87,16 +113,29 @@ export function AsaasSubscriptionDialog({ onClose }: { onClose: () => void }) {
               </Field>
             </div>
             <Field label="Valor (opcional)">
-              <input type="number" min="0" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm" />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={valor}
+                onChange={(e) => setValor(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              />
             </Field>
             {erro && <p className="text-xs text-destructive">{erro}</p>}
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={onClose} className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-md border border-border px-3 py-2 text-sm hover:bg-muted"
+              >
                 Cancelar
               </button>
-              <button type="submit" disabled={loading}
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60">
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+              >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Criar assinatura
               </button>

@@ -219,13 +219,7 @@ export function AttachmentViewer({
   );
 }
 
-function AttachmentBlockedState({
-  isOffice,
-  message,
-}: {
-  isOffice: boolean;
-  message: string;
-}) {
+function AttachmentBlockedState({ isOffice, message }: { isOffice: boolean; message: string }) {
   return (
     <div className="flex min-h-[420px] items-center justify-center rounded-xl border border-dashed border-border bg-background p-8 text-center">
       <div className="max-w-md">

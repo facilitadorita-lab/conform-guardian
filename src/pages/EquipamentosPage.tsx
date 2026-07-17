@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "re
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAuthContext, useEquipamentos } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import { equipamentosService } from "@/services";
@@ -33,6 +34,7 @@ const PAGE_SIZE = 12;
 
 export function EquipamentosPage() {
   const { data: authContext } = useAuthContext();
+  const { podeEscrever } = useSession();
   const selectedCompanyId = authContext?.empresaAtual.id ?? null;
   const empresaNome = authContext?.empresaAtual.nome ?? "empresa não selecionada";
   const { data: equipamentos = [], isLoading } = useEquipamentos();
@@ -98,6 +100,7 @@ export function EquipamentosPage() {
 
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      if (!podeEscrever) throw new Error("Seu perfil possui acesso somente para consulta.");
       if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
 
       return equipamentosService.criar(selectedCompanyId, {
@@ -154,7 +157,9 @@ export function EquipamentosPage() {
           <button
             type="button"
             onClick={() => setModalAberto(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm cf-transition hover:-translate-y-0.5 hover:bg-primary/90"
+            disabled={!podeEscrever}
+            title={!podeEscrever ? "Seu perfil possui acesso somente para consulta" : undefined}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm cf-transition hover:-translate-y-0.5 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus className="h-4 w-4" /> Novo equipamento
           </button>
@@ -303,7 +308,13 @@ export function EquipamentosPage() {
               <button
                 type="button"
                 onClick={() => (filtrosAtivos ? limparFiltros() : setModalAberto(true))}
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground cf-transition hover:bg-primary/90"
+                disabled={!filtrosAtivos && !podeEscrever}
+                title={
+                  !filtrosAtivos && !podeEscrever
+                    ? "Seu perfil possui acesso somente para consulta"
+                    : undefined
+                }
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground cf-transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {filtrosAtivos ? "Limpar filtros" : "Cadastrar equipamento"}
               </button>
@@ -350,7 +361,7 @@ export function EquipamentosPage() {
         )}
       </Surface>
 
-      {modalAberto && (
+      {modalAberto && podeEscrever && (
         <NovoEquipamentoModal
           erro={erro}
           isSaving={createMutation.isPending}

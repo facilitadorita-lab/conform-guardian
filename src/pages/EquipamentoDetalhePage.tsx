@@ -21,6 +21,7 @@ import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
 import { useAuthContext, useEquipamento } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import { edgeFunctionsService, evidenciasTimelineService } from "@/services";
@@ -53,6 +54,7 @@ const uploadAccept =
 
 export function EquipamentoDetalhePage({ id }: { id: string }) {
   const { data: authContext } = useAuthContext();
+  const { podeEscrever } = useSession();
   const selectedCompanyId = authContext?.empresaAtual.id ?? null;
   const { data: equipamento, isLoading } = useEquipamento(id);
   const queryClient = useQueryClient();
@@ -69,6 +71,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
 
   const createMutation = useMutation({
     mutationFn: async ({ kind, formData }: { kind: FormKind; formData: FormData }) => {
+      if (!podeEscrever) throw new Error("Seu perfil possui acesso somente para consulta.");
       if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
       let upload: { anexoId?: string; signedUrl?: string } | null = null;
       const file = formData.get("anexo");
@@ -312,6 +315,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
             <TimelineSection
               title="Calibrações"
               actionLabel="Inserir nova calibração"
+              canAdd={podeEscrever}
               onAdd={() => setActiveForm("calibracao")}
             >
               <TimelineList
@@ -330,6 +334,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
             <TimelineSection
               title="Qualificações"
               actionLabel="Inserir nova qualificação"
+              canAdd={podeEscrever}
               onAdd={() => setActiveForm("qualificacao")}
             >
               <TimelineList
@@ -348,6 +353,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
             <TimelineSection
               title="Manutenções"
               actionLabel="Inserir nova manutenção"
+              canAdd={podeEscrever}
               onAdd={() => setActiveForm("manutencao")}
             >
               <TimelineList
@@ -396,7 +402,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         </div>
       </Surface>
 
-      {activeForm && (
+      {activeForm && podeEscrever && (
         <OperationalModal
           kind={activeForm}
           equipamentoNome={equipamento.nome}
@@ -508,11 +514,13 @@ function EquipmentSummaryCard({
 function TimelineSection({
   title,
   actionLabel,
+  canAdd,
   onAdd,
   children,
 }: {
   title: string;
   actionLabel: string;
+  canAdd: boolean;
   onAdd: () => void;
   children: ReactNode;
 }) {
@@ -525,7 +533,9 @@ function TimelineSection({
           <button
             type="button"
             onClick={onAdd}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm cf-transition hover:-translate-y-0.5 hover:bg-primary/90"
+            disabled={!canAdd}
+            title={!canAdd ? "Seu perfil possui acesso somente para consulta" : undefined}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm cf-transition hover:-translate-y-0.5 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus className="h-4 w-4" /> {tabLabelFromTitle(actionLabel)}
           </button>

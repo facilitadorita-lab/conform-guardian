@@ -91,9 +91,7 @@ function normalizeLog(log: LogAuditoriaRow): EvidenciaTimelineItem {
   };
 }
 
-function firstUsuarioNome(
-  usuario: LogAuditoriaRow["usuarios"],
-): string | null | undefined {
+function firstUsuarioNome(usuario: LogAuditoriaRow["usuarios"]): string | null | undefined {
   return Array.isArray(usuario) ? usuario[0]?.nome : usuario?.nome;
 }
 
@@ -137,5 +135,7 @@ function labelAcao(acao: string): Pick<EvidenciaTimelineItem, "titulo" | "descri
     },
   };
 
-  return labels[acao] ?? { titulo: acao, descricao: "Evento registrado na auditoria", tipo: "sistema" };
+  return (
+    labels[acao] ?? { titulo: acao, descricao: "Evento registrado na auditoria", tipo: "sistema" }
+  );
 }

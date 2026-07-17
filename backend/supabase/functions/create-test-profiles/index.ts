@@ -48,7 +48,8 @@ Deno.serve(async (req: Request) => {
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const authorization = req.headers.get("authorization") ?? "";
-  if (!url || !anonKey || !serviceKey || !authorization) return respond({ error: "unauthorized" }, 401);
+  if (!url || !anonKey || !serviceKey || !authorization)
+    return respond({ error: "unauthorized" }, 401);
 
   const userClient = createClient(url, anonKey, {
     global: { headers: { Authorization: authorization } },
@@ -91,7 +92,8 @@ Deno.serve(async (req: Request) => {
     )
     .select("id, razao_social, nome_fantasia, cnpj")
     .single();
-  if (empresaError || !empresa) return respond({ error: empresaError?.message ?? "empresa_error" }, 500);
+  if (empresaError || !empresa)
+    return respond({ error: empresaError?.message ?? "empresa_error" }, 500);
 
   await adminClient.from("assinaturas_empresas").upsert(
     {
@@ -144,9 +146,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const categoriaId = await ensureCatalog(adminClient, "categorias_documentos", "Documento teste");
-  const tipoId = await ensureCatalog(adminClient, "tipos_documentos", "Certificado teste", { exige_anexo: true });
+  const tipoId = await ensureCatalog(adminClient, "tipos_documentos", "Certificado teste", {
+    exige_anexo: true,
+  });
 
-  let { data: documento, error: docLookupError } = await adminClient
+  const { data: existingDocument, error: docLookupError } = await adminClient
     .from("documentos")
     .select("id,nome")
     .eq("empresa_id", empresa.id)
@@ -155,31 +159,38 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   if (docLookupError) return respond({ error: docLookupError.message }, 500);
 
+  let documento = existingDocument;
+
   if (!documento) {
     const created = await adminClient
       .from("documentos")
       .insert({
-          empresa_id: empresa.id,
-          nome: "Documento Teste com Anexo",
-          categoria_id: categoriaId,
-          tipo_documento_id: tipoId,
-          numero_documento: "TESTE-ANEXO-001",
-          orgao_emissor: "Conform Flow",
-          data_emissao: "2026-07-15",
-          data_vencimento: "2027-07-15",
-          periodicidade_meses: 12,
-          exige_anexo: true,
-          setor_unidade: "Base Teste",
-          observacoes: "Documento criado para validar visualização de anexos e isolamento por empresa.",
-        })
+        empresa_id: empresa.id,
+        nome: "Documento Teste com Anexo",
+        categoria_id: categoriaId,
+        tipo_documento_id: tipoId,
+        numero_documento: "TESTE-ANEXO-001",
+        orgao_emissor: "Conform Flow",
+        data_emissao: "2026-07-15",
+        data_vencimento: "2027-07-15",
+        periodicidade_meses: 12,
+        exige_anexo: true,
+        setor_unidade: "Base Teste",
+        observacoes:
+          "Documento criado para validar visualização de anexos e isolamento por empresa.",
+      })
       .select("id,nome")
       .single();
-    if (created.error || !created.data) return respond({ error: created.error?.message ?? "documento_error" }, 500);
+    if (created.error || !created.data)
+      return respond({ error: created.error?.message ?? "documento_error" }, 500);
     documento = created.data;
   }
 
   const path = `${empresa.id}/documentos/${documento.id}/${crypto.randomUUID()}-documento-teste.pdf`;
-  const pdf = minimalPdf("Conform Flow - Anexo teste", "Arquivo fictício para validar upload, preview e auditoria.");
+  const pdf = minimalPdf(
+    "Conform Flow - Anexo teste",
+    "Arquivo fictício para validar upload, preview e auditoria.",
+  );
   const { error: uploadError } = await adminClient.storage
     .from("evidencias")
     .upload(path, new Blob([pdf], { type: "application/pdf" }), {
@@ -233,7 +244,12 @@ Deno.serve(async (req: Request) => {
   });
 });
 
-async function ensureUser(adminClient: ReturnType<typeof createClient>, email: string, password: string, nome: string) {
+async function ensureUser(
+  adminClient: ReturnType<typeof createClient>,
+  email: string,
+  password: string,
+  nome: string,
+) {
   const created = await adminClient.auth.admin.createUser({
     email,
     password,

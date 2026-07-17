@@ -47,7 +47,9 @@ export const dashboardService = {
       return cloneMock({ ...dashboardMock, pendencias: pendenciasMock });
     }
 
-    const data = await invokeRpc<ApiDashboardResponse>("api_dashboard", { p_empresa_id: empresaId });
+    const data = await invokeRpc<ApiDashboardResponse>("api_dashboard", {
+      p_empresa_id: empresaId,
+    });
     return normalizeDashboard(data);
   },
 };
@@ -128,5 +130,5 @@ function labelModulo(modulo: string | undefined): string {
     pendencias: "Pendência",
   };
 
-  return modulo ? labels[modulo] ?? modulo : "Pendência";
+  return modulo ? (labels[modulo] ?? modulo) : "Pendência";
 }

@@ -151,8 +151,12 @@ export function AppShell({
               <button
                 type="button"
                 onClick={async () => {
-                  await signOut();
-                  await navigate({ to: "/login", search: { msg: undefined } });
+                  try {
+                    await signOut();
+                  } finally {
+                    queryClient.clear();
+                    await navigate({ to: "/login", search: { msg: undefined } });
+                  }
                 }}
                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm cf-transition hover:border-danger/30 hover:bg-danger/5 hover:text-danger"
                 aria-label="Sair da plataforma"

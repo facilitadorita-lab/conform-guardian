@@ -3,9 +3,19 @@ import { createClient } from "npm:@supabase/supabase-js@^2";
 const origin = Deno.env.get("ALLOWED_ORIGIN") ?? "*";
 const cors = {
   "access-control-allow-origin": origin,
-  "access-control-allow-headers":
-    "authorization, apikey, content-type, x-client-info",
+  "access-control-allow-headers": "authorization, apikey, content-type, x-client-info",
   "access-control-allow-methods": "POST, OPTIONS",
+};
+
+type StructuredRecord = Record<string, unknown>;
+
+type StructuredContext = {
+  documentos?: unknown;
+  equipamentos?: unknown;
+  manutencoes?: unknown;
+  vencimentos?: unknown;
+  pendencias?: unknown;
+  politica_privacidade?: StructuredRecord;
 };
 
 const respond = (body: unknown, status = 200) =>
@@ -15,16 +25,13 @@ const respond = (body: unknown, status = 200) =>
   });
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS")
-    return new Response(null, { status: 204, headers: cors });
-  if (req.method !== "POST")
-    return respond({ error: "method_not_allowed" }, 405);
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  if (req.method !== "POST") return respond({ error: "method_not_allowed" }, 405);
 
   const url = Deno.env.get("SUPABASE_URL")!;
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
   const authorization = req.headers.get("authorization") ?? "";
-  if (!url || !anonKey || !authorization)
-    return respond({ error: "unauthorized" }, 401);
+  if (!url || !anonKey || !authorization) return respond({ error: "unauthorized" }, 401);
 
   const userClient = createClient(url, anonKey, {
     global: { headers: { Authorization: authorization } },
@@ -32,25 +39,17 @@ Deno.serve(async (req: Request) => {
   });
 
   const { data: authData, error: authError } = await userClient.auth.getUser();
-  if (authError || !authData.user)
-    return respond({ error: "unauthorized" }, 401);
+  if (authError || !authData.user) return respond({ error: "unauthorized" }, 401);
 
   const input = await req.json().catch(() => ({}));
   let empresaId = String(input.empresa_id ?? "").trim();
-  const pergunta = String(
-    input.pergunta ?? input.question ?? input.message ?? "",
-  ).trim();
+  const pergunta = String(input.pergunta ?? input.question ?? input.message ?? "").trim();
   const escopo = String(input.escopo ?? "geral");
-  const equipamentoId = input.equipamento_id
-    ? String(input.equipamento_id)
-    : null;
+  const equipamentoId = input.equipamento_id ? String(input.equipamento_id) : null;
   const setor = input.setor ? String(input.setor) : null;
 
   if (pergunta.length < 3) {
-    return respond(
-      { error: "invalid_payload", message: "Informe uma pergunta válida." },
-      400,
-    );
+    return respond({ error: "invalid_payload", message: "Informe uma pergunta válida." }, 400);
   }
 
   if (!empresaId) {
@@ -77,15 +76,12 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const { data: contexto, error: contextoError } = await userClient.rpc(
-    "api_assistente_contexto",
-    {
-      p_empresa_id: empresaId,
-      p_escopo: escopo,
-      p_equipamento_id: equipamentoId,
-      p_setor: setor,
-    },
-  );
+  const { data: contexto, error: contextoError } = await userClient.rpc("api_assistente_contexto", {
+    p_empresa_id: empresaId,
+    p_escopo: escopo,
+    p_equipamento_id: equipamentoId,
+    p_setor: setor,
+  });
   if (contextoError) return respond({ error: contextoError.message }, 403);
 
   const resposta = buildStructuredAnswer(pergunta, contexto);
@@ -118,38 +114,21 @@ Deno.serve(async (req: Request) => {
   });
 });
 
-function buildStructuredAnswer(pergunta: string, contexto: any) {
+function buildStructuredAnswer(pergunta: string, contexto: StructuredContext) {
   const perguntaNormalizada = normalize(pergunta);
-  const equipamentos = Array.isArray(contexto?.equipamentos)
-    ? contexto.equipamentos
-    : [];
-  const manutencoes = Array.isArray(contexto?.manutencoes)
-    ? contexto.manutencoes
-    : [];
-  const vencimentos = Array.isArray(contexto?.vencimentos)
-    ? contexto.vencimentos
-    : [];
-  const documentos = Array.isArray(contexto?.documentos)
-    ? contexto.documentos
-    : [];
-  const pendencias = Array.isArray(contexto?.pendencias)
-    ? contexto.pendencias
-    : [];
-  const documentosMencionados = filterDocumentsByQuestion(
-    perguntaNormalizada,
-    documentos,
-  );
+  const equipamentos = toStructuredRecords(contexto.equipamentos);
+  const manutencoes = toStructuredRecords(contexto.manutencoes);
+  const vencimentos = toStructuredRecords(contexto.vencimentos);
+  const documentos = toStructuredRecords(contexto.documentos);
+  const pendencias = toStructuredRecords(contexto.pendencias);
+  const documentosMencionados = filterDocumentsByQuestion(perguntaNormalizada, documentos);
 
   const linhas: string[] = [];
 
   if (perguntaNormalizada.includes("manut")) {
-    const vencidas = manutencoes.filter(
-      (item: any) => item.status_calculado === "vencido",
-    );
-    const proximas = manutencoes.filter((item: any) =>
-      ["vence_hoje", "critico", "a_vencer", "atencao"].includes(
-        String(item.status_calculado),
-      ),
+    const vencidas = manutencoes.filter((item) => item.status_calculado === "vencido");
+    const proximas = manutencoes.filter((item) =>
+      ["vence_hoje", "critico", "a_vencer", "atencao"].includes(String(item.status_calculado)),
     );
 
     linhas.push(
@@ -174,16 +153,10 @@ function buildStructuredAnswer(pergunta: string, contexto: any) {
         )} — ${statusLabel(item.status_calculado)}`,
     );
   } else if (perguntaNormalizada.includes("calibr")) {
-    const calibracoes = vencimentos.filter(
-      (item: any) => item.modulo === "calibracoes",
-    );
-    const vencidas = calibracoes.filter(
-      (item: any) => item.status === "vencido",
-    );
-    const proximas = calibracoes.filter((item: any) =>
-      ["vence_hoje", "critico", "a_vencer", "atencao"].includes(
-        String(item.status),
-      ),
+    const calibracoes = vencimentos.filter((item) => item.modulo === "calibracoes");
+    const vencidas = calibracoes.filter((item) => item.status === "vencido");
+    const proximas = calibracoes.filter((item) =>
+      ["vence_hoje", "critico", "a_vencer", "atencao"].includes(String(item.status)),
     );
 
     linhas.push(
@@ -194,9 +167,7 @@ function buildStructuredAnswer(pergunta: string, contexto: any) {
         proximas: proximas.length,
       }),
     );
-    linhas.push(
-      humanizeOperationalHint([...vencidas, ...proximas], "calibracao"),
-    );
+    linhas.push(humanizeOperationalHint([...vencidas, ...proximas], "calibracao"));
     appendHumanItems(
       linhas,
       [...vencidas, ...proximas],
@@ -206,16 +177,10 @@ function buildStructuredAnswer(pergunta: string, contexto: any) {
         )} — ${statusLabel(item.status)}`,
     );
   } else if (perguntaNormalizada.includes("qualific")) {
-    const qualificacoes = vencimentos.filter(
-      (item: any) => item.modulo === "qualificacoes",
-    );
-    const vencidas = qualificacoes.filter(
-      (item: any) => item.status === "vencido",
-    );
-    const proximas = qualificacoes.filter((item: any) =>
-      ["vence_hoje", "critico", "a_vencer", "atencao"].includes(
-        String(item.status),
-      ),
+    const qualificacoes = vencimentos.filter((item) => item.modulo === "qualificacoes");
+    const vencidas = qualificacoes.filter((item) => item.status === "vencido");
+    const proximas = qualificacoes.filter((item) =>
+      ["vence_hoje", "critico", "a_vencer", "atencao"].includes(String(item.status)),
     );
 
     linhas.push(
@@ -237,10 +202,7 @@ function buildStructuredAnswer(pergunta: string, contexto: any) {
           item.data_vencimento,
         )} — ${statusLabel(item.status)}`,
     );
-  } else if (
-    hasDocumentIntent(perguntaNormalizada) ||
-    documentosMencionados.length > 0
-  ) {
+  } else if (hasDocumentIntent(perguntaNormalizada) || documentosMencionados.length > 0) {
     const documentosFiltrados =
       documentosMencionados.length > 0
         ? documentosMencionados
@@ -249,10 +211,7 @@ function buildStructuredAnswer(pergunta: string, contexto: any) {
       perguntaNormalizada,
       vencimentos,
     );
-    const itens =
-      documentosFiltrados.length > 0
-        ? documentosFiltrados
-        : vencimentosFiltrados;
+    const itens = documentosFiltrados.length > 0 ? documentosFiltrados : vencimentosFiltrados;
 
     if (itens.length === 0) {
       linhas.push(
@@ -315,8 +274,7 @@ function buildStructuredAnswer(pergunta: string, contexto: any) {
     );
   } else if (perguntaNormalizada.includes("equip")) {
     const atencao = equipamentos.filter(
-      (item: any) =>
-        !["em_dia", "ok", null, undefined].includes(item.status_consolidado),
+      (item) => !["em_dia", "ok", ""].includes(String(item.status_consolidado ?? "")),
     );
 
     if (atencao.length === 0) {
@@ -372,17 +330,15 @@ function buildStructuredAnswer(pergunta: string, contexto: any) {
   linhas.push(
     "Minha sugestão: resolva primeiro o que estiver vencido ou crítico; depois acompanhe os itens em atenção antes que virem atraso.",
   );
-  linhas.push(
-    "Obs.: considerei apenas os dados cadastrados no sistema, sem ler anexos ou PDFs.",
-  );
+  linhas.push("Obs.: considerei apenas os dados cadastrados no sistema, sem ler anexos ou PDFs.");
 
   return linhas.join("\n");
 }
 
 function appendHumanItems(
   linhas: string[],
-  items: any[],
-  formatter: (item: any) => string,
+  items: StructuredRecord[],
+  formatter: (item: StructuredRecord) => string,
 ) {
   const limited = items.slice(0, 5);
   if (limited.length === 0) {
@@ -400,12 +356,10 @@ function appendHumanItems(
 
 function filterDocumentsByDocumentIntent(
   perguntaNormalizada: string,
-  documentos: any[],
+  documentos: StructuredRecord[],
 ) {
   const tokens = getQuestionTokens(perguntaNormalizada);
-  const specificTokens = tokens.filter(
-    (token) => !DOCUMENT_GENERIC_TOKENS.has(token),
-  );
+  const specificTokens = tokens.filter((token) => !DOCUMENT_GENERIC_TOKENS.has(token));
   const statusFilter = getStatusFilter(perguntaNormalizada);
 
   let filtered = documentos;
@@ -414,27 +368,22 @@ function filterDocumentsByDocumentIntent(
   }
 
   if (statusFilter) {
-    filtered = filtered.filter((item: any) =>
-      statusFilter.includes(
-        normalize(String(item.status ?? item.status_calculado ?? "")),
-      ),
+    filtered = filtered.filter((item) =>
+      statusFilter.includes(normalize(String(item.status ?? item.status_calculado ?? ""))),
     );
   }
 
   return filtered.slice(0, 10);
 }
 
-function filterDocumentsByQuestion(
-  perguntaNormalizada: string,
-  documentos: any[],
-) {
+function filterDocumentsByQuestion(perguntaNormalizada: string, documentos: StructuredRecord[]) {
   const tokens = getQuestionTokens(perguntaNormalizada).filter(
     (token) => !DOCUMENT_GENERIC_TOKENS.has(token),
   );
   if (tokens.length === 0) return [];
 
   return documentos
-    .map((item: any) => ({
+    .map((item) => ({
       item,
       score: scoreRecordMatch(tokens, [
         item.nome,
@@ -454,11 +403,9 @@ function filterDocumentsByQuestion(
 
 function filterVencimentosByDocumentIntent(
   perguntaNormalizada: string,
-  vencimentos: any[],
+  vencimentos: StructuredRecord[],
 ) {
-  const documentos = vencimentos.filter(
-    (item: any) => item.modulo === "documentos",
-  );
+  const documentos = vencimentos.filter((item) => item.modulo === "documentos");
   const tokens = getQuestionTokens(perguntaNormalizada).filter(
     (token) => !DOCUMENT_GENERIC_TOKENS.has(token),
   );
@@ -467,7 +414,7 @@ function filterVencimentosByDocumentIntent(
   let filtered = documentos;
   if (tokens.length > 0) {
     filtered = documentos
-      .map((item: any) => ({
+      .map((item) => ({
         item,
         score: scoreRecordMatch(tokens, [item.titulo, item.nome]),
       }))
@@ -477,7 +424,7 @@ function filterVencimentosByDocumentIntent(
   }
 
   if (statusFilter) {
-    filtered = filtered.filter((item: any) =>
+    filtered = filtered.filter((item) =>
       statusFilter.includes(normalize(String(item.status ?? ""))),
     );
   }
@@ -485,7 +432,7 @@ function filterVencimentosByDocumentIntent(
   return filtered.slice(0, 10);
 }
 
-function formatDocumentItem(item: any) {
+function formatDocumentItem(item: StructuredRecord) {
   const titulo = cleanTitle(item.titulo ?? item.nome ?? "Documento");
   const status = statusLabel(item.status ?? item.status_calculado);
   const vencimento = formatDate(item.data_vencimento);
@@ -541,19 +488,13 @@ function humanizeCountSummary({
   return `Sim — encontrei ${proximas} ${proximas === 1 ? noun : plural} em atenção. Nenhuma está vencida, mas vale programar antes de virar atraso.`;
 }
 
-function humanizeOperationalHint(items: any[], intent: "calibracao") {
+function humanizeOperationalHint(items: StructuredRecord[], intent: "calibracao") {
   if (intent === "calibracao") {
-    const titles = items.map((item: any) =>
-      normalize(String(item.titulo ?? "")),
-    );
+    const titles = items.map((item) => normalize(String(item.titulo ?? "")));
     const hasColdChain = titles.some((title) =>
-      [
-        "geladeira",
-        "freezer",
-        "camara fria",
-        "camera fria",
-        "câmara fria",
-      ].some((term) => title.includes(term)),
+      ["geladeira", "freezer", "camara fria", "camera fria", "câmara fria"].some((term) =>
+        title.includes(term),
+      ),
     );
 
     if (hasColdChain) {
@@ -564,10 +505,8 @@ function humanizeOperationalHint(items: any[], intent: "calibracao") {
   return "Eu organizaria esses itens por data de vencimento e criticidade operacional.";
 }
 
-function humanizeDocumentHint(items: any[]) {
-  const statuses = items.map((item: any) =>
-    normalize(String(item.status ?? "")),
-  );
+function humanizeDocumentHint(items: StructuredRecord[]) {
+  const statuses = items.map((item) => normalize(String(item.status ?? "")));
   if (statuses.includes("vencido"))
     return "Tem documento vencido nessa lista, então eu trataria como prioridade regulatória.";
   if (statuses.some((status) => ["critico", "vence_hoje"].includes(status))) {
@@ -750,7 +689,7 @@ function formatDate(value: unknown) {
   return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
-function buildSources(contexto: any) {
+function buildSources(contexto: StructuredContext) {
   const fontes: string[] = [];
   if (Array.isArray(contexto?.documentos)) fontes.push("documentos");
   if (Array.isArray(contexto?.equipamentos)) fontes.push("equipamentos");
@@ -758,6 +697,14 @@ function buildSources(contexto: any) {
   if (Array.isArray(contexto?.vencimentos)) fontes.push("vencimentos");
   if (Array.isArray(contexto?.pendencias)) fontes.push("pendências");
   return fontes;
+}
+
+function toStructuredRecords(value: unknown): StructuredRecord[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is StructuredRecord =>
+      typeof item === "object" && item !== null && !Array.isArray(item),
+  );
 }
 
 function normalize(value: string) {
