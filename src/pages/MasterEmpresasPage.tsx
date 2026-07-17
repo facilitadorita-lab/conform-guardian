@@ -120,7 +120,7 @@ export function MasterEmpresasPage() {
     await selectCompany(empresaId);
     await queryClient.invalidateQueries();
     await router.invalidate();
-    await router.navigate({ to: "/" });
+    await router.navigate({ to: "/dashboard" });
   };
 
   function handleCriarEmpresa(event: FormEvent<HTMLFormElement>) {
