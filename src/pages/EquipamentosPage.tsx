@@ -17,7 +17,7 @@ import {
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
-import { useAuthContext, useEquipamentos } from "@/hooks/use-conform-data";
+import { useEquipamentos } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
@@ -33,10 +33,8 @@ type Ordenacao = "vencimento" | "nome" | "criticidade" | "status";
 const PAGE_SIZE = 12;
 
 export function EquipamentosPage() {
-  const { data: authContext } = useAuthContext();
-  const { podeEscrever } = useSession();
-  const selectedCompanyId = authContext?.empresaAtual.id ?? null;
-  const empresaNome = authContext?.empresaAtual.nome ?? "empresa não selecionada";
+  const { podeEscrever, selectedCompanyId, selectedCompany } = useSession();
+  const empresaNome = selectedCompany?.razao_social ?? "empresa não selecionada";
   const { data: equipamentos = [], isLoading } = useEquipamentos();
   const queryClient = useQueryClient();
   const [modalAberto, setModalAberto] = useState(false);

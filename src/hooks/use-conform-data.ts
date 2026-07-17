@@ -39,6 +39,7 @@ export function useAuthContext() {
 }
 
 function useResolvedCompanyId() {
+  const { selectedCompanyId } = useAppSession();
   const authQuery = useAuthContext();
   const acessoBloqueado = Boolean(
     authQuery.data &&
@@ -49,7 +50,7 @@ function useResolvedCompanyId() {
     ? undefined
     : runtimeConfig.useMocks
       ? MOCK_EMPRESA_ID
-      : authQuery.data?.empresaAtual.id;
+      : (selectedCompanyId ?? authQuery.data?.empresaAtual.id);
 
   return {
     ...authQuery,

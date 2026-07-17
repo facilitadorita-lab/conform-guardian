@@ -18,7 +18,7 @@ import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { AttachmentViewer } from "@/components/attachment-viewer";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
-import { useAuthContext, useDocumentos } from "@/hooks/use-conform-data";
+import { useDocumentos } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { documentosService, edgeFunctionsService, evidenciasTimelineService } from "@/services";
@@ -37,10 +37,8 @@ type SortKey = "vencimento" | "nome" | "status";
 const pageSize = 12;
 
 export function DocumentosPage() {
-  const { data: authContext } = useAuthContext();
-  const { podeEscrever } = useSession();
-  const selectedCompanyId = authContext?.empresaAtual.id ?? null;
-  const empresaNome = authContext?.empresaAtual.nome ?? "empresa não selecionada";
+  const { podeEscrever, selectedCompanyId, selectedCompany } = useSession();
+  const empresaNome = selectedCompany?.razao_social ?? "empresa não selecionada";
   const { data: documentos = [], isLoading } = useDocumentos();
   const queryClient = useQueryClient();
   const [documentoPreview, setDocumentoPreview] = useState<DocumentoResumo | null>(null);

@@ -37,18 +37,23 @@ export function AppShell({
   children: ReactNode;
 }) {
   const { user, loading, signOut } = useAuth();
-  const { selectCompany } = useAppSession();
+  const { selectCompany, selectedCompanyId } = useAppSession();
   const { data: authContext } = useAuthContext();
   const mfa = useMfaAssurance();
   const queryClient = useQueryClient();
   const router = useRouter();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const empresaAtual =
+    authContext?.empresasPermitidas.find((company) => company.id === selectedCompanyId) ??
+    authContext?.empresaAtual;
+  const activeAuthContext =
+    authContext && empresaAtual ? { ...authContext, empresaAtual } : authContext;
   const podeTrocarEmpresa = Boolean(authContext && authContext.empresasPermitidas.length > 1);
   const acessoBloqueado = Boolean(
-    authContext && !authContext.usuario.isMaster && authContext.empresaAtual.status !== "ativa",
+    authContext && !authContext.usuario.isMaster && empresaAtual?.status !== "ativa",
   );
-  const exibirAssistente = hasPlanFeature(authContext, "assistente_ia");
+  const exibirAssistente = hasPlanFeature(activeAuthContext, "assistente_ia");
   const breadcrumbs = buildBreadcrumbs(pathname, title);
   const privilegedProfile = ["master", "administrador", "administrador_provisorio"].includes(
     authContext?.perfilAtual ?? "",
@@ -65,16 +70,16 @@ export function AppShell({
     return <AccessValidationScreen />;
   }
 
-  if (!authContext) {
+  if (!authContext || !empresaAtual) {
     return <AccessValidationScreen />;
   }
 
   if (acessoBloqueado) {
     return (
       <BlockedAccessScreen
-        empresaNome={authContext.empresaAtual.nome}
-        empresaCnpj={authContext.empresaAtual.cnpj}
-        status={authContext.empresaAtual.status}
+        empresaNome={empresaAtual.nome}
+        empresaCnpj={empresaAtual.cnpj}
+        status={empresaAtual.status}
       />
     );
   }
@@ -117,7 +122,7 @@ export function AppShell({
                 <div className="hidden items-center gap-2 md:flex">
                   <CompanySwitcher
                     empresas={authContext.empresasPermitidas}
-                    empresaAtual={authContext.empresaAtual}
+                    empresaAtual={empresaAtual}
                     onSelectEmpresa={async (empresaId) => {
                       await selectCompany(empresaId);
                       await queryClient.invalidateQueries();
@@ -139,10 +144,10 @@ export function AppShell({
                   <Building2 className="h-4 w-4 text-accent" />
                   <div className="min-w-0 leading-tight">
                     <span className="block max-w-[180px] truncate text-xs font-semibold">
-                      {authContext.empresaAtual.nome}
+                      {empresaAtual.nome}
                     </span>
                     <span className="block text-[11px] text-muted-foreground">
-                      CNPJ {authContext.empresaAtual.cnpj}
+                      CNPJ {empresaAtual.cnpj}
                     </span>
                   </div>
                 </div>

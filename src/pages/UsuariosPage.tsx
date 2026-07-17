@@ -48,16 +48,18 @@ const perfis: Array<{
 export function UsuariosPage() {
   const { data: usuarios = [], isLoading } = useUsuarios();
   const { data: authContext } = useAuthContext();
-  const { podeAdministrar } = useSession();
+  const { podeAdministrar, selectedCompanyId } = useSession();
   const queryClient = useQueryClient();
-  const selectedCompanyId = authContext?.empresaAtual.id ?? null;
   const [busca, setBusca] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UsuarioResumo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   const podeGerenciar = podeAdministrar;
-  const limiteUsuarios = authContext?.empresaAtual.plano?.limite_usuarios ?? null;
+  const selectedCompanyContext = authContext?.empresasPermitidas.find(
+    (company) => company.id === selectedCompanyId,
+  );
+  const limiteUsuarios = selectedCompanyContext?.plano?.limite_usuarios ?? null;
   const usuariosAtivos = usuarios.filter((usuario) => usuario.status === "Ativo").length;
   const atingiuLimite = limiteUsuarios !== null && usuariosAtivos >= limiteUsuarios;
 

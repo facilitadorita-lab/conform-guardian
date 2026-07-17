@@ -16,6 +16,7 @@ import {
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAuthContext, useConfiguracoes, useMatrizDocumental } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import type { ConfiguracaoCatalogoItem, PlanoRecurso } from "@/types";
@@ -52,7 +53,11 @@ export function ConfiguracoesPage() {
   const { data: configuracoes = [] } = useConfiguracoes();
   const { data: matriz } = useMatrizDocumental();
   const { data: authContext } = useAuthContext();
-  const plano = authContext?.empresaAtual.plano;
+  const { selectedCompanyId } = useSession();
+  const empresaAtual =
+    authContext?.empresasPermitidas.find((company) => company.id === selectedCompanyId) ??
+    authContext?.empresaAtual;
+  const plano = empresaAtual?.plano;
   const canAdmin = Boolean(
     authContext?.usuario.isMaster ||
     ["administrador", "administrador_provisorio"].includes(authContext?.perfilAtual ?? ""),
@@ -68,8 +73,8 @@ export function ConfiguracoesPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ResumoCard
           title="Empresa atual"
-          value={authContext?.empresaAtual.nome ?? "-"}
-          description={authContext?.empresaAtual.cnpj ?? "CNPJ não informado"}
+          value={empresaAtual?.nome ?? "-"}
+          description={empresaAtual?.cnpj ?? "CNPJ não informado"}
           icon={Building2}
           tone="info"
         />
@@ -239,9 +244,9 @@ export function ConfiguracoesPage() {
           </div>
         </Surface>
       ) : null}
-      {authContext?.empresaAtual.id ? (
+      {empresaAtual?.id && authContext?.usuario.id ? (
         <GovernanceSettings
-          companyId={authContext.empresaAtual.id}
+          companyId={empresaAtual.id}
           canAdmin={canAdmin}
           userId={authContext.usuario.id}
         />

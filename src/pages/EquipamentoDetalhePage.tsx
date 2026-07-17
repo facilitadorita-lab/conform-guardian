@@ -20,7 +20,7 @@ import { AttachmentViewer } from "@/components/attachment-viewer";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
-import { useAuthContext, useEquipamento } from "@/hooks/use-conform-data";
+import { useEquipamento } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
@@ -53,9 +53,7 @@ const uploadAccept =
   "application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export function EquipamentoDetalhePage({ id }: { id: string }) {
-  const { data: authContext } = useAuthContext();
-  const { podeEscrever } = useSession();
-  const selectedCompanyId = authContext?.empresaAtual.id ?? null;
+  const { podeEscrever, selectedCompanyId } = useSession();
   const { data: equipamento, isLoading } = useEquipamento(id);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("Dados gerais");

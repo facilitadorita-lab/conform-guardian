@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
-import { useAuthContext, useRelatorios } from "@/hooks/use-conform-data";
+import { useRelatorios } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import { relatoriosService } from "@/services";
@@ -34,7 +35,7 @@ const iconMap: Record<string, LucideIcon> = {
 
 export function RelatoriosPage() {
   const { data: relatorios = [] } = useRelatorios();
-  const { data: authContext } = useAuthContext();
+  const { selectedCompanyId } = useSession();
   const [busca, setBusca] = useState("");
   const relatoriosFiltrados = useMemo(() => {
     const termo = normalizar(busca);
@@ -45,7 +46,7 @@ export function RelatoriosPage() {
   }, [busca, relatorios]);
 
   const gerarRelatorio = useMutation({
-    mutationFn: () => relatoriosService.gerarExecutivoIA(authContext!.empresaAtual.id),
+    mutationFn: () => relatoriosService.gerarExecutivoIA(selectedCompanyId!),
     onSuccess: (relatorio) => abrirRelatorioPrint(relatorio),
   });
 
@@ -57,7 +58,7 @@ export function RelatoriosPage() {
         <button
           type="button"
           onClick={() => gerarRelatorio.mutate()}
-          disabled={!authContext?.empresaAtual.id || gerarRelatorio.isPending}
+          disabled={!selectedCompanyId || gerarRelatorio.isPending}
           className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm cf-transition hover:-translate-y-0.5 hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {gerarRelatorio.isPending ? (

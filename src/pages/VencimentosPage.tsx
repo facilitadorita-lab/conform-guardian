@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle, CalendarClock, CheckCircle2, Clock, Filter } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuthContext } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { vencimentosService, type VencimentoConsolidado, type VencimentoModulo } from "@/services";
 import { formatDateBR } from "@/utils/date";
@@ -12,8 +12,7 @@ type FiltroPeriodo = "todos" | "vencidos" | "7" | "30" | "60";
 type FiltroModulo = "todos" | VencimentoModulo;
 
 export function VencimentosPage() {
-  const { data: authContext } = useAuthContext();
-  const empresaId = authContext?.empresaAtual.id;
+  const { selectedCompanyId: empresaId } = useSession();
   const [periodo, setPeriodo] = useState<FiltroPeriodo>("todos");
   const [modulo, setModulo] = useState<FiltroModulo>("todos");
   const [busca, setBusca] = useState("");

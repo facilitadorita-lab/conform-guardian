@@ -77,7 +77,7 @@ export function MasterEmpresasPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: authContext, isLoading, error } = useAuthContext();
-  const { selectCompany, refreshContext } = useAppSession();
+  const { selectCompany, refreshContext, selectedCompanyId } = useAppSession();
   const [modalAberto, setModalAberto] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [erroCadastro, setErroCadastro] = useState<string | null>(null);
@@ -195,7 +195,7 @@ export function MasterEmpresasPage() {
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {authContext.empresasPermitidas.map((empresa) => {
-            const selected = empresa.id === authContext.empresaAtual.id;
+            const selected = empresa.id === selectedCompanyId;
             return (
               <article
                 key={empresa.id}

@@ -9,7 +9,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useAuthContext } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { assistantService } from "@/services";
 
 type ChatMessage = {
@@ -29,19 +29,18 @@ const sugestoes = [
 ];
 
 export function FloatingAssistant() {
-  const { data: authContext } = useAuthContext();
+  const { selectedCompany: empresa } = useSession();
   const [aberto, setAberto] = useState(false);
   const [pergunta, setPergunta] = useState("");
   const [mensagens, setMensagens] = useState<ChatMessage[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const empresa = authContext?.empresaAtual;
   const podeEnviar = Boolean(empresa?.id && pergunta.trim() && !enviando);
 
   const placeholder = useMemo(() => {
     if (!empresa) return "Selecione uma empresa para conversar com o FlowIA...";
-    return `Pergunte sobre ${empresa.nome}`;
+    return `Pergunte sobre ${empresa.razao_social}`;
   }, [empresa]);
 
   async function enviarPergunta(event?: FormEvent<HTMLFormElement>) {
@@ -132,7 +131,7 @@ export function FloatingAssistant() {
               <div>
                 Consultando apenas dados de{" "}
                 <span className="font-semibold text-foreground">
-                  {empresa?.nome ?? "empresa selecionada"}
+                  {empresa?.razao_social ?? "empresa selecionada"}
                 </span>
                 {empresa?.cnpj ? <span> · CNPJ {empresa.cnpj}</span> : null}
               </div>

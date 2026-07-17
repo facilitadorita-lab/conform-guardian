@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { AlertTriangle, Building2, Send, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { useAuthContext } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import { assistantService } from "@/services";
 
 type ChatMessage = {
@@ -19,18 +19,17 @@ const sugestoes = [
 ];
 
 export function AssistentePage() {
-  const { data: authContext } = useAuthContext();
+  const { selectedCompany: empresa } = useSession();
   const [pergunta, setPergunta] = useState("");
   const [mensagens, setMensagens] = useState<ChatMessage[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const empresa = authContext?.empresaAtual;
   const podeEnviar = Boolean(empresa?.id && pergunta.trim() && !enviando);
 
   const placeholder = useMemo(() => {
     if (!empresa) return "Carregando empresa...";
-    return `Pergunte sobre ${empresa.nome}: documentos, equipamentos, manutenções, qualificações...`;
+    return `Pergunte sobre ${empresa.razao_social}: documentos, equipamentos, manutenções, qualificações...`;
   }, [empresa]);
 
   async function enviarPergunta(event: FormEvent<HTMLFormElement>) {
@@ -96,7 +95,7 @@ export function AssistentePage() {
         <div className="flex flex-wrap items-center gap-2">
           <Building2 className="h-4 w-4 text-blue-600" />
           <span>Consultando dados de</span>
-          <strong>{empresa?.nome ?? "empresa selecionada"}</strong>
+          <strong>{empresa?.razao_social ?? "empresa selecionada"}</strong>
           {empresa?.cnpj ? <span className="text-blue-800">({empresa.cnpj})</span> : null}
         </div>
       </section>

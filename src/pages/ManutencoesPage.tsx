@@ -14,7 +14,7 @@ import {
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { Surface } from "@/components/conform/surface";
-import { useAuthContext, useEquipamentos, useManutencoes } from "@/hooks/use-conform-data";
+import { useEquipamentos, useManutencoes } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
@@ -29,9 +29,7 @@ const uploadAccept =
 type FiltroNatureza = "todas" | "preventiva" | "corretiva";
 
 export function ManutencoesPage() {
-  const { data: authContext } = useAuthContext();
-  const { podeEscrever } = useSession();
-  const selectedCompanyId = authContext?.empresaAtual.id ?? null;
+  const { podeEscrever, selectedCompanyId } = useSession();
   const [busca, setBusca] = useState("");
   const [natureza, setNatureza] = useState<FiltroNatureza>("todas");
   const [modalAberto, setModalAberto] = useState(false);

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useAuthContext } from "@/hooks/use-conform-data";
+import { useSession } from "@/hooks/use-session";
 import type { PlanoRecurso } from "@/types";
 import { cn } from "@/lib/utils";
 import { getPlanName, hasPlanFeature } from "@/utils/plan-features";
@@ -163,7 +164,11 @@ const masterGroup: { label: string; items: NavItem[] } = {
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { data: authContext } = useAuthContext();
+  const { selectedCompanyId } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const empresaAtual =
+    authContext?.empresasPermitidas.find((company) => company.id === selectedCompanyId) ??
+    authContext?.empresaAtual;
   const planName = getPlanName(authContext);
   const userInitials = useMemo(
     () => initials(authContext?.usuario.nome),
@@ -210,19 +215,17 @@ export function AppSidebar() {
           ) : null}
         </div>
 
-        {!collapsed && authContext?.empresaAtual ? (
+        {!collapsed && empresaAtual ? (
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
             <div className="flex items-start gap-2">
               <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" />
               <div className="min-w-0">
-                <div className="truncate text-xs font-semibold">
-                  {authContext.empresaAtual.nome}
-                </div>
+                <div className="truncate text-xs font-semibold">{empresaAtual.nome}</div>
                 <div className="mt-1 truncate text-[11px] text-sidebar-foreground/60">
-                  CNPJ {authContext.empresaAtual.cnpj}
+                  CNPJ {empresaAtual.cnpj}
                 </div>
                 <div className="mt-2 inline-flex rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-sidebar-foreground/80">
-                  {authContext.usuario.isMaster ? "Admin Master" : planName}
+                  {authContext?.usuario.isMaster ? "Admin Master" : planName}
                 </div>
               </div>
             </div>
