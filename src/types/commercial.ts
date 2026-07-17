@@ -136,10 +136,23 @@ export interface MasterSystemHealth {
     ultima_ocorrencia_at: string;
   }>;
   webhook_failures_24h: number;
+  client_errors_24h: number;
+  notification_failures_24h: number;
+  scheduled_report_failures_24h: number;
+  data_quality_critical: number;
+  pending_dunning: number;
   last_restore_test: {
     status: string;
     completed_at: string | null;
     rpo_minutes: number | null;
     rto_minutes: number | null;
+  } | null;
+  last_deployment: {
+    ambiente: string;
+    versao: string;
+    commit_sha?: string | null;
+    status: string;
+    iniciado_at: string;
+    concluido_at?: string | null;
   } | null;
 }

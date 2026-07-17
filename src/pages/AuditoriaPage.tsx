@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
   Download,
   Eye,
@@ -17,6 +18,8 @@ import { AppShell } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import type { LogAuditoriaResumo } from "@/types";
 import { formatDateTimeBR } from "@/utils/date";
+import { useSession } from "@/hooks/use-session";
+import { professionalService } from "@/services";
 
 type RiscoFiltro = "todos" | "baixo" | "medio" | "alto";
 
@@ -24,6 +27,11 @@ export function AuditoriaPage() {
   const { data: auditoria, isLoading } = useAuditoriaAvancada();
   const [busca, setBusca] = useState("");
   const [riscoFiltro, setRiscoFiltro] = useState<RiscoFiltro>("todos");
+  const { selectedCompanyId } = useSession();
+  const exportVerified = useMutation({
+    mutationFn: () => professionalService.exportAudit(selectedCompanyId!),
+    onSuccess: (payload) => downloadJson(payload, "auditoria-conform-flow-verificavel.json"),
+  });
   const eventos = useMemo(() => auditoria?.eventos ?? [], [auditoria?.eventos]);
 
   const eventosFiltrados = useMemo(() => {
@@ -85,14 +93,10 @@ export function AuditoriaPage() {
           title="Eventos registrados"
           description="Pesquise eventos, filtre por risco e acompanhe a trilha de segurança operacional."
           action={
-            <button
-              type="button"
-              onClick={() => exportarAuditoriaCsv(eventosFiltrados)}
-              disabled={eventosFiltrados.length === 0}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold cf-transition hover:border-accent/30 hover:bg-muted/40 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Download className="h-3.5 w-3.5" /> Exportar CSV
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => exportarAuditoriaCsv(eventosFiltrados)} disabled={eventosFiltrados.length === 0} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold cf-transition hover:border-accent/30 hover:bg-muted/40 disabled:opacity-50"><Download className="h-3.5 w-3.5" /> CSV</button>
+              <button type="button" onClick={() => exportVerified.mutate()} disabled={!selectedCompanyId || exportVerified.isPending} className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"><Lock className="h-3.5 w-3.5" /> Exportação verificável</button>
+            </div>
           }
         />
 
@@ -166,8 +170,19 @@ export function AuditoriaPage() {
           </>
         )}
       </Surface>
+      {exportVerified.error ? <div className="rounded-xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger">{exportVerified.error.message}</div> : null}
     </AppShell>
   );
+}
+
+function downloadJson(payload: Record<string, unknown>, fileName: string) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function AuditRow({ log }: { log: LogAuditoriaResumo }) {

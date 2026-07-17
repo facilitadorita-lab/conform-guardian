@@ -19,6 +19,7 @@ O código não contém chaves privadas. Todas as configurações abaixo devem se
 - `TURNSTILE_SECRET_KEY`
 - `SIGNUP_REQUIRE_TURNSTILE=true` depois que o widget público estiver configurado
 - `OPERATIONS_ALERT_WEBHOOK_URL` opcional para o canal interno de incidentes
+- `EMAIL_WEBHOOK_URL` para alertas e relatórios agendados
 
 ## 3. Stripe
 
@@ -42,7 +43,9 @@ Configurar chamadas protegidas com `Authorization: Bearer <SYSTEM_CRON_SECRET>`:
 
 - `system-health-check`: a cada 5 minutos.
 - `process-lgpd-exports`: a cada 5 minutos.
-- `dispatch-expiration-alerts`: conforme a rotina de vencimentos já existente.
+- `dispatch-expiration-alerts`: a cada hora.
+- `dispatch-scheduled-reports`: a cada 15 minutos.
+- `process-dunning`: a cada hora.
 
 ## 6. GitHub Environments
 
@@ -51,6 +54,8 @@ Environment `production`:
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_DB_PASSWORD`
 - `SUPABASE_PROJECT_ID`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - aprovação manual obrigatória para deploy
 
 Environment `production-backup`:
@@ -58,6 +63,8 @@ Environment `production-backup`:
 - `SUPABASE_DB_URL`
 - `RESTORE_TEST_DB_URL` apontando somente para banco descartável
 - `BACKUP_ENCRYPTION_PASSWORD`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
 ## 7. Ordem segura de publicação
 

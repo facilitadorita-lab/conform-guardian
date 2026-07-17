@@ -12,6 +12,7 @@ export * from "./edgeFunctionsService";
 export * from "./evidenciasTimelineService";
 export * from "./manutencoesService";
 export * from "./pendenciasService";
+export * from "./professionalService";
 export * from "./publicCatalogService";
 export * from "./signupService";
 export * from "./governanceService";

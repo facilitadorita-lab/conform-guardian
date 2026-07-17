@@ -24,4 +24,11 @@ O backup lógico diário é criado pelo workflow `Encrypted backup and restore t
 5. Registrar aprovação de duas pessoas antes de apontar a aplicação para o banco restaurado.
 6. Eliminar de forma segura qualquer dump em texto claro.
 
-O Storage de evidências requer política de backup própria no provedor; o dump PostgreSQL preserva metadados e caminhos, mas não copia os binários do bucket.
+O workflow também exporta os buckets privados `evidencias` e `lgpd-exports`, cria um manifesto SHA-256 por arquivo, criptografa o pacote e valida sua abertura. O dump PostgreSQL e o pacote de Storage formam uma única unidade de recuperação lógica.
+
+Segredos adicionais do ambiente `production-backup`:
+
+- `SUPABASE_URL`;
+- `SUPABASE_SERVICE_ROLE_KEY`, restrita ao runner protegido e rotacionada periodicamente.
+
+Uma restauração completa deve validar se cada metadado ativo em `anexos.storage_path` possui um binário correspondente no manifesto do Storage.

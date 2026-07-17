@@ -93,12 +93,25 @@ Deno.serve(async (req: Request) => {
       .from("assinaturas_empresas")
       .update({
         status: "inadimplente",
-        bloqueada_em: new Date().toISOString(),
+        grace_period_ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
         gateway_subscription_id: subscriptionId,
         gateway: "asaas",
       })
       .eq("empresa_id", empresaId)
       .is("deleted_at", null);
+  }
+
+  if (assinatura?.id && (paid || overdue)) {
+    await adminClient.from("tentativas_cobranca").insert({
+      empresa_id: empresaId,
+      assinatura_id: assinatura.id,
+      gateway: "asaas",
+      gateway_event_id: paymentId,
+      status: paid ? "succeeded" : "failed",
+      valor_centavos: Math.round(Number(payment.value ?? 0) * 100),
+      erro_codigo: paid ? null : "PAYMENT_OVERDUE",
+      completed_at: new Date().toISOString(),
+    });
   }
 
   return respond({ received: true });

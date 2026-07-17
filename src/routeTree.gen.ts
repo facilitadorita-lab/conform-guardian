@@ -40,6 +40,7 @@ import { Route as MasterEmpresasRouteImport } from './routes/master.empresas'
 import { Route as MasterAssinaturasRouteImport } from './routes/master.assinaturas'
 import { Route as EquipamentosIdRouteImport } from './routes/equipamentos.$id'
 import { Route as CheckoutSucessoRouteImport } from './routes/checkout.sucesso'
+import { Route as EquipamentoQrTokenRouteImport } from './routes/equipamento.qr.$token'
 
 const VencimentosRoute = VencimentosRouteImport.update({
   id: '/vencimentos',
@@ -198,6 +199,11 @@ const CheckoutSucessoRoute = CheckoutSucessoRouteImport.update({
   path: '/checkout/sucesso',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EquipamentoQrTokenRoute = EquipamentoQrTokenRouteImport.update({
+  id: '/equipamento/qr/$token',
+  path: '/equipamento/qr/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/master/usuarios-ativos': typeof MasterUsuariosAtivosRoute
   '/master/valores-planos': typeof MasterValoresPlanosRoute
   '/seguranca/mfa': typeof SegurancaMfaRoute
+  '/equipamento/qr/$token': typeof EquipamentoQrTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -264,6 +271,7 @@ export interface FileRoutesByTo {
   '/master/usuarios-ativos': typeof MasterUsuariosAtivosRoute
   '/master/valores-planos': typeof MasterValoresPlanosRoute
   '/seguranca/mfa': typeof SegurancaMfaRoute
+  '/equipamento/qr/$token': typeof EquipamentoQrTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -298,6 +306,7 @@ export interface FileRoutesById {
   '/master/usuarios-ativos': typeof MasterUsuariosAtivosRoute
   '/master/valores-planos': typeof MasterValoresPlanosRoute
   '/seguranca/mfa': typeof SegurancaMfaRoute
+  '/equipamento/qr/$token': typeof EquipamentoQrTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -333,6 +342,7 @@ export interface FileRouteTypes {
     | '/master/usuarios-ativos'
     | '/master/valores-planos'
     | '/seguranca/mfa'
+    | '/equipamento/qr/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/master/usuarios-ativos'
     | '/master/valores-planos'
     | '/seguranca/mfa'
+    | '/equipamento/qr/$token'
   id:
     | '__root__'
     | '/'
@@ -399,6 +410,7 @@ export interface FileRouteTypes {
     | '/master/usuarios-ativos'
     | '/master/valores-planos'
     | '/seguranca/mfa'
+    | '/equipamento/qr/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -432,6 +444,7 @@ export interface RootRouteChildren {
   MasterUsuariosAtivosRoute: typeof MasterUsuariosAtivosRoute
   MasterValoresPlanosRoute: typeof MasterValoresPlanosRoute
   SegurancaMfaRoute: typeof SegurancaMfaRoute
+  EquipamentoQrTokenRoute: typeof EquipamentoQrTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -653,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutSucessoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/equipamento/qr/$token': {
+      id: '/equipamento/qr/$token'
+      path: '/equipamento/qr/$token'
+      fullPath: '/equipamento/qr/$token'
+      preLoaderRoute: typeof EquipamentoQrTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -699,6 +719,7 @@ const rootRouteChildren: RootRouteChildren = {
   MasterUsuariosAtivosRoute: MasterUsuariosAtivosRoute,
   MasterValoresPlanosRoute: MasterValoresPlanosRoute,
   SegurancaMfaRoute: SegurancaMfaRoute,
+  EquipamentoQrTokenRoute: EquipamentoQrTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

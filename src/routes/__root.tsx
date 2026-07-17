@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSessionProvider } from "@/hooks/use-app-session";
+import { initializeObservability } from "@/lib/observability";
 
 function NotFoundComponent() {
   return (
@@ -124,6 +125,8 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => initializeObservability(), []);
 
   return (
     <QueryClientProvider client={queryClient}>

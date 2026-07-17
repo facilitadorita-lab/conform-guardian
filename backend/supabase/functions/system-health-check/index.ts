@@ -105,6 +105,64 @@ Deno.serve(async (request: Request) => {
     );
   else await resolveAlert(admin, "backup-restore-test-overdue");
 
+  const professionalChecks = [
+    {
+      component: "client_observability",
+      table: "eventos_erro_sistema",
+      statusField: "resolvido_at",
+      failureValue: null,
+      cutoffField: "ultima_ocorrencia_at",
+      warningThreshold: 10,
+    },
+    {
+      component: "notification_delivery",
+      table: "entregas_notificacao",
+      statusField: "status",
+      failureValue: "failed",
+      cutoffField: "created_at",
+      warningThreshold: 1,
+    },
+    {
+      component: "scheduled_reports",
+      table: "execucoes_relatorios_agendados",
+      statusField: "status",
+      failureValue: "failed",
+      cutoffField: "created_at",
+      warningThreshold: 1,
+    },
+  ] as const;
+  for (const check of professionalChecks) {
+    let query = admin.from(check.table).select("id", { head: true, count: "exact" })
+      .gte(check.cutoffField, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+    query = check.failureValue === null
+      ? query.is(check.statusField, null)
+      : query.eq(check.statusField, check.failureValue);
+    const { count, error } = await query;
+    const status = error ? "unknown" : (count ?? 0) >= check.warningThreshold ? "degraded" : "healthy";
+    await recordHealth(admin, check.component, status, null, { failures_24h: count ?? null });
+    const fingerprint = `${check.component}-failures`;
+    if ((count ?? 0) >= check.warningThreshold) {
+      await upsertAlert(
+        admin,
+        fingerprint,
+        (count ?? 0) >= 10 ? "critical" : "warning",
+        check.component,
+        `Falhas em ${check.component}`,
+        `${count} ocorrencia(s) precisam de acompanhamento nas ultimas 24 horas.`,
+        { count },
+      );
+    } else if (!error) await resolveAlert(admin, fingerprint);
+  }
+
+  const { count: dunningQueue, error: dunningError } = await admin
+    .from("tentativas_cobranca")
+    .select("id", { head: true, count: "exact" })
+    .in("status", ["queued", "processing"])
+    .lt("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+  await recordHealth(admin, "billing_dunning", dunningError ? "unknown" : (dunningQueue ?? 0) > 0 ? "degraded" : "healthy", null, {
+    stuck_over_24h: dunningQueue ?? null,
+  });
+
   const alertWebhook = Deno.env.get("OPERATIONS_ALERT_WEBHOOK_URL");
   if (alertWebhook) {
     const { data: criticalAlerts } = await admin
@@ -127,7 +185,7 @@ Deno.serve(async (request: Request) => {
   }
 
   return respond(
-    { ok: !databaseError, checks: results.length + 4, checked_at: new Date().toISOString() },
+    { ok: !databaseError, checks: results.length + 8, checked_at: new Date().toISOString() },
     databaseError ? 503 : 200,
   );
 });

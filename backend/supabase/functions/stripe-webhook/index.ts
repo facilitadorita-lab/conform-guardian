@@ -175,14 +175,32 @@ async function handleInvoiceStatus(
     );
   if (!subscriptionId) return;
 
-  const { error } = await admin
+  const { data: subscription, error } = await admin
     .from("assinaturas_empresas")
-    .update({ status, updated_at: new Date().toISOString() })
+    .update({
+      status,
+      grace_period_ends_at: status === "ativa" ? null : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      ultimo_pagamento_em: status === "ativa" ? new Date().toISOString() : undefined,
+      updated_at: new Date().toISOString(),
+    })
     .eq("gateway", "stripe")
     .eq("gateway_subscription_id", subscriptionId)
-    .select("id")
+    .select("id,empresa_id")
     .maybeSingle();
   if (error) throw new Error("SUBSCRIPTION_STATUS_UPDATE_FAILED");
+  if (subscription) {
+    const amount = Math.round(Number(invoice.amount_due ?? invoice.amount_paid ?? 0));
+    await admin.from("tentativas_cobranca").insert({
+      empresa_id: subscription.empresa_id,
+      assinatura_id: subscription.id,
+      gateway: "stripe",
+      gateway_event_id: text(invoice.id) || null,
+      status: status === "ativa" ? "succeeded" : "failed",
+      valor_centavos: Number.isFinite(amount) ? amount : null,
+      erro_codigo: status === "ativa" ? null : "INVOICE_PAYMENT_FAILED",
+      completed_at: new Date().toISOString(),
+    });
+  }
 }
 
 async function handleSubscriptionCanceled(admin: SupabaseClient, subscription: JsonObject) {

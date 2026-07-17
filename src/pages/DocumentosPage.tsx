@@ -18,6 +18,7 @@ import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { AttachmentViewer } from "@/components/attachment-viewer";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
+import { DocumentWorkflowPanel } from "@/components/document-workflow-panel";
 import { useDocumentos } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
@@ -586,6 +587,7 @@ function DocumentPreviewModal({
   empresaId: string | null;
   onClose: () => void;
 }) {
+  const { podeEscrever } = useSession();
   const { data: timeline = [], isLoading } = useQuery({
     queryKey: ["evidencias-timeline", empresaId, "documentos", documento.id],
     queryFn: () => evidenciasTimelineService.listar(empresaId!, "documentos", documento.id),
@@ -632,6 +634,7 @@ function DocumentPreviewModal({
             <div className="mt-6">
               <EvidenciasTimeline items={timeline} isLoading={isLoading} />
             </div>
+            {empresaId ? <DocumentWorkflowPanel companyId={empresaId} documentId={documento.id} canWrite={podeEscrever} /> : null}
           </aside>
 
           <section className="min-h-[420px] overflow-auto bg-muted/30 p-5">

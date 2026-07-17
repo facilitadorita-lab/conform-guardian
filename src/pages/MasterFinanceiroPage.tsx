@@ -5,12 +5,17 @@ import {
   CalendarClock,
   CreditCard,
   Users,
+  TrendingUp,
+  ReceiptText,
+  RotateCcw,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useMasterAssinaturas, useMasterFinanceiroResumo } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { formatDateBR } from "@/utils/date";
 import { formatCurrencyFromCents } from "@/utils/money";
 import type { StatusConformidade } from "@/types";
+import { professionalService } from "@/services";
 
 const statusTone: Record<string, StatusConformidade | "info"> = {
   trial: "info",
@@ -24,6 +29,10 @@ const statusTone: Record<string, StatusConformidade | "info"> = {
 export function MasterFinanceiroPage() {
   const { data: resumo } = useMasterFinanceiroResumo();
   const { data: assinaturas = [] } = useMasterAssinaturas();
+  const professional = useQuery({
+    queryKey: ["master", "financeiro", "professional"],
+    queryFn: () => professionalService.professionalFinance(),
+  });
 
   return (
     <AppShell
@@ -61,6 +70,16 @@ export function MasterFinanceiroPage() {
           tone="text-primary"
         />
       </section>
+
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <MasterKpi label="MRR" value={formatCurrencyFromCents(professional.data?.mrr_centavos)} icon={TrendingUp} tone="text-success" />
+        <MasterKpi label="ARR projetado" value={formatCurrencyFromCents(professional.data?.arr_centavos)} icon={TrendingUp} tone="text-primary" />
+        <MasterKpi label="Ticket médio" value={formatCurrencyFromCents(professional.data?.ticket_medio_centavos)} icon={ReceiptText} tone="text-accent" />
+        <MasterKpi label="A receber vencido" value={formatCurrencyFromCents(professional.data?.recebiveis_vencidos_centavos)} icon={AlertTriangle} tone="text-danger" />
+        <MasterKpi label="Recuperações 30d" value={professional.data?.recuperadas_30d ?? 0} icon={RotateCcw} tone="text-success" />
+      </section>
+
+      {professional.error ? <div className="rounded-xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger">Não foi possível carregar os indicadores avançados: {professional.error.message}</div> : null}
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card">
@@ -175,8 +194,30 @@ export function MasterFinanceiroPage() {
           </tbody>
         </table>
       </section>
+      <section className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h2 className="text-sm font-semibold">Aging da inadimplência</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Valores vencidos separados pelo tempo em atraso.</p>
+          <div className="mt-4 space-y-3">
+            <AgingRow label="Até 7 dias" value={professional.data?.aging.ate_7_dias} />
+            <AgingRow label="De 8 a 30 dias" value={professional.data?.aging.de_8_a_30_dias} />
+            <AgingRow label="Mais de 30 dias" value={professional.data?.aging.mais_30_dias} danger />
+          </div>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="border-b border-border p-5"><h2 className="text-sm font-semibold">Tentativas de cobrança</h2><p className="mt-1 text-xs text-muted-foreground">Histórico de sucesso, falha e recuperação por gateway.</p></div>
+          <div className="divide-y divide-border">
+            {(professional.data?.ultimas_tentativas ?? []).slice(0, 8).map((attempt) => <div key={attempt.id} className="flex items-center justify-between gap-3 p-4 text-sm"><div><div className="font-medium">{attempt.nome_fantasia}</div><div className="text-xs text-muted-foreground">{attempt.gateway} · {attempt.status}</div></div><div className="font-semibold">{formatCurrencyFromCents(attempt.valor_centavos)}</div></div>)}
+            {!professional.isLoading && !professional.data?.ultimas_tentativas.length ? <div className="p-6 text-center text-sm text-muted-foreground">Nenhuma tentativa registrada.</div> : null}
+          </div>
+        </div>
+      </section>
     </AppShell>
   );
+}
+
+function AgingRow({ label, value, danger }: { label: string; value?: number; danger?: boolean }) {
+  return <div className={`flex items-center justify-between rounded-xl border p-3 ${danger ? "border-danger/25 bg-danger/5" : "border-border bg-muted/20"}`}><span className="text-sm text-muted-foreground">{label}</span><strong className={danger ? "text-danger" : ""}>{formatCurrencyFromCents(value)}</strong></div>;
 }
 
 function MasterKpi({

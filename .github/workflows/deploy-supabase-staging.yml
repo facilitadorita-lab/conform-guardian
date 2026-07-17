@@ -1,0 +1,53 @@
+name: Deploy Supabase staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conform-flow-supabase-staging
+  cancel-in-progress: true
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: staging
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm build
+      - run: test -n "$SUPABASE_ACCESS_TOKEN" && test -n "$SUPABASE_DB_PASSWORD" && test -n "$PROJECT_ID"
+      - run: supabase link --workdir backend --project-ref "$PROJECT_ID"
+      - run: supabase db push --workdir backend --linked --dry-run --include-all
+      - run: supabase db push --workdir backend --linked --include-all
+      - run: supabase functions deploy --workdir backend --project-ref "$PROJECT_ID"
+      - name: Register successful staging release
+        if: success()
+        run: |
+          curl --fail-with-body --request POST "$SUPABASE_URL/rest/v1/implantacoes_sistema" \
+            --header "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            --header "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            --header "Content-Type: application/json" \
+            --data "{\"ambiente\":\"staging\",\"versao\":\"github-${GITHUB_RUN_NUMBER}\",\"commit_sha\":\"${GITHUB_SHA}\",\"status\":\"succeeded\",\"concluido_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"

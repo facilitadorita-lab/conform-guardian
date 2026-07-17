@@ -20,6 +20,7 @@ import { useRelatorios } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
 import { AppShell } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
+import { ScheduledReportsPanel } from "@/components/scheduled-reports-panel";
 import { relatoriosService } from "@/services";
 import type { RelatorioCatalogoItem, RelatorioExecutivoIA } from "@/types";
 import { formatDateBR, formatDateTimeBR } from "@/utils/date";
@@ -155,6 +156,7 @@ export function RelatoriosPage() {
           </div>
         )}
       </Surface>
+      {selectedCompanyId ? <ScheduledReportsPanel companyId={selectedCompanyId} /> : null}
     </AppShell>
   );
 }

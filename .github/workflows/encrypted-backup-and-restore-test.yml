@@ -17,10 +17,12 @@ jobs:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       RESTORE_TEST_DB_URL: ${{ secrets.RESTORE_TEST_DB_URL }}
       BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate protected configuration
-        run: test -n "$SUPABASE_DB_URL" && test -n "$RESTORE_TEST_DB_URL" && test -n "$BACKUP_ENCRYPTION_PASSWORD"
+        run: test -n "$SUPABASE_DB_URL" && test -n "$RESTORE_TEST_DB_URL" && test -n "$BACKUP_ENCRYPTION_PASSWORD" && test -n "$SUPABASE_URL" && test -n "$SUPABASE_SERVICE_ROLE_KEY"
       - name: Create logical backup
         run: pg_dump "$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file=conform-flow.dump
       - name: Encrypt and fingerprint backup
@@ -34,6 +36,17 @@ jobs:
           psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) from public.empresas;"
           psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) from public.documentos;"
           psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) from public.logs_auditoria;"
+          psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) from public.documento_revisoes;"
+          psql "$RESTORE_TEST_DB_URL" -v ON_ERROR_STOP=1 -c "select count(*) from public.achados_qualidade_dados;"
+      - name: Export private Storage with checksums
+        run: python backend/scripts/backup_storage.py
+      - name: Encrypt and verify Storage backup
+        run: |
+          tar -czf conform-flow-storage.tar.gz storage-backup
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 -in conform-flow-storage.tar.gz -out conform-flow-storage.tar.gz.enc -pass env:BACKUP_ENCRYPTION_PASSWORD
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in conform-flow-storage.tar.gz.enc -out conform-flow-storage.verify.tar.gz -pass env:BACKUP_ENCRYPTION_PASSWORD
+          tar -tzf conform-flow-storage.verify.tar.gz >/dev/null
+          sha256sum conform-flow-storage.tar.gz.enc > conform-flow-storage.tar.gz.enc.sha256
       - name: Record successful restore drill
         run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "insert into public.ensaios_restauracao_backup(ambiente, backup_reference, status, initiated_at, completed_at, evidence_reference, notes) values ('github-disposable', 'github-run-${GITHUB_RUN_ID}', 'passed', now(), now(), 'github-run-${GITHUB_RUN_ID}', 'Restauração e consultas de integridade concluídas automaticamente.');"
       - uses: actions/upload-artifact@v4
@@ -42,8 +55,10 @@ jobs:
           path: |
             conform-flow.dump.enc
             conform-flow.dump.enc.sha256
+            conform-flow-storage.tar.gz.enc
+            conform-flow-storage.tar.gz.enc.sha256
           retention-days: 30
           if-no-files-found: error
       - name: Remove plaintext backup
         if: always()
-        run: rm -f conform-flow.dump
+        run: rm -rf conform-flow.dump conform-flow-storage.tar.gz conform-flow-storage.verify.tar.gz storage-backup

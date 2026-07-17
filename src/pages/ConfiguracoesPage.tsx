@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import type { ConfiguracaoCatalogoItem, PlanoRecurso } from "@/types";
 import { statusLabel } from "@/utils/status";
 import { GovernanceSettings } from "@/components/governance-settings";
+import { ProfessionalGovernancePanel } from "@/components/professional-governance-panel";
 
 const iconMap: Record<string, LucideIcon> = {
   "bell-ring": BellRing,
@@ -245,11 +246,10 @@ export function ConfiguracoesPage() {
         </Surface>
       ) : null}
       {empresaAtual?.id && authContext?.usuario.id ? (
-        <GovernanceSettings
-          companyId={empresaAtual.id}
-          canAdmin={canAdmin}
-          userId={authContext.usuario.id}
-        />
+        <>
+          <ProfessionalGovernancePanel companyId={empresaAtual.id} canAdmin={canAdmin} currentUserId={authContext.usuario.id} />
+          <GovernanceSettings companyId={empresaAtual.id} canAdmin={canAdmin} userId={authContext.usuario.id} />
+        </>
       ) : null}
     </AppShell>
   );

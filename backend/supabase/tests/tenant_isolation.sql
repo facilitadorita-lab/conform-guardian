@@ -32,6 +32,22 @@ insert into public.manutencoes(id, empresa_id, equipamento_id, natureza, data_ma
   ('a3000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'a2000000-0000-4000-8000-000000000001', 'preventiva', current_date),
   ('b3000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', 'b2000000-0000-4000-8000-000000000002', 'preventiva', current_date);
 
+insert into public.documento_revisoes(id,empresa_id,documento_id,numero_versao,snapshot_json,conteudo_hash,created_by) values
+  ('a4000000-0000-4000-8000-000000000001','a0000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001',1,'{}','hash-a','10000000-0000-4000-8000-000000000001'),
+  ('b4000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000002','b1000000-0000-4000-8000-000000000002',1,'{}','hash-b','20000000-0000-4000-8000-000000000002');
+
+insert into public.regras_notificacao_empresa(id,empresa_id,nome,evento,created_by) values
+  ('a5000000-0000-4000-8000-000000000001','a0000000-0000-4000-8000-000000000001','Regra A','vencimento','10000000-0000-4000-8000-000000000001'),
+  ('b5000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000002','Regra B','vencimento','20000000-0000-4000-8000-000000000002');
+
+insert into public.achados_qualidade_dados(id,empresa_id,regra_codigo,modulo,registro_id,titulo,severidade) values
+  ('a6000000-0000-4000-8000-000000000001','a0000000-0000-4000-8000-000000000001','DOC_VENCIMENTO','documentos','a1000000-0000-4000-8000-000000000001','Achado A','warning'),
+  ('b6000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000002','DOC_VENCIMENTO','documentos','b1000000-0000-4000-8000-000000000002','Achado B','warning');
+
+insert into public.relatorios_agendados(id,empresa_id,nome,frequencia,destinatarios,created_by) values
+  ('a7000000-0000-4000-8000-000000000001','a0000000-0000-4000-8000-000000000001','Relatorio A','semanal',array['a@test.local'],'10000000-0000-4000-8000-000000000001'),
+  ('b7000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000002','Relatorio B','semanal',array['b@test.local'],'20000000-0000-4000-8000-000000000002');
+
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
@@ -62,6 +78,18 @@ begin
     raise exception 'TENANT_MAINTENANCE_READ_ISOLATION_FAILED: tenant A visualizou % manutenções', v_visible;
   end if;
 
+  select count(*) into v_visible from public.documento_revisoes;
+  if v_visible <> 1 then raise exception 'TENANT_DOCUMENT_WORKFLOW_READ_ISOLATION_FAILED'; end if;
+  select count(*) into v_visible from public.regras_notificacao_empresa;
+  if v_visible <> 1 then raise exception 'TENANT_NOTIFICATION_RULE_READ_ISOLATION_FAILED'; end if;
+  select count(*) into v_visible from public.achados_qualidade_dados;
+  if v_visible <> 1 then raise exception 'TENANT_DATA_QUALITY_READ_ISOLATION_FAILED'; end if;
+  select count(*) into v_visible from public.relatorios_agendados;
+  if v_visible <> 1 then raise exception 'TENANT_SCHEDULED_REPORT_READ_ISOLATION_FAILED'; end if;
+  if public.has_company_permission('b0000000-0000-4000-8000-000000000002','documentos.ler') then
+    raise exception 'TENANT_PERMISSION_RESOLUTION_LEAK';
+  end if;
+
   begin
     insert into public.documentos(empresa_id, nome, exige_anexo)
     values ('b0000000-0000-4000-8000-000000000002', 'Tentativa cruzada', false);
@@ -76,6 +104,21 @@ begin
     raise exception 'TENANT_EQUIPMENT_WRITE_LEAK';
   exception
     when insufficient_privilege then null;
+  end;
+
+  begin
+    perform public.api_documento_workflow(
+      'b0000000-0000-4000-8000-000000000002',
+      'b1000000-0000-4000-8000-000000000002'
+    );
+    raise exception 'TENANT_WORKFLOW_RPC_LEAK';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    perform public.api_listar_relatorios_agendados('b0000000-0000-4000-8000-000000000002');
+    raise exception 'TENANT_SCHEDULED_REPORT_RPC_LEAK';
+  exception when insufficient_privilege then null;
   end;
 end;
 $$;

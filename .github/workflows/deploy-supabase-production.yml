@@ -11,7 +11,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  frontend-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm build
+
+  tenant-security-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start --workdir backend -x studio,imgproxy,inbucket,logflare,vector,supavisor
+      - run: supabase db reset --workdir backend
+      - env:
+          PGPASSWORD: postgres
+        run: psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/supabase/tests/tenant_isolation.sql
+      - if: always()
+        run: supabase stop --workdir backend --no-backup
+
   deploy:
+    needs: [frontend-preflight, tenant-security-preflight]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
@@ -19,6 +52,8 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
@@ -34,3 +69,11 @@ jobs:
         run: supabase db push --workdir backend --linked --include-all
       - name: Deploy Edge Functions
         run: supabase functions deploy --workdir backend --project-ref "$PROJECT_ID"
+      - name: Register successful production release
+        if: success()
+        run: |
+          curl --fail-with-body --request POST "$SUPABASE_URL/rest/v1/implantacoes_sistema" \
+            --header "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            --header "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            --header "Content-Type: application/json" \
+            --data "{\"ambiente\":\"production\",\"versao\":\"github-${GITHUB_RUN_NUMBER}\",\"commit_sha\":\"${GITHUB_SHA}\",\"status\":\"succeeded\",\"concluido_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"

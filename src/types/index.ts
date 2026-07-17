@@ -3,3 +3,4 @@ export * from "./view-models";
 export * from "./company-verification";
 export * from "./commercial";
 export * from "./governance";
+export * from "./professional";
