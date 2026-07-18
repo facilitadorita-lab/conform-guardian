@@ -19,6 +19,7 @@ type ApiDashboardResponse = Partial<DashboardData> & {
     vencidos?: number;
     criticos?: number;
     a_vencer_30?: number;
+    a_vencer_60?: number;
     pendentes_anexo?: number;
   };
   equipamentos?: {
@@ -65,7 +66,7 @@ function normalizeDashboard(data: ApiDashboardResponse): DashboardData {
     documentosVencidos: numberOrZero(data.documentosVencidos ?? data.documentos?.vencidos),
     vencendo7: numberOrZero(data.vencendo7 ?? data.documentos?.criticos),
     vencendo30: numberOrZero(data.vencendo30 ?? data.documentos?.a_vencer_30),
-    vencendo60: numberOrZero(data.vencendo60 ?? data.documentos?.a_vencer_30),
+    vencendo60: numberOrZero(data.vencendo60 ?? data.documentos?.a_vencer_60),
     equipamentosAtencao: numberOrZero(data.equipamentosAtencao ?? data.equipamentos?.atencao),
     manutencoesVencidas: numberOrZero(data.manutencoesVencidas ?? data.manutencoes?.vencidas),
     manutencoesProximas: numberOrZero(data.manutencoesProximas ?? data.manutencoes?.a_vencer),

@@ -13,7 +13,9 @@ function readBool(value: string | undefined, fallback: boolean): boolean {
 export const runtimeConfig = {
   // Produção segura: se Supabase estiver configurado, mocks ficam desligados por padrão.
   // Para prototipar localmente, use VITE_USE_MOCKS=true explicitamente.
-  useMocks: readBool(useMocksFlag, !supabaseUrl || !supabaseAnonKey),
+  // Mocks may only be activated explicitly. If Supabase variables are absent,
+  // the app remains without data instead of exposing mocks as production data.
+  useMocks: readBool(useMocksFlag, false),
   supabaseUrl,
   supabaseAnonKey,
 } as const;
@@ -23,7 +25,7 @@ export function isSupabaseConfigured(): boolean {
 }
 
 export function shouldUseMocks(): boolean {
-  return runtimeConfig.useMocks || !isSupabaseConfigured();
+  return runtimeConfig.useMocks;
 }
 
 export const MOCK_EMPRESA_ID = "empresa-mock-clinica-vitalis";

@@ -11,7 +11,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 import { authContextMock } from "@/mocks";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import { shouldUseMocks } from "@/lib/runtime-config";
+import { isSupabaseConfigured, shouldUseMocks } from "@/lib/runtime-config";
 import {
   authService,
   clearSelectedCompanyId,
@@ -62,6 +62,15 @@ export function AppSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (useMocks) {
       setAuthLoading(false);
+      return;
+    }
+
+    if (!isSupabaseConfigured()) {
+      setAuthLoading(false);
+      setContextLoading(false);
+      setContextError(
+        new Error("Supabase nÃ£o configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY."),
+      );
       return;
     }
 
@@ -122,6 +131,17 @@ export function AppSessionProvider({ children }: { children: ReactNode }) {
       return authContextMock;
     }
 
+    if (!isSupabaseConfigured()) {
+      const error = new Error(
+        "Supabase nÃ£o configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY.",
+      );
+      setAuthContext(null);
+      setPermissions(null);
+      setContextError(error);
+      setContextLoading(false);
+      return null;
+    }
+
     if (!user) {
       setAuthContext(null);
       setPermissions(null);
@@ -138,17 +158,28 @@ export function AppSessionProvider({ children }: { children: ReactNode }) {
 
       setAuthContext(nextContext);
       const storedCompanyId = getSelectedCompanyId();
-      if (!nextContext.usuario.isMaster && !storedCompanyId) {
-        setSelectedCompanyId(nextContext.empresaAtual.id);
-        setSelectedCompanyState(nextContext.empresaAtual.id);
-      } else {
-        setSelectedCompanyState(storedCompanyId);
-      }
+      const selectedCompanyIsAllowed = Boolean(
+        storedCompanyId &&
+          nextContext.empresasPermitidas.some((empresa) => empresa.id === storedCompanyId),
+      );
+      const resolvedCompanyId = nextContext.usuario.isMaster
+        ? selectedCompanyIsAllowed
+          ? storedCompanyId
+          : null
+        : nextContext.empresaAtual.id;
 
-      const canResolvePermissions = !nextContext.usuario.isMaster || Boolean(storedCompanyId);
-      if (canResolvePermissions) {
+      if (
+        !nextContext.usuario.isMaster &&
+        resolvedCompanyId &&
+        resolvedCompanyId !== storedCompanyId
+      ) {
+        setSelectedCompanyId(resolvedCompanyId);
+      }
+      setSelectedCompanyState(resolvedCompanyId);
+
+      if (resolvedCompanyId) {
         const nextPermissions = await companyVerificationService.obterPermissoes(
-          nextContext.empresaAtual.id,
+          resolvedCompanyId,
         );
         if (requestId === contextRequest.current) setPermissions(nextPermissions);
       } else {

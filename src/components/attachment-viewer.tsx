@@ -137,7 +137,9 @@ export function AttachmentViewer({
     );
   }
 
-  const canEmbed = !previewFailed && Boolean(blobUrl) && (fileInfo.isPdf || fileInfo.isImage);
+  // A URL assinada já autoriza a leitura no Storage privado. Usá-la diretamente
+  // no iframe/img evita o fetch intermediário, que depende de CORS do Storage.
+  const canEmbed = !previewFailed && Boolean(url) && (fileInfo.isPdf || fileInfo.isImage);
 
   return (
     <div className="space-y-3">
@@ -186,7 +188,7 @@ export function AttachmentViewer({
         fileInfo.isImage ? (
           <div className="flex min-h-[420px] items-center justify-center overflow-auto rounded-xl border border-border bg-background p-4">
             <img
-              src={blobUrl ?? undefined}
+              src={url ?? undefined}
               alt={name || title}
               onError={() => setPreviewFailed(true)}
               className="max-h-[70vh] max-w-full rounded-lg object-contain"
@@ -195,7 +197,7 @@ export function AttachmentViewer({
         ) : (
           <iframe
             title={`Visualização de ${title}`}
-            src={blobUrl ?? undefined}
+            src={url ?? undefined}
             onError={() => setPreviewFailed(true)}
             className="h-[70vh] min-h-[420px] w-full rounded-xl border border-border bg-background"
           />

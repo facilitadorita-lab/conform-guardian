@@ -228,12 +228,11 @@ function uploadFileToSignedUrl(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    const formData = new FormData();
-
-    formData.append("cacheControl", "3600");
-    formData.append("", file);
 
     xhr.open("PUT", signedUrl);
+    // createSignedUploadUrl espera o corpo binário do arquivo. FormData
+    // adiciona multipart/form-data e deixa o objeto inválido no Storage.
+    xhr.setRequestHeader("content-type", file.type || "application/octet-stream");
     xhr.setRequestHeader("x-upsert", "false");
 
     xhr.upload.onprogress = (event) => {
@@ -256,7 +255,7 @@ function uploadFileToSignedUrl(
 
     xhr.onerror = () => reject(new Error("Falha de rede durante o upload do arquivo."));
     xhr.onabort = () => reject(new Error("Upload cancelado antes de finalizar."));
-    xhr.send(formData);
+    xhr.send(file);
   });
 }
 

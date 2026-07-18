@@ -1,10 +1,12 @@
+import { runtimeConfig } from "@/lib/runtime-config";
 import { configuracoesMock } from "@/mocks";
 import type { ConfiguracaoCatalogoItem, MatrizDocumentalEmpresa, OnboardingEmpresa } from "@/types";
 import { cloneMock, invokeRpc } from "./service-utils";
 
 export const configuracoesService = {
   async listar(): Promise<ConfiguracaoCatalogoItem[]> {
-    return cloneMock(configuracoesMock);
+    if (runtimeConfig.useMocks) return cloneMock(configuracoesMock);
+    return invokeRpc<ConfiguracaoCatalogoItem[]>("api_catalogo_configuracoes");
   },
 
   async matrizDocumental(empresaId: string): Promise<MatrizDocumentalEmpresa> {

@@ -14,7 +14,7 @@ import {
 import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppSession } from "@/hooks/use-app-session";
-import { useAuthContext } from "@/hooks/use-conform-data";
+import { useAlertas, useAuthContext } from "@/hooks/use-conform-data";
 import { runtimeConfig } from "@/lib/runtime-config";
 import type { StatusConformidade } from "@/types";
 import { cn } from "@/lib/utils";
@@ -37,7 +37,8 @@ export function AppShell({
 }) {
   const { user, loading, signOut } = useAuth();
   const { selectCompany, selectedCompanyId } = useAppSession();
-  const { data: authContext } = useAuthContext();
+  const { data: authContext, error: contextError } = useAuthContext();
+  const { data: alertas } = useAlertas();
   const queryClient = useQueryClient();
   const router = useRouter();
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ export function AppShell({
     authContext && !authContext.usuario.isMaster && empresaAtual?.status !== "ativa",
   );
   const exibirAssistente = hasPlanFeature(activeAuthContext, "assistente_ia");
+  const alertasCount = alertas?.length ?? 0;
   const breadcrumbs = buildBreadcrumbs(pathname, title);
   useEffect(() => {
     if (runtimeConfig.useMocks || loading || user) return;
@@ -59,11 +61,11 @@ export function AppShell({
   }, [loading, navigate, user]);
 
   if (!runtimeConfig.useMocks && (loading || !user)) {
-    return <AccessValidationScreen />;
+    return <AccessValidationScreen error={contextError} />;
   }
 
   if (!authContext || !empresaAtual) {
-    return <AccessValidationScreen />;
+    return <AccessValidationScreen error={contextError} />;
   }
 
   if (acessoBloqueado) {
@@ -105,9 +107,11 @@ export function AppShell({
 
               <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm">
                 <Bell className="h-4 w-4" />
-                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
-                  7
-                </span>
+                {alertasCount > 0 ? (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
+                    {alertasCount > 99 ? "99+" : alertasCount}
+                  </span>
+                ) : null}
               </div>
 
               {podeTrocarEmpresa ? (
@@ -216,7 +220,8 @@ function humanizePath(value: string) {
     .replace(/^\w/, (char) => char.toUpperCase());
 }
 
-function AccessValidationScreen() {
+function AccessValidationScreen({ error }: { error?: Error | null }) {
+  const hasConfigurationError = Boolean(error?.message.toLowerCase().includes("supabase"));
   return (
     <main className="cf-subtle-grid flex min-h-screen items-center justify-center bg-background p-6">
       <section className="cf-page-card flex max-w-md flex-col items-center gap-4 p-8 text-center">
@@ -226,10 +231,17 @@ function AccessValidationScreen() {
           className="h-16 w-16 object-contain"
         />
         <div>
-          <h1 className="text-base font-semibold">Validando acesso</h1>
+          <h1 className="text-base font-semibold">
+            {hasConfigurationError ? "Configuração necessária" : "Validando acesso"}
+          </h1>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Conferindo empresa, plano e permissões antes de carregar a plataforma.
+            {hasConfigurationError
+              ? "O ambiente ainda não está conectado ao Supabase. Configure as variáveis do ambiente e publique novamente."
+              : "Conferindo empresa, plano e permissões antes de carregar a plataforma."}
           </p>
+          {error && !hasConfigurationError ? (
+            <p className="mt-2 text-xs text-danger">{error.message}</p>
+          ) : null}
         </div>
       </section>
     </main>
