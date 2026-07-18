@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Bell, Clock3, Mail, Monitor, Search, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  Clock3,
+  Mail,
+  Monitor,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAlertas } from "@/hooks/use-conform-data";
@@ -17,7 +26,7 @@ const tones: Record<string, "info" | "atencao" | "critico" | "vencido"> = {
 };
 
 export function AlertasPage() {
-  const { data: alertas = [], isLoading } = useAlertas();
+  const { data: alertas = [], isLoading, isError, error, refetch } = useAlertas();
   const [busca, setBusca] = useState("");
   const [nivelFiltro, setNivelFiltro] = useState("todos");
   const resumo = useMemo(() => calcularResumo(alertas), [alertas]);
@@ -131,6 +140,21 @@ export function AlertasPage() {
               />
             ))}
           </div>
+        ) : isError ? (
+          <EmptyState
+            icon={AlertTriangle}
+            title="Não foi possível carregar os alertas"
+            description={error instanceof Error ? error.message : "Tente novamente em instantes."}
+            action={
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-accent hover:bg-muted"
+              >
+                <RefreshCw className="h-4 w-4" /> Tentar novamente
+              </button>
+            }
+          />
         ) : alertasFiltrados.length === 0 ? (
           <EmptyState
             icon={Bell}

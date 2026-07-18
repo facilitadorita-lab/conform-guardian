@@ -36,7 +36,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   const { user, loading, signOut } = useAuth();
-  const { selectCompany, selectedCompanyId } = useAppSession();
+  const { selectCompany, selectedCompanyId, permissions } = useAppSession();
   const { data: authContext, error: contextError } = useAuthContext();
   const { data: alertas } = useAlertas();
   const queryClient = useQueryClient();
@@ -50,7 +50,9 @@ export function AppShell({
     authContext && empresaAtual ? { ...authContext, empresaAtual } : authContext;
   const podeTrocarEmpresa = Boolean(authContext && authContext.empresasPermitidas.length > 1);
   const acessoBloqueado = Boolean(
-    authContext && !authContext.usuario.isMaster && empresaAtual?.status !== "ativa",
+    authContext &&
+    !authContext.usuario.isMaster &&
+    (empresaAtual?.status !== "ativa" || permissions?.can_open_operational_modules !== true),
   );
   const exibirAssistente = hasPlanFeature(activeAuthContext, "assistente_ia");
   const alertasCount = alertas?.length ?? 0;
@@ -74,6 +76,7 @@ export function AppShell({
         empresaNome={empresaAtual.nome}
         empresaCnpj={empresaAtual.cnpj}
         status={empresaAtual.status}
+        reason={permissions?.reason_code}
       />
     );
   }
@@ -252,11 +255,14 @@ function BlockedAccessScreen({
   empresaNome,
   empresaCnpj,
   status,
+  reason,
 }: {
   empresaNome: string;
   empresaCnpj: string;
   status: string;
+  reason?: string | null;
 }) {
+  const paymentIssue = reason === "SUBSCRIPTION_PAST_DUE" || reason === "SUBSCRIPTION_REQUIRED";
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 text-white">
       <section className="w-full max-w-2xl rounded-3xl border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur">
@@ -276,7 +282,9 @@ function BlockedAccessScreen({
             </div>
 
             <h1 className="text-3xl font-semibold tracking-tight">
-              Regularize a assinatura para continuar
+              {paymentIssue
+                ? "Regularize a assinatura para continuar"
+                : "Acesso operacional restrito"}
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               Por segurança, enquanto a empresa estiver com status{" "}

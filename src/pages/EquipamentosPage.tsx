@@ -7,6 +7,7 @@ import {
   Eye,
   Factory,
   Plus,
+  RefreshCw,
   Search,
   ShieldCheck,
   SlidersHorizontal,
@@ -35,7 +36,7 @@ const PAGE_SIZE = 12;
 export function EquipamentosPage() {
   const { podeEscrever, selectedCompanyId, selectedCompany } = useSession();
   const empresaNome = selectedCompany?.razao_social ?? "empresa não selecionada";
-  const { data: equipamentos = [], isLoading } = useEquipamentos();
+  const { data: equipamentos = [], isLoading, isError, error, refetch } = useEquipamentos();
   const queryClient = useQueryClient();
   const [modalAberto, setModalAberto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -291,6 +292,21 @@ export function EquipamentosPage() {
               />
             ))}
           </div>
+        ) : isError ? (
+          <EmptyState
+            icon={AlertTriangle}
+            title="Não foi possível carregar os equipamentos"
+            description={error instanceof Error ? error.message : "Tente novamente em instantes."}
+            action={
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-accent hover:bg-muted"
+              >
+                <RefreshCw className="h-4 w-4" /> Tentar novamente
+              </button>
+            }
+          />
         ) : equipamentosFiltrados.length === 0 ? (
           <EmptyState
             icon={Factory}
@@ -633,11 +649,11 @@ function NovoEquipamentoModal({
 
         <div className="grid gap-4 p-5 md:grid-cols-2">
           <Input label="Nome" name="nome" required />
-          <Input label="Código interno" name="codigo_interno" />
+          <Input label="Código interno" name="codigo_interno" required />
           <Input label="Número de série" name="numero_serie" />
-          <Input label="Fabricante" name="fabricante" />
-          <Input label="Modelo" name="modelo" />
-          <Input label="Setor" name="setor" />
+          <Input label="Fabricante" name="fabricante" required />
+          <Input label="Modelo" name="modelo" required />
+          <Input label="Setor" name="setor" required />
           <Input label="Localização" name="localizacao" />
           <Select label="Criticidade" name="criticidade" required>
             <option value="baixa">Baixa</option>

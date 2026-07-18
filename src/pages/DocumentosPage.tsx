@@ -9,6 +9,7 @@ import {
   FileText,
   FileWarning,
   Plus,
+  RefreshCw,
   Search,
   ShieldCheck,
   SlidersHorizontal,
@@ -40,7 +41,7 @@ const pageSize = 12;
 export function DocumentosPage() {
   const { podeEscrever, selectedCompanyId, selectedCompany } = useSession();
   const empresaNome = selectedCompany?.razao_social ?? "empresa não selecionada";
-  const { data: documentos = [], isLoading } = useDocumentos();
+  const { data: documentos = [], isLoading, isError, error, refetch } = useDocumentos();
   const queryClient = useQueryClient();
   const [documentoPreview, setDocumentoPreview] = useState<DocumentoResumo | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
@@ -195,9 +196,6 @@ export function DocumentosPage() {
 
   function handlePreview(documento: DocumentoResumo) {
     setDocumentoPreview(documento);
-    if (documento.anexoId) {
-      void edgeFunctionsService.registrarEventoAnexo(documento.anexoId);
-    }
   }
 
   function limparFiltros() {
@@ -371,6 +369,21 @@ export function DocumentosPage() {
               />
             ))}
           </div>
+        ) : isError ? (
+          <EmptyState
+            icon={FileWarning}
+            title="Não foi possível carregar os documentos"
+            description={error instanceof Error ? error.message : "Tente novamente em instantes."}
+            action={
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-accent hover:bg-muted"
+              >
+                <RefreshCw className="h-4 w-4" /> Tentar novamente
+              </button>
+            }
+          />
         ) : documentosPaginados.length > 0 ? (
           <>
             <div className="hidden overflow-x-auto lg:block">
@@ -634,7 +647,13 @@ function DocumentPreviewModal({
             <div className="mt-6">
               <EvidenciasTimeline items={timeline} isLoading={isLoading} />
             </div>
-            {empresaId ? <DocumentWorkflowPanel companyId={empresaId} documentId={documento.id} canWrite={podeEscrever} /> : null}
+            {empresaId ? (
+              <DocumentWorkflowPanel
+                companyId={empresaId}
+                documentId={documento.id}
+                canWrite={podeEscrever}
+              />
+            ) : null}
           </aside>
 
           <section className="min-h-[420px] overflow-auto bg-muted/30 p-5">
@@ -644,6 +663,17 @@ function DocumentPreviewModal({
               mimeType={documento.anexoMimeType}
               title={documento.nome}
               emptyDescription="Este documento ainda não possui arquivo disponível para abrir no navegador. Mesmo assim, os dados principais seguem disponíveis para conferência."
+              onView={() => {
+                if (documento.anexoId)
+                  void edgeFunctionsService.registrarEventoAnexo(documento.anexoId);
+              }}
+              onDownload={() => {
+                if (documento.anexoId)
+                  void edgeFunctionsService.registrarEventoAnexo(
+                    documento.anexoId,
+                    "download_anexo",
+                  );
+              }}
             />
           </section>
         </div>

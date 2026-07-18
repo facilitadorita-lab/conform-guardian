@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, Search, UserRoundX } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, RefreshCw, Search, UserRoundX } from "lucide-react";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useDashboardData, usePendencias } from "@/hooks/use-conform-data";
@@ -12,7 +12,7 @@ import { statusLabel } from "@/utils/status";
 type StatusFiltro = StatusConformidade | "todos";
 
 export function PendenciasPage() {
-  const { data: pendencias = [], isLoading } = usePendencias();
+  const { data: pendencias = [], isLoading, isError, error, refetch } = usePendencias();
   const { data: dashboard } = useDashboardData();
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState<StatusFiltro>("todos");
@@ -120,6 +120,21 @@ export function PendenciasPage() {
               />
             ))}
           </div>
+        ) : isError ? (
+          <EmptyState
+            icon={AlertTriangle}
+            title="Não foi possível carregar as pendências"
+            description={error instanceof Error ? error.message : "Tente novamente em instantes."}
+            action={
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-accent hover:bg-muted"
+              >
+                <RefreshCw className="h-4 w-4" /> Tentar novamente
+              </button>
+            }
+          />
         ) : pendenciasFiltradas.length === 0 ? (
           <EmptyState
             icon={AlertTriangle}

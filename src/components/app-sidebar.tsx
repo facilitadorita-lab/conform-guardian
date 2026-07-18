@@ -34,6 +34,7 @@ type NavItem = {
   icon: LucideIcon;
   exact?: boolean;
   recurso?: PlanoRecurso;
+  adminOnly?: boolean;
 };
 
 const groups: { label: string; items: NavItem[] }[] = [
@@ -119,6 +120,7 @@ const groups: { label: string; items: NavItem[] }[] = [
         description: "Acessos e perfis",
         icon: Users,
         recurso: "usuarios",
+        adminOnly: true,
       },
       {
         to: "/configuracoes",
@@ -164,7 +166,7 @@ const masterGroup: { label: string; items: NavItem[] } = {
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { data: authContext } = useAuthContext();
-  const { selectedCompanyId } = useSession();
+  const { selectedCompanyId, podeAdministrar } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const empresaAtual =
     authContext?.empresasPermitidas.find((company) => company.id === selectedCompanyId) ??
@@ -179,7 +181,9 @@ export function AppSidebar() {
     .map((group) => ({
       ...group,
       items: group.items.filter(
-        (item) => !item.recurso || hasPlanFeature(authContext, item.recurso),
+        (item) =>
+          (!item.recurso || hasPlanFeature(authContext, item.recurso)) &&
+          (!item.adminOnly || authContext?.usuario.isMaster || podeAdministrar),
       ),
     }))
     .filter((group) => group.items.length > 0);

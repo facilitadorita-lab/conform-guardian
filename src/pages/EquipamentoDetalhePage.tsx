@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { AttachmentViewer } from "@/components/attachment-viewer";
+import { SecureUploadButton } from "@/components/secure-upload-button";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
@@ -58,9 +59,13 @@ const uploadAccept =
 
 export function EquipamentoDetalhePage({ id }: { id: string }) {
   const { podeEscrever, selectedCompanyId } = useSession();
-  const { data: equipamento, isLoading } = useEquipamento(id);
+  const { data: equipamento, isLoading, isError, error, refetch } = useEquipamento(id);
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<Tab>("Dados gerais");
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "Dados gerais";
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    return tabs.includes(requested as Tab) ? (requested as Tab) : "Dados gerais";
+  });
   const [activeForm, setActiveForm] = useState<FormKind | null>(null);
   const [previewItem, setPreviewItem] = useState<EquipamentoHistoricoItem | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -78,8 +83,21 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
   });
   const rotateQr = useMutation({
     mutationFn: () => professionalService.rotateEquipmentQr(selectedCompanyId!, id),
-    onSuccess: (data) => queryClient.setQueryData(["professional", "equipment-qr", selectedCompanyId, id], data.qr_token),
+    onSuccess: (data) =>
+      queryClient.setQueryData(
+        ["professional", "equipment-qr", selectedCompanyId, id],
+        data.qr_token,
+      ),
   });
+
+  function changeTab(nextTab: Tab) {
+    setTab(nextTab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", nextTab);
+      window.history.replaceState({}, "", url);
+    }
+  }
 
   const createMutation = useMutation({
     mutationFn: async ({ kind, formData }: { kind: FormKind; formData: FormData }) => {
@@ -199,6 +217,30 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
     );
   }
 
+  if (isError) {
+    return (
+      <AppShell
+        title="Equipamento indisponível"
+        description="Não foi possível carregar os dados do equipamento selecionado."
+        actions={<BackButton />}
+      >
+        <div className="flex flex-col items-center gap-3 rounded-xl border border-danger/30 bg-danger/5 p-8 text-center">
+          <FileArchive className="h-10 w-10 text-danger" />
+          <p className="max-w-lg text-sm text-danger">
+            {error instanceof Error ? error.message : "Tente novamente em instantes."}
+          </p>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-accent hover:bg-muted"
+          >
+            <RotateCw className="h-4 w-4" /> Tentar novamente
+          </button>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!equipamento) {
     return (
       <AppShell
@@ -223,9 +265,6 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
 
   function handlePreviewItem(item: EquipamentoHistoricoItem) {
     setPreviewItem(item);
-    if (item.anexoId) {
-      void edgeFunctionsService.registrarEventoAnexo(item.anexoId);
-    }
   }
 
   const calibracoesAtuais = currentItems(equipamento.calibracoes);
@@ -243,7 +282,18 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
     <AppShell
       title={`${equipamento.nome} · ${equipamento.codigo}`}
       description={`${equipamento.fabricante} ${equipamento.modelo} - setor ${equipamento.setor}`}
-      actions={<div className="flex items-center gap-2"><button type="button" onClick={() => setQrOpen(true)} className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium shadow-sm hover:border-accent/30 hover:bg-muted/40"><QrCode className="h-4 w-4" /> QR do equipamento</button><BackButton /></div>}
+      actions={
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setQrOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium shadow-sm hover:border-accent/30 hover:bg-muted/40"
+          >
+            <QrCode className="h-4 w-4" /> QR do equipamento
+          </button>
+          <BackButton />
+        </div>
+      }
     >
       {lastUpload && (
         <UploadSuccessBanner
@@ -297,7 +347,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
           {tabs.map((item) => (
             <button
               key={item}
-              onClick={() => setTab(item)}
+              onClick={() => changeTab(item)}
               className={cn(
                 "-mb-px whitespace-nowrap rounded-t-xl border-b-2 px-4 py-3 text-sm font-semibold cf-transition",
                 tab === item
@@ -337,7 +387,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               />
               <ArchiveShortcut
                 count={archivedItems(equipamento.calibracoes).length}
-                onClick={() => setTab("Arquivados")}
+                onClick={() => changeTab("Arquivados")}
               />
             </TimelineSection>
           )}
@@ -356,7 +406,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               />
               <ArchiveShortcut
                 count={archivedItems(equipamento.qualificacoes).length}
-                onClick={() => setTab("Arquivados")}
+                onClick={() => changeTab("Arquivados")}
               />
             </TimelineSection>
           )}
@@ -375,23 +425,58 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
               />
               <ArchiveShortcut
                 count={archivedItems(equipamento.manutencoes).length}
-                onClick={() => setTab("Arquivados")}
+                onClick={() => changeTab("Arquivados")}
               />
             </TimelineSection>
           )}
 
           {tab === "Anexos" && (
-            <TimelineList
-              items={anexosAtuais}
-              empty="Nenhum anexo vinculado a este equipamento."
-              onPreview={handlePreviewItem}
-            />
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">Anexos do equipamento</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Evidências ficam isoladas neste equipamento e podem ser visualizadas sem baixar.
+                  </p>
+                </div>
+                {podeEscrever && selectedCompanyId ? (
+                  <SecureUploadButton
+                    contexto="equipamentos"
+                    empresaId={selectedCompanyId}
+                    referenciaId={id}
+                    finalidade="evidencia"
+                    accept={uploadAccept}
+                    label="Adicionar anexo"
+                    onUploaded={() => {
+                      void queryClient.invalidateQueries({
+                        queryKey: ["equipamentos", selectedCompanyId, id],
+                      });
+                    }}
+                  />
+                ) : null}
+              </div>
+              <TimelineList
+                items={anexosAtuais}
+                empty="Nenhum anexo vinculado a este equipamento."
+                onPreview={handlePreviewItem}
+              />
+            </div>
           )}
 
           {tab === "Pendências" && (
             <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-              As pendências específicas do equipamento serão exibidas aqui quando houver tratativas
-              vinculadas ao cadastro.
+              <div>
+                <p>
+                  As pendências específicas do equipamento serão exibidas aqui quando houver
+                  tratativas vinculadas ao cadastro.
+                </p>
+                <Link
+                  to="/pendencias"
+                  className="mt-3 inline-flex text-sm font-medium text-accent hover:underline"
+                >
+                  Abrir central de pendências
+                </Link>
+              </div>
             </div>
           )}
 
@@ -439,17 +524,51 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
           onClose={() => setPreviewItem(null)}
         />
       )}
-      {qrOpen ? <EquipmentQrDialog equipmentName={equipamento.nome} token={qrQuery.data} isLoading={qrQuery.isLoading || rotateQr.isPending} error={(qrQuery.error ?? rotateQr.error)?.message} onRotate={() => rotateQr.mutate()} onClose={() => setQrOpen(false)} /> : null}
+      {qrOpen ? (
+        <EquipmentQrDialog
+          equipmentName={equipamento.nome}
+          token={qrQuery.data}
+          isLoading={qrQuery.isLoading || rotateQr.isPending}
+          error={(qrQuery.error ?? rotateQr.error)?.message}
+          onRotate={() => rotateQr.mutate()}
+          onClose={() => setQrOpen(false)}
+        />
+      ) : null}
     </AppShell>
   );
 }
 
-function EquipmentQrDialog({ equipmentName, token, isLoading, error, onRotate, onClose }: { equipmentName: string; token?: string; isLoading: boolean; error?: string; onRotate: () => void; onClose: () => void }) {
+function EquipmentQrDialog({
+  equipmentName,
+  token,
+  isLoading,
+  error,
+  onRotate,
+  onClose,
+}: {
+  equipmentName: string;
+  token?: string;
+  isLoading: boolean;
+  error?: string;
+  onRotate: () => void;
+  onClose: () => void;
+}) {
   const [dataUrl, setDataUrl] = useState("");
-  const targetUrl = token && typeof window !== "undefined" ? `${window.location.origin}/equipamento/qr/${token}` : "";
+  const targetUrl =
+    token && typeof window !== "undefined"
+      ? `${window.location.origin}/equipamento/qr/${token}`
+      : "";
   useEffect(() => {
-    if (!targetUrl) { setDataUrl(""); return; }
-    void QRCode.toDataURL(targetUrl, { width: 360, margin: 2, errorCorrectionLevel: "H", color: { dark: "#0f2947", light: "#ffffff" } }).then(setDataUrl);
+    if (!targetUrl) {
+      setDataUrl("");
+      return;
+    }
+    void QRCode.toDataURL(targetUrl, {
+      width: 360,
+      margin: 2,
+      errorCorrectionLevel: "H",
+      color: { dark: "#0f2947", light: "#ffffff" },
+    }).then(setDataUrl);
   }, [targetUrl]);
   function download() {
     if (!dataUrl) return;
@@ -458,7 +577,56 @@ function EquipmentQrDialog({ equipmentName, token, isLoading, error, onRotate, o
     link.download = `qr-${equipmentName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`;
     link.click();
   }
-  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4"><div className="w-full max-w-md rounded-3xl border border-border bg-background p-6 text-center shadow-2xl"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent"><QrCode className="h-6 w-6" /></div><h2 className="mt-4 text-lg font-semibold">QR do equipamento</h2><p className="mt-1 text-sm text-muted-foreground">{equipmentName}</p><div className="mx-auto mt-5 flex min-h-72 items-center justify-center rounded-2xl border border-border bg-white p-4">{dataUrl ? <img src={dataUrl} alt={`QR Code de ${equipmentName}`} className="h-64 w-64" /> : <span className="text-sm text-slate-500">{isLoading ? "Gerando QR Code..." : "QR indisponível"}</span>}</div><p className="mt-3 text-xs leading-5 text-muted-foreground">O QR não contém dados do equipamento. Ele aponta para uma rota protegida que exige login e valida o acesso à empresa no backend.</p>{error ? <p className="mt-3 text-xs text-danger">{error}</p> : null}<div className="mt-5 flex flex-wrap justify-center gap-2"><button type="button" onClick={onClose} className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted">Fechar</button><button type="button" onClick={onRotate} disabled={isLoading} className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"><RotateCw className="h-4 w-4" /> Renovar QR</button><button type="button" onClick={download} disabled={!dataUrl} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"><Download className="h-4 w-4" /> Baixar</button></div></div></div>;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+      <div className="w-full max-w-md rounded-3xl border border-border bg-background p-6 text-center shadow-2xl">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+          <QrCode className="h-6 w-6" />
+        </div>
+        <h2 className="mt-4 text-lg font-semibold">QR do equipamento</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{equipmentName}</p>
+        <div className="mx-auto mt-5 flex min-h-72 items-center justify-center rounded-2xl border border-border bg-white p-4">
+          {dataUrl ? (
+            <img src={dataUrl} alt={`QR Code de ${equipmentName}`} className="h-64 w-64" />
+          ) : (
+            <span className="text-sm text-slate-500">
+              {isLoading ? "Gerando QR Code..." : "QR indisponível"}
+            </span>
+          )}
+        </div>
+        <p className="mt-3 text-xs leading-5 text-muted-foreground">
+          O QR não contém dados do equipamento. Ele aponta para uma rota protegida que exige login e
+          valida o acesso à empresa no backend.
+        </p>
+        {error ? <p className="mt-3 text-xs text-danger">{error}</p> : null}
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Fechar
+          </button>
+          <button
+            type="button"
+            onClick={onRotate}
+            disabled={isLoading}
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            <RotateCw className="h-4 w-4" /> Renovar QR
+          </button>
+          <button
+            type="button"
+            onClick={download}
+            disabled={!dataUrl}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" /> Baixar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function BackButton() {
@@ -949,6 +1117,13 @@ function AttachmentPreview({
             mimeType={item.documentoMimeType}
             title={item.documentoNome || item.descricao}
             emptyDescription="Este item ainda não possui arquivo disponível para abrir no navegador. Quando houver anexo real, ele será exibido aqui sem precisar baixar."
+            onView={() => {
+              if (item.anexoId) void edgeFunctionsService.registrarEventoAnexo(item.anexoId);
+            }}
+            onDownload={() => {
+              if (item.anexoId)
+                void edgeFunctionsService.registrarEventoAnexo(item.anexoId, "download_anexo");
+            }}
           />
           <div className="mt-5">
             <EvidenciasTimeline items={timeline} isLoading={isLoading} />

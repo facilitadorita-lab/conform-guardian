@@ -39,12 +39,13 @@ export function useAuthContext() {
 }
 
 function useResolvedCompanyId() {
-  const { selectedCompanyId } = useAppSession();
+  const { selectedCompanyId, permissions } = useAppSession();
   const authQuery = useAuthContext();
   const acessoBloqueado = Boolean(
     authQuery.data &&
     !authQuery.data.usuario.isMaster &&
-    authQuery.data.empresaAtual.status !== "ativa",
+    (authQuery.data.empresaAtual.status !== "ativa" ||
+      permissions?.can_open_operational_modules !== true),
   );
   const empresaId = acessoBloqueado
     ? undefined

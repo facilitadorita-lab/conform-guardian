@@ -102,10 +102,7 @@ export function useSession() {
     empresaAtiva: empresaAtual.status === "ativa",
     podeEscrever: usuarioAtual.isMaster || permissions?.can_write === true,
     podeAdministrar: usuarioAtual.isMaster || permissions?.can_admin_company === true,
-    acessoLiberado:
-      usuarioAtual.isMaster ||
-      permissions?.can_open_operational_modules ||
-      Boolean(selectedCompany && empresaAtual.status === "ativa"),
+    acessoLiberado: usuarioAtual.isMaster || permissions?.can_open_operational_modules === true,
     contextoCarregando: appSession.authLoading || appSession.contextLoading,
     trocarEmpresa,
     limparEmpresa: appSession.clearSelectedCompany,

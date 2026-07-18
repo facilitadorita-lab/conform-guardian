@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { ArrowRight, Building2, CheckCircle2, Plus, ShieldCheck, X } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { ArrowRight, Building2, CheckCircle2, Plus, Search, ShieldCheck, X } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
@@ -81,6 +81,9 @@ export function MasterEmpresasPage() {
   const [modalAberto, setModalAberto] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [erroCadastro, setErroCadastro] = useState<string | null>(null);
+  const [busca, setBusca] = useState("");
+  const [statusFiltro, setStatusFiltro] = useState<"todas" | "ativa" | "bloqueada">("todas");
+  const [pagina, setPagina] = useState(1);
 
   const criarEmpresaMutation = useMutation({
     mutationFn: (formData: FormData) =>
@@ -122,6 +125,26 @@ export function MasterEmpresasPage() {
     await router.invalidate();
     await router.navigate({ to: "/dashboard" });
   };
+
+  const empresasFiltradas = useMemo(
+    () =>
+      authContext?.empresasPermitidas.filter((empresa) => {
+        const termo = busca.trim().toLocaleLowerCase("pt-BR");
+        const correspondeBusca =
+          !termo || `${empresa.nome} ${empresa.cnpj}`.toLocaleLowerCase("pt-BR").includes(termo);
+        const correspondeStatus =
+          statusFiltro === "todas" ||
+          (statusFiltro === "ativa" ? empresa.status === "ativa" : empresa.status !== "ativa");
+        return correspondeBusca && correspondeStatus;
+      }) ?? [],
+    [authContext?.empresasPermitidas, busca, statusFiltro],
+  );
+  const totalPaginas = Math.max(1, Math.ceil(empresasFiltradas.length / 24));
+  const empresasPaginadas = empresasFiltradas.slice((pagina - 1) * 24, pagina * 24);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [busca, statusFiltro]);
 
   function handleCriarEmpresa(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -193,8 +216,31 @@ export function MasterEmpresasPage() {
           </div>
         </div>
 
+        <div className="grid gap-3 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_auto]">
+          <label className="relative">
+            <span className="sr-only">Buscar empresa</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+              placeholder="Buscar por nome ou CNPJ..."
+              className="h-10 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent/10"
+            />
+          </label>
+          <select
+            value={statusFiltro}
+            onChange={(event) => setStatusFiltro(event.target.value as typeof statusFiltro)}
+            className="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+            aria-label="Filtrar empresas por status"
+          >
+            <option value="todas">Todos os status</option>
+            <option value="ativa">Ativas</option>
+            <option value="bloqueada">Bloqueadas ou suspensas</option>
+          </select>
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {authContext.empresasPermitidas.map((empresa) => {
+          {empresasPaginadas.map((empresa) => {
             const selected = empresa.id === selectedCompanyId;
             return (
               <article
@@ -238,7 +284,37 @@ export function MasterEmpresasPage() {
               </article>
             );
           })}
+          {empresasFiltradas.length === 0 ? (
+            <div className="md:col-span-2 xl:col-span-3 rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              Nenhuma empresa corresponde aos filtros. Revise o nome, CNPJ ou status informado.
+            </div>
+          ) : null}
         </div>
+        {empresasFiltradas.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+            <span>
+              Página {pagina} de {totalPaginas} · {empresasFiltradas.length} empresa(s)
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPagina((value) => Math.max(1, value - 1))}
+                disabled={pagina === 1}
+                className="rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
+                disabled={pagina === totalPaginas}
+                className="rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {modalAberto ? (

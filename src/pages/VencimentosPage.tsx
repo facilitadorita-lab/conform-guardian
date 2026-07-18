@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, CalendarClock, CheckCircle2, Clock, Filter } from "lucide-react";
+import { AlertTriangle, CalendarClock, CheckCircle2, Clock, Filter, RefreshCw } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@/hooks/use-session";
@@ -17,7 +17,13 @@ export function VencimentosPage() {
   const [modulo, setModulo] = useState<FiltroModulo>("todos");
   const [busca, setBusca] = useState("");
 
-  const { data: vencimentos = [], isLoading } = useQuery({
+  const {
+    data: vencimentos = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["vencimentos", empresaId],
     queryFn: () => vencimentosService.listar(empresaId!),
     enabled: Boolean(empresaId),
@@ -109,10 +115,31 @@ export function VencimentosPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
+              {isError && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-10 text-center">
+                    <div className="flex flex-col items-center gap-3 text-sm text-danger">
+                      <AlertTriangle className="h-6 w-6" />
+                      <span>
+                        {error instanceof Error
+                          ? error.message
+                          : "Não foi possível carregar os vencimentos."}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void refetch()}
+                        className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 font-medium text-accent hover:bg-muted"
+                      >
+                        <RefreshCw className="h-4 w-4" /> Tentar novamente
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
               {filtrados.map((item) => (
                 <LinhaVencimento key={`${item.modulo}-${item.id}`} item={item} />
               ))}
-              {!isLoading && filtrados.length === 0 && (
+              {!isLoading && !isError && filtrados.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-10 text-center text-sm text-muted-foreground">
                     Nenhum vencimento encontrado para os filtros selecionados.

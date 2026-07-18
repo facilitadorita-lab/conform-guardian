@@ -39,6 +39,7 @@ export function MasterPlanosPage() {
       planos[0],
     [drafts, planos, selectedId],
   );
+  const validationErrors = planoSelecionado ? validatePlano(planoSelecionado) : [];
 
   useEffect(() => {
     setDrafts((current) => {
@@ -61,7 +62,7 @@ export function MasterPlanosPage() {
       description="Configure valores, limites e quais módulos cada plano libera para as empresas."
       actions={
         <button
-          disabled={!planoSelecionado || salvarPlano.isPending}
+          disabled={!planoSelecionado || salvarPlano.isPending || validationErrors.length > 0}
           onClick={() => planoSelecionado && salvarPlano.mutate(planoSelecionado)}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -77,6 +78,11 @@ export function MasterPlanosPage() {
       {salvarPlano.error ? (
         <div className="rounded-xl border border-danger/25 bg-danger/5 px-4 py-3 text-sm text-danger">
           {salvarPlano.error.message}
+        </div>
+      ) : null}
+      {validationErrors.length > 0 ? (
+        <div className="rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">
+          <strong>Revise o plano antes de salvar:</strong> {validationErrors.join(" ")}
         </div>
       ) : null}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -347,6 +353,30 @@ function moneyToCents(value: string) {
   const normalized = value.replace(/\./g, "").replace(",", ".");
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0;
+}
+
+function validatePlano(plano: PlanoComercialResumo): string[] {
+  const errors: string[] = [];
+  if (!Number.isFinite(plano.valor_mensal_centavos) || plano.valor_mensal_centavos < 0) {
+    errors.push("o valor mensal não pode ser negativo.");
+  }
+  if (!Number.isFinite(plano.valor_anual_centavos) || plano.valor_anual_centavos < 0) {
+    errors.push("o valor anual não pode ser negativo.");
+  }
+  if (!Number.isFinite(plano.limite_usuarios) || plano.limite_usuarios < 1) {
+    errors.push("o plano precisa permitir pelo menos um usuário.");
+  }
+  if (!Number.isFinite(plano.limite_storage_mb) || plano.limite_storage_mb < 1) {
+    errors.push("defina um armazenamento maior que zero.");
+  }
+  if (
+    plano.limite_unidades !== null &&
+    plano.limite_unidades !== undefined &&
+    plano.limite_unidades < 1
+  ) {
+    errors.push("o limite de unidades deve ser maior que zero ou ficar em branco.");
+  }
+  return errors;
 }
 
 function numberOrZero(value: string) {

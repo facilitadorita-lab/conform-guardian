@@ -7,6 +7,7 @@ import {
   ClipboardList,
   FileCheck2,
   FileWarning,
+  RefreshCw,
   ShieldCheck,
   Wrench,
 } from "lucide-react";
@@ -26,8 +27,47 @@ import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
 
 export function DashboardPage() {
-  const { data } = useDashboardData();
+  const { data, isLoading, isError, error, refetch } = useDashboardData();
   const { data: onboarding } = useOnboardingEmpresa();
+  if (isLoading && !data) {
+    return (
+      <AppShell title="Dashboard" description="Carregando os indicadores da empresa selecionada.">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Carregando dashboard">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-28 animate-pulse rounded-2xl border border-border bg-muted/40"
+            />
+          ))}
+        </div>
+      </AppShell>
+    );
+  }
+
+  if (isError && !data) {
+    return (
+      <AppShell
+        title="Dashboard indisponível"
+        description="Não foi possível atualizar os indicadores agora."
+      >
+        <Surface className="flex flex-col items-center gap-3 p-10 text-center">
+          <FileWarning className="h-10 w-10 text-warning" />
+          <h2 className="text-lg font-semibold">Não conseguimos carregar seus dados</h2>
+          <p className="max-w-lg text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : "Tente novamente em instantes."}
+          </p>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <RefreshCw className="h-4 w-4" /> Tentar novamente
+          </button>
+        </Surface>
+      </AppShell>
+    );
+  }
+
   const dashboard = data ?? {
     indiceConformidade: 0,
     documentosVencidos: 0,

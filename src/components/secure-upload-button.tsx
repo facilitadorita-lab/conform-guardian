@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Upload, Loader2, Check, Eye } from "lucide-react";
+import { Upload, Loader2, Check, Eye, RefreshCw } from "lucide-react";
 import { edgeFunctionsService } from "@/services";
 
 type Contexto =
@@ -28,8 +28,10 @@ export function SecureUploadButton({
   const [progress, setProgress] = useState(0);
   const [successUrl, setSuccessUrl] = useState<string | null>(null);
   const [successAnexoId, setSuccessAnexoId] = useState<string | null>(null);
+  const [lastFile, setLastFile] = useState<File | null>(null);
 
   async function handleFile(file: File) {
+    setLastFile(file);
     setErro(null);
     setSuccessUrl(null);
     setSuccessAnexoId(null);
@@ -116,6 +118,16 @@ export function SecureUploadButton({
         </div>
       )}
       {erro && <span className="text-xs text-destructive">{erro}</span>}
+      {erro && lastFile ? (
+        <button
+          type="button"
+          onClick={() => void handleFile(lastFile)}
+          disabled={state === "uploading"}
+          className="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline disabled:opacity-60"
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> Tentar novamente
+        </button>
+      ) : null}
     </div>
   );
 }

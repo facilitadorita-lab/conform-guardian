@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Eye,
   Plus,
+  RefreshCw,
   Search,
   ShieldCheck,
   X,
@@ -52,7 +53,7 @@ export function ManutencoesPage() {
     [busca, natureza],
   );
 
-  const { data: manutencoes = [], isLoading } = useManutencoes(params);
+  const { data: manutencoes = [], isLoading, isError, error, refetch } = useManutencoes(params);
   const { data: equipamentos = [] } = useEquipamentos();
   const resumo = useMemo(() => calcularResumo(manutencoes), [manutencoes]);
 
@@ -257,6 +258,27 @@ export function ManutencoesPage() {
                 </tr>
               )}
 
+              {isError && (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center">
+                    <div className="flex flex-col items-center gap-3 text-sm text-danger">
+                      <span>
+                        {error instanceof Error
+                          ? error.message
+                          : "Não foi possível carregar as manutenções."}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void refetch()}
+                        className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 font-medium text-accent hover:bg-muted"
+                      >
+                        <RefreshCw className="h-4 w-4" /> Tentar novamente
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+
               {!isLoading &&
                 manutencoes.map((manutencao) => (
                   <tr key={manutencao.id} className="cf-transition hover:bg-muted/30">
@@ -298,7 +320,7 @@ export function ManutencoesPage() {
                   </tr>
                 ))}
 
-              {!isLoading && manutencoes.length === 0 && (
+              {!isLoading && !isError && manutencoes.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
                     Nenhuma manutenção encontrada para os filtros selecionados.

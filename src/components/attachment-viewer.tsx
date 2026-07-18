@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink, Eye, FileWarning } from "lucide-react";
+import { Download, ExternalLink, Eye, FileWarning, RefreshCw } from "lucide-react";
 
 type AttachmentViewerProps = {
   url?: string | null;
@@ -8,6 +8,8 @@ type AttachmentViewerProps = {
   title: string;
   emptyTitle?: string;
   emptyDescription?: string;
+  onView?: () => void;
+  onDownload?: () => void;
 };
 
 const pdfMimeTypes = new Set(["application/pdf"]);
@@ -27,11 +29,14 @@ export function AttachmentViewer({
   title,
   emptyTitle = "Pré-visualização do registro",
   emptyDescription = "Este registro ainda não possui arquivo disponível para abrir no navegador.",
+  onView,
+  onDownload,
 }: AttachmentViewerProps) {
   const [previewFailed, setPreviewFailed] = useState(false);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isLoadingBlob, setIsLoadingBlob] = useState(false);
   const [blobError, setBlobError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const fileInfo = useMemo(() => {
     const normalizedMime = (mimeType ?? "").toLowerCase();
@@ -49,7 +54,7 @@ export function AttachmentViewer({
     setPreviewFailed(false);
     setBlobError(null);
     setBlobUrl(null);
-  }, [url]);
+  }, [reloadKey, url]);
 
   useEffect(() => {
     if (!url || !(fileInfo.isPdf || fileInfo.isImage)) return;
@@ -81,10 +86,11 @@ export function AttachmentViewer({
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [fileInfo.isImage, fileInfo.isPdf, url]);
+  }, [fileInfo.isImage, fileInfo.isPdf, reloadKey, url]);
 
   async function openAttachment() {
     if (!url) return;
+    onView?.();
 
     setBlobError(null);
     const popup = window.open("about:blank", "_blank", "noopener,noreferrer");
@@ -105,6 +111,7 @@ export function AttachmentViewer({
 
   async function downloadAttachment() {
     if (!url) return;
+    onDownload?.();
 
     setBlobError(null);
 
@@ -171,7 +178,15 @@ export function AttachmentViewer({
       </div>
 
       {blobError ? (
-        <AttachmentBlockedState isOffice={fileInfo.isOffice} message={blobError} />
+        <AttachmentBlockedState
+          isOffice={fileInfo.isOffice}
+          message={blobError}
+          onRetry={() => {
+            setPreviewFailed(false);
+            setBlobError(null);
+            setReloadKey((value) => value + 1);
+          }}
+        />
       ) : isLoadingBlob && (fileInfo.isPdf || fileInfo.isImage) ? (
         <div className="flex min-h-[420px] items-center justify-center rounded-xl border border-border bg-background p-8 text-center">
           <div className="max-w-md">
@@ -214,6 +229,17 @@ export function AttachmentViewer({
                 ? "Arquivos Word, Excel e PowerPoint normalmente não abrem embutidos no navegador. O anexo está salvo; use baixar para abrir no seu computador."
                 : "O arquivo está salvo, mas o navegador bloqueou ou não reconheceu a pré-visualização."}
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setPreviewFailed(false);
+                setBlobError(null);
+                setReloadKey((value) => value + 1);
+              }}
+              className="mt-4 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-accent hover:bg-muted"
+            >
+              <RefreshCw className="h-4 w-4" /> Tentar novamente
+            </button>
           </div>
         </div>
       )}
@@ -221,7 +247,15 @@ export function AttachmentViewer({
   );
 }
 
-function AttachmentBlockedState({ isOffice, message }: { isOffice: boolean; message: string }) {
+function AttachmentBlockedState({
+  isOffice,
+  message,
+  onRetry,
+}: {
+  isOffice: boolean;
+  message: string;
+  onRetry: () => void;
+}) {
   return (
     <div className="flex min-h-[420px] items-center justify-center rounded-xl border border-dashed border-border bg-background p-8 text-center">
       <div className="max-w-md">
@@ -234,9 +268,16 @@ function AttachmentBlockedState({ isOffice, message }: { isOffice: boolean; mess
             ? "Arquivos Word, Excel e PowerPoint normalmente precisam ser baixados para abrir. Mesmo assim, o navegador bloqueou o acesso ao Storage."
             : message}
         </p>
-        <p className="mt-3 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-muted-foreground">
-          No Microsoft Edge, desative temporariamente extensões de bloqueio/AdBlock ou adicione{" "}
-          <strong>tvtpxgzwhakpypjdzphe.supabase.co</strong> à lista de sites permitidos.
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-4 inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm font-medium text-accent hover:bg-muted"
+        >
+          <RefreshCw className="h-4 w-4" /> Tentar novamente
+        </button>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Se o problema persistir, confirme sua conexão ou peça ao administrador para renovar o
+          acesso ao anexo.
         </p>
       </div>
     </div>

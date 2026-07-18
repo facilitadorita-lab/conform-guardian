@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Bot,
@@ -11,12 +11,15 @@ import {
 } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
 import { assistantService } from "@/services";
+import type { AssistantSource } from "@/services/assistantService";
+import { formatDateBR } from "@/utils/date";
 
 type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
   sourcesCount?: number;
+  sources?: AssistantSource[];
 };
 
 const ASSISTANT_NAME = "FlowIA";
@@ -35,6 +38,12 @@ export function FloatingAssistant() {
   const [mensagens, setMensagens] = useState<ChatMessage[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMensagens([]);
+    setErro(null);
+    setPergunta("");
+  }, [empresa?.id]);
 
   const podeEnviar = Boolean(empresa?.id && pergunta.trim() && !enviando);
 
@@ -75,6 +84,7 @@ export function FloatingAssistant() {
           role: "assistant",
           content,
           sourcesCount,
+          sources: resposta.fontes ?? resposta.sources ?? [],
         },
       ]);
     } catch (error) {
@@ -188,6 +198,35 @@ export function FloatingAssistant() {
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{mensagem.content}</p>
+                    {mensagem.sources && mensagem.sources.length > 0 ? (
+                      <details className="mt-3 border-t border-border/70 pt-2 text-xs">
+                        <summary className="cursor-pointer font-medium text-accent">
+                          Ver dados usados ({mensagem.sources.length})
+                        </summary>
+                        <ul className="mt-2 space-y-1.5 text-muted-foreground">
+                          {mensagem.sources.slice(0, 5).map((source, index) => (
+                            <li key={`${source.registro_id ?? source.titulo ?? "fonte"}-${index}`}>
+                              {sourceHref(source) ? (
+                                <a
+                                  href={sourceHref(source) ?? undefined}
+                                  className="font-medium text-accent hover:underline"
+                                >
+                                  {source.titulo ?? "Registro"}
+                                </a>
+                              ) : (
+                                <span className="font-medium text-foreground">
+                                  {source.titulo ?? "Registro"}
+                                </span>
+                              )}
+                              {source.data_vencimento
+                                ? ` · vence em ${formatDateBR(source.data_vencimento)}`
+                                : ""}
+                              {source.status ? ` · ${source.status}` : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    ) : null}
                   </div>
                 </article>
               ))
@@ -240,4 +279,13 @@ export function FloatingAssistant() {
       </button>
     </div>
   );
+}
+
+function sourceHref(source: AssistantSource): string | null {
+  if (!source.registro_id) return null;
+  if (source.modulo === "equipamentos") return `/equipamentos/${source.registro_id}`;
+  if (source.modulo === "documentos") return `/documentos?registro=${source.registro_id}`;
+  if (source.modulo === "manutencoes") return "/manutencoes";
+  if (source.modulo === "pendencias") return "/pendencias";
+  return null;
 }
