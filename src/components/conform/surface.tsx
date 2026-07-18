@@ -18,8 +18,8 @@ export function PageHeader({
   return (
     <section
       className={cn(
-        "cf-page-card overflow-hidden px-5 py-5 md:px-6",
-        "bg-[radial-gradient(circle_at_top_right,oklch(0.58_0.18_258/0.12),transparent_32%),linear-gradient(180deg,white,oklch(0.99_0.004_248))]",
+        "cf-page-card overflow-hidden px-5 py-6 md:px-7 md:py-7",
+        "bg-[radial-gradient(circle_at_top_right,oklch(0.58_0.18_258/0.09),transparent_34%),linear-gradient(180deg,white,oklch(0.99_0.004_248))]",
         className,
       )}
     >
@@ -30,7 +30,7 @@ export function PageHeader({
               {eyebrow}
             </div>
           ) : null}
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-foreground md:text-[1.7rem]">
+          <h1 className="text-[1.7rem] font-semibold tracking-[-0.035em] text-foreground md:text-[2rem]">
             {title}
           </h1>
           {description ? (
@@ -45,7 +45,7 @@ export function PageHeader({
 
 export function Surface({ className, children, ...props }: ComponentPropsWithoutRef<"section">) {
   return (
-    <section className={cn("cf-page-card p-5", className)} {...props}>
+    <section className={cn("cf-page-card p-5 md:p-6", className)} {...props}>
       {children}
     </section>
   );
@@ -63,9 +63,10 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/30 px-6 py-10 text-center">
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-        <Icon className="h-6 w-6" />
+    <div className="relative flex min-h-64 flex-col items-center justify-center overflow-hidden rounded-[var(--cf-radius-card)] border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent/5 blur-2xl" />
+      <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/15 bg-accent/8 text-accent shadow-sm">
+        <Icon className="h-6 w-6" aria-hidden="true" />
       </div>
       <h3 className="text-base font-semibold">{title}</h3>
       <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">{description}</p>

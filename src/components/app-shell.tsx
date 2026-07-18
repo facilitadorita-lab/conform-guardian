@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
@@ -7,22 +7,49 @@ import {
   CreditCard,
   LockKeyhole,
   LogOut,
+  Menu,
   Search,
   ShieldCheck,
   Sparkles,
+  X,
 } from "lucide-react";
 import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppSession } from "@/hooks/use-app-session";
 import { useAlertas, useAuthContext } from "@/hooks/use-conform-data";
 import { runtimeConfig } from "@/lib/runtime-config";
-import type { StatusConformidade } from "@/types";
+import type { AuthContexto, PlanoRecurso, StatusConformidade } from "@/types";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/conform/surface";
 import { AppSidebar } from "./app-sidebar";
 import { CompanySwitcher } from "./company-switcher";
 import { FloatingAssistant } from "./floating-assistant";
 import { hasPlanFeature } from "@/utils/plan-features";
+
+const mobileNavigationItems: Array<{
+  label: string;
+  to: string;
+  recurso?: PlanoRecurso;
+  adminOnly?: boolean;
+  masterOnly?: boolean;
+}> = [
+  { label: "Dashboard", to: "/dashboard" },
+  { label: "Documentos", to: "/documentos", recurso: "documentos" },
+  { label: "Equipamentos", to: "/equipamentos", recurso: "equipamentos" },
+  { label: "Manutenções", to: "/manutencoes", recurso: "manutencoes" },
+  { label: "Pendências", to: "/pendencias", recurso: "pendencias" },
+  { label: "Alertas", to: "/alertas", recurso: "alertas" },
+  { label: "Vencimentos", to: "/vencimentos", recurso: "vencimentos" },
+  { label: "Relatórios", to: "/relatorios", recurso: "relatorios" },
+  { label: "Auditoria", to: "/auditoria", recurso: "auditoria" },
+  { label: "Usuários", to: "/usuarios", recurso: "usuarios", adminOnly: true },
+  { label: "Configurações", to: "/configuracoes" },
+  { label: "Empresas", to: "/master/empresas", masterOnly: true },
+  { label: "Financeiro", to: "/master/financeiro", masterOnly: true },
+  { label: "Planos", to: "/master/planos", masterOnly: true },
+  { label: "Saúde do sistema", to: "/master/saude", masterOnly: true },
+  { label: "Histórico comercial", to: "/master/historico-comercial", masterOnly: true },
+];
 
 export function AppShell({
   title,
@@ -39,6 +66,7 @@ export function AppShell({
   const { selectCompany, selectedCompanyId, permissions } = useAppSession();
   const { data: authContext, error: contextError } = useAuthContext();
   const { data: alertas } = useAlertas();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
   const navigate = useNavigate();
@@ -85,30 +113,39 @@ export function AppShell({
     <div className="flex min-h-screen w-full bg-background text-foreground">
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 border-b border-border/80 bg-card/90 backdrop-blur-xl">
-          <div className="flex h-16 items-center gap-4 px-4 md:px-6">
+        <header className="sticky top-0 z-30 border-b border-border/70 bg-background/78 backdrop-blur-2xl">
+          <div className="flex min-h-[4.5rem] items-center gap-3 px-4 md:gap-5 md:px-7">
+            <button
+              type="button"
+              onClick={() => setMobileOpen((open) => !open)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-[var(--cf-shadow-soft)] cf-transition hover:border-accent/30 hover:text-accent md:hidden"
+              aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
             <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
               <Breadcrumbs items={breadcrumbs} />
             </div>
 
-            <div className="relative w-full max-w-xl flex-1 lg:flex-none">
+            <div className="relative hidden w-full max-w-xl flex-1 sm:block lg:flex-none">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 placeholder="Buscar documentos, equipamentos, pendências..."
-                className="h-10 w-full rounded-xl border border-input bg-background/80 pl-9 pr-3 text-sm shadow-sm placeholder:text-muted-foreground cf-transition focus:border-accent focus:bg-card focus:ring-4 focus:ring-accent/10"
+                className="cf-focus-ring h-11 w-full rounded-xl border border-input bg-card/75 pl-10 pr-3 text-sm shadow-[var(--cf-shadow-soft)] placeholder:text-muted-foreground outline-none cf-transition focus:bg-card"
                 aria-label="Busca global"
               />
             </div>
 
             <div className="ml-auto flex items-center gap-2">
               {exibirAssistente ? (
-                <div className="hidden items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-2 text-xs font-medium text-accent xl:flex">
+                <div className="hidden items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-2 text-xs font-semibold text-accent xl:flex">
                   <Sparkles className="h-3.5 w-3.5" />
                   FlowIA disponível
                 </div>
               ) : null}
 
-              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm">
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-[var(--cf-shadow-soft)] cf-transition hover:border-accent/30 hover:text-accent">
                 <Bell className="h-4 w-4" />
                 {alertasCount > 0 ? (
                   <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
@@ -132,14 +169,14 @@ export function AppShell({
                   {authContext.usuario.isMaster ? (
                     <Link
                       to="/master/empresas"
-                      className="hidden rounded-xl border border-border bg-card px-3 py-2 text-xs font-medium shadow-sm cf-transition hover:border-accent/40 hover:bg-muted xl:inline-flex"
+                      className="hidden rounded-xl border border-border bg-card px-3 py-2.5 text-xs font-semibold shadow-[var(--cf-shadow-soft)] cf-transition hover:border-accent/40 hover:bg-muted xl:inline-flex"
                     >
                       Ver empresas
                     </Link>
                   ) : null}
                 </div>
               ) : (
-                <div className="hidden items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 shadow-sm md:flex">
+                <div className="hidden items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 shadow-[var(--cf-shadow-soft)] md:flex">
                   <Building2 className="h-4 w-4 text-accent" />
                   <div className="min-w-0 leading-tight">
                     <span className="block max-w-[180px] truncate text-xs font-semibold">
@@ -162,17 +199,27 @@ export function AppShell({
                     await navigate({ to: "/login", search: { msg: undefined } });
                   }
                 }}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm cf-transition hover:border-danger/30 hover:bg-danger/5 hover:text-danger"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-[var(--cf-shadow-soft)] cf-transition hover:border-danger/30 hover:bg-danger/5 hover:text-danger"
                 aria-label="Sair da plataforma"
               >
                 <LogOut className="h-4 w-4" />
               </button>
             </div>
           </div>
+          {mobileOpen ? (
+            <MobileNavigation
+              authContext={authContext}
+              pathname={pathname}
+              canAdminister={
+                authContext.usuario.isMaster || permissions?.can_admin_company === true
+              }
+              onNavigate={() => setMobileOpen(false)}
+            />
+          ) : null}
         </header>
 
         <main className="flex-1">
-          <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-6 px-4 py-6 md:px-8 md:py-8">
+          <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-7 px-4 py-6 md:px-8 md:py-9">
             <PageHeader
               eyebrow={authContext.usuario.isMaster ? "Admin Master" : "Ambiente do cliente"}
               title={title}
@@ -201,6 +248,53 @@ function Breadcrumbs({ items }: { items: string[] }) {
           <span className="truncate">{item}</span>
         </span>
       ))}
+    </nav>
+  );
+}
+
+function MobileNavigation({
+  authContext,
+  pathname,
+  canAdminister,
+  onNavigate,
+}: {
+  authContext: AuthContexto;
+  pathname: string;
+  canAdminister: boolean;
+  onNavigate: () => void;
+}) {
+  const items = mobileNavigationItems.filter(
+    (item) =>
+      (!item.recurso || hasPlanFeature(authContext, item.recurso)) &&
+      (!item.adminOnly || canAdminister) &&
+      (!item.masterOnly || authContext.usuario.isMaster),
+  );
+
+  return (
+    <nav
+      className="border-t border-border/70 bg-card/95 px-4 py-3 shadow-[0_18px_30px_-28px_rgba(15,41,71,0.4)] md:hidden"
+      aria-label="Navegação principal"
+    >
+      <div className="grid grid-cols-2 gap-2">
+        {items.map((item) => {
+          const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+          return (
+            <Link
+              key={item.to}
+              to={item.to as never}
+              onClick={onNavigate}
+              className={cn(
+                "rounded-xl px-3 py-2.5 text-sm font-semibold cf-transition",
+                active
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

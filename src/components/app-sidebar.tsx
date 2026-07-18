@@ -191,9 +191,9 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        "hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex",
+        "hidden shrink-0 flex-col border-r border-sidebar-border bg-[linear-gradient(180deg,oklch(0.24_0.052_256),oklch(0.19_0.045_256))] text-sidebar-foreground md:flex",
         "cf-transition relative",
-        collapsed ? "w-[88px]" : "w-[280px]",
+        collapsed ? "w-[84px]" : "w-[288px]",
       )}
     >
       <div
@@ -237,16 +237,16 @@ export function AppSidebar() {
         ) : null}
       </div>
 
-      <nav className={cn("flex-1 overflow-y-auto py-4", collapsed ? "px-3" : "px-4")}>
-        <div className="space-y-6">
+      <nav className={cn("flex-1 overflow-y-auto py-5", collapsed ? "px-3" : "px-4")}>
+        <div className="space-y-7">
           {visibleGroups.map((group) => (
             <div key={group.label}>
               {!collapsed ? (
-                <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-sidebar-foreground/45">
+                <div className="mb-3 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/45">
                   {group.label}
                 </div>
               ) : null}
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {group.items.map((item) => {
                   const active = item.exact
                     ? pathname === item.to
@@ -261,7 +261,7 @@ export function AppSidebar() {
                         title={collapsed ? item.label : undefined}
                         className={cn(
                           "group relative flex items-center rounded-xl text-sm cf-transition",
-                          collapsed ? "h-11 justify-center px-0" : "gap-3 px-3 py-2.5",
+                          collapsed ? "h-11 justify-center px-0" : "gap-3 px-3.5 py-3",
                           active
                             ? "bg-white text-sidebar-primary-foreground shadow-sm"
                             : "text-sidebar-foreground/78 hover:bg-white/[0.08] hover:text-white",

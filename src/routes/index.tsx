@@ -33,36 +33,45 @@ export const Route = createFileRoute("/")({
 
 function LandingPage() {
   return (
-    <main className="min-h-screen bg-white text-slate-950">
+    <main className="min-h-screen bg-[#fbfcfe] text-slate-950">
       <PublicHeader />
 
-      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.14),transparent_34%),linear-gradient(180deg,#f8fafc_0%,#ffffff_72%)]">
-        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 md:py-24 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:px-8">
+      <section className="relative isolate overflow-hidden bg-[radial-gradient(circle_at_12%_4%,rgba(14,165,233,0.13),transparent_30%),linear-gradient(180deg,#f7faff_0%,#fbfcfe_80%)]">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(15,41,71,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(15,41,71,0.035)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:linear-gradient(to_bottom,black,transparent_72%)]" />
+        <div className="relative mx-auto grid max-w-7xl gap-14 px-5 py-24 md:py-28 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:px-8">
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-200 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 shadow-sm">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-200/70 bg-white/85 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 shadow-[0_10px_24px_-20px_rgba(15,41,71,0.65)] backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" />
               SaaS para empresas reguladas
             </div>
-            <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 md:text-6xl">
-              Gestão de conformidade, documentos e vencimentos em um só lugar.
+            <h1 className="max-w-4xl text-4xl font-semibold leading-[1.04] tracking-[-0.055em] text-slate-950 md:text-[4.25rem]">
+              Tranquilidade para operar. Evidência para auditar.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              Centralize documentos, acompanhe calibrações, qualificações, manutenções e reduza
-              riscos operacionais com mais controle, alertas e rastreabilidade.
+              O Conform Flow organiza documentos, prazos, equipamentos e evidências para que sua
+              empresa regulada reduza riscos e chegue preparada a cada auditoria.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button
                 asChild
-                className="h-12 rounded-xl bg-slate-950 px-6 text-white hover:bg-slate-800"
+                className="h-12 rounded-xl bg-slate-950 px-6 text-white shadow-[0_18px_35px_-24px_rgba(15,23,42,0.75)] hover:-translate-y-0.5 hover:bg-slate-800"
               >
                 <a href="mailto:comercial@conformflow.com.br?subject=Solicitar demonstração Conform Flow">
                   Solicitar demonstração <ArrowRight className="h-4 w-4" />
                 </a>
               </Button>
-              <Button asChild variant="outline" className="h-12 rounded-xl bg-white px-6">
+              <Button
+                asChild
+                variant="outline"
+                className="h-12 rounded-xl border-slate-200 bg-white px-6 shadow-sm hover:-translate-y-0.5"
+              >
                 <Link to="/planos">Conhecer planos</Link>
               </Button>
-              <Button asChild variant="ghost" className="h-12 rounded-xl px-6">
+              <Button
+                asChild
+                variant="ghost"
+                className="h-12 rounded-xl px-6 text-slate-600 hover:bg-white hover:text-slate-950"
+              >
                 <Link to="/login" search={{ msg: undefined }}>
                   Entrar
                 </Link>

@@ -135,8 +135,8 @@ export function LogoSignature({
 
 export function PublicHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/88 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between gap-4 px-5 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/78 backdrop-blur-2xl">
+      <div className="mx-auto flex h-[4.75rem] w-full max-w-7xl items-center justify-between gap-4 px-5 lg:px-8">
         <Link to="/" aria-label="Página inicial Conform Flow">
           <LogoSignature />
         </Link>
@@ -160,12 +160,19 @@ export function PublicHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" className="hidden rounded-xl md:inline-flex">
+          <Button
+            asChild
+            variant="ghost"
+            className="hidden rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-950 md:inline-flex"
+          >
             <Link to="/login" search={{ msg: undefined }}>
               Entrar
             </Link>
           </Button>
-          <Button asChild className="rounded-xl bg-slate-950 px-4 text-white hover:bg-slate-800">
+          <Button
+            asChild
+            className="rounded-xl bg-slate-950 px-4 text-white shadow-[0_12px_28px_-20px_rgba(15,23,42,0.72)] hover:-translate-y-0.5 hover:bg-slate-800"
+          >
             <a href="mailto:comercial@conformflow.com.br?subject=Solicitar demonstração Conform Flow">
               Solicitar demo
             </a>
@@ -261,8 +268,8 @@ export function FeatureCard({
   description: string;
 }) {
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.45)]">
-      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
+    <article className="group rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.45)] transition-[border-color,box-shadow,transform] duration-[180ms] ease-out hover:-translate-y-1 hover:border-cyan-200 hover:shadow-[0_24px_60px_-40px_rgba(15,23,42,0.5)]">
+      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-100 bg-cyan-50 text-cyan-700 transition-transform duration-[180ms] group-hover:scale-105">
         <Icon className="h-5 w-5" />
       </div>
       <h3 className="text-base font-semibold text-slate-950">{title}</h3>
@@ -281,9 +288,9 @@ export function ModuleCard({
   description: string;
 }) {
   return (
-    <article className="group rounded-3xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-cyan-200 hover:shadow-[0_24px_60px_-42px_rgba(15,23,42,0.55)]">
+    <article className="group rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_16px_42px_-38px_rgba(15,23,42,0.35)] transition-[border-color,box-shadow,transform] duration-[180ms] ease-out hover:-translate-y-1 hover:border-cyan-200 hover:shadow-[0_24px_60px_-42px_rgba(15,23,42,0.55)]">
       <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-sm transition-transform duration-[180ms] group-hover:scale-105">
           <Icon className="h-5 w-5" />
         </div>
         <div>
@@ -351,8 +358,8 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
           <article
             key={plan.id}
             className={cn(
-              "relative flex rounded-3xl border bg-white p-6 shadow-[0_20px_55px_-42px_rgba(15,23,42,0.5)]",
-              plan.mais_escolhido ? "border-cyan-400 ring-4 ring-cyan-100" : "border-slate-200",
+              "relative flex rounded-2xl border bg-white p-7 shadow-[0_20px_55px_-42px_rgba(15,23,42,0.5)] transition-[border-color,box-shadow,transform] duration-[180ms] ease-out hover:-translate-y-1 hover:shadow-[0_26px_64px_-44px_rgba(15,23,42,0.55)]",
+              plan.mais_escolhido ? "border-cyan-400 ring-4 ring-cyan-100/80" : "border-slate-200",
             )}
           >
             {plan.mais_escolhido ? (
@@ -393,7 +400,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
               <Button
                 asChild
                 className={cn(
-                  "mt-7 rounded-xl",
+                  "mt-7 h-11 rounded-xl",
                   plan.mais_escolhido
                     ? "bg-slate-950 text-white hover:bg-slate-800"
                     : "bg-white text-slate-950 ring-1 ring-slate-200 hover:bg-slate-50",
@@ -487,7 +494,10 @@ export function SecurityBand() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {items.map((item) => (
-            <div key={item} className="rounded-3xl border border-white/10 bg-white/[0.06] p-5">
+            <div
+              key={item}
+              className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 shadow-[0_18px_50px_-40px_rgba(0,0,0,0.8)] transition-colors duration-[180ms] hover:bg-white/[0.09]"
+            >
               <ShieldCheck className="mb-4 h-5 w-5 text-cyan-300" />
               <div className="text-sm font-semibold">{item}</div>
             </div>
@@ -534,7 +544,7 @@ export function FAQSection() {
         <Accordion
           type="single"
           collapsible
-          className="mt-10 rounded-3xl border border-slate-200 px-6"
+          className="mt-10 rounded-2xl border border-slate-200 bg-slate-50/55 px-6 shadow-[0_18px_50px_-42px_rgba(15,23,42,0.28)]"
         >
           {faqs.map((faq) => (
             <AccordionItem key={faq.q} value={faq.q}>
@@ -555,7 +565,7 @@ export function FAQSection() {
 export function CtaSection() {
   return (
     <section className="bg-slate-50 px-5 py-20 lg:px-8">
-      <div className="mx-auto max-w-7xl overflow-hidden rounded-[2rem] bg-slate-950 p-8 text-white shadow-[0_30px_80px_-45px_rgba(15,23,42,0.75)] md:p-12">
+      <div className="mx-auto max-w-7xl overflow-hidden rounded-[1.25rem] bg-slate-950 p-8 text-white shadow-[0_30px_80px_-45px_rgba(15,23,42,0.75)] md:p-12">
         <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
@@ -600,8 +610,8 @@ export function ProductMockup() {
   ];
 
   return (
-    <div className="relative rounded-[2rem] border border-white/20 bg-white p-3 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.9)]">
-      <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+    <div className="relative [transform:perspective(1400px)_rotateY(-3deg)_rotateX(1deg)] rounded-[1.25rem] border border-white/70 bg-white/75 p-3 shadow-[0_34px_90px_-48px_rgba(15,23,42,0.65)] backdrop-blur-xl transition-transform duration-[220ms] ease-out hover:[transform:perspective(1400px)_rotateY(-1deg)_rotateX(0deg)]">
+      <div className="rounded-xl border border-slate-200/90 bg-slate-50 p-4 shadow-inner">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -609,7 +619,7 @@ export function ProductMockup() {
             </div>
             <div className="mt-1 text-lg font-semibold text-slate-950">Índice de conformidade</div>
           </div>
-          <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          <div className="rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
             87%
           </div>
         </div>
@@ -619,13 +629,16 @@ export function ProductMockup() {
             ["Equip. em atenção", "6"],
             ["Pendências críticas", "7"],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div
+              key={label}
+              className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.55)]"
+            >
               <div className="text-xs text-slate-500">{label}</div>
               <div className="mt-2 text-2xl font-semibold text-slate-950">{value}</div>
             </div>
           ))}
         </div>
-        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_28px_-24px_rgba(15,23,42,0.55)]">
           {rows.map((row) => (
             <div
               key={row.join("-")}
@@ -637,6 +650,37 @@ export function ProductMockup() {
               <span className="font-semibold text-amber-600">{row[3]}</span>
             </div>
           ))}
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <span>Risco por prazo</span>
+              <span className="text-cyan-700">Atualizado agora</span>
+            </div>
+            <div className="mt-4 flex h-12 items-end gap-1.5">
+              {[42, 58, 38, 72, 54, 86, 64, 78, 52, 68, 44, 60].map((height, index) => (
+                <span
+                  key={index}
+                  className="flex-1 rounded-t-md bg-cyan-600/75 transition-all duration-[180ms] hover:bg-cyan-600"
+                  style={{ height: `${height}%` }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <BellRing className="h-3.5 w-3.5 text-amber-600" /> Alertas
+            </div>
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-2xl font-semibold text-slate-950">7</span>
+              <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">
+                Acompanhar
+              </span>
+            </div>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+              <div className="h-full w-2/3 rounded-full bg-amber-500" />
+            </div>
+          </div>
         </div>
       </div>
     </div>

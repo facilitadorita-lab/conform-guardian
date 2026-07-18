@@ -107,9 +107,10 @@ function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.16),transparent_32%),linear-gradient(135deg,#f8fafc_0%,#ffffff_48%,#eef6fb_100%)] px-5 py-8 text-slate-950">
+    <main className="cf-subtle-grid relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.14),transparent_32%),linear-gradient(135deg,#f8fafc_0%,#ffffff_48%,#eef6fb_100%)] px-4 py-6 text-slate-950 sm:px-5 sm:py-8">
+      <div className="pointer-events-none absolute -right-32 top-12 h-96 w-96 rounded-full bg-cyan-200/25 blur-3xl" />
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center">
-        <section className="grid w-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_90px_-55px_rgba(15,23,42,0.7)] lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative grid w-full overflow-hidden rounded-[2rem] border border-slate-200/90 bg-white/95 shadow-[var(--cf-shadow)] backdrop-blur lg:grid-cols-[1.05fr_0.95fr]">
           <BrandPanel />
 
           <div className="flex items-center justify-center p-6 sm:p-10 lg:p-14">
@@ -118,7 +119,7 @@ function LoginPage() {
                 <LogoSignature className="lg:hidden" />
                 <Link
                   to="/"
-                  className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-950"
+                  className="ml-auto rounded-lg px-2 py-1 text-sm font-medium text-slate-500 outline-none transition hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-4 focus-visible:ring-cyan-100"
                 >
                   Voltar ao site
                 </Link>
@@ -145,7 +146,7 @@ function LoginPage() {
 
               <form onSubmit={onSubmit} className="mt-7 space-y-5">
                 <label className="block">
-                  <span className="text-sm font-medium text-slate-700">E-mail</span>
+                  <span className="text-sm font-semibold text-slate-700">E-mail</span>
                   <div className="relative mt-2">
                     <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
@@ -155,18 +156,18 @@ function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seu@email.com"
-                      className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                      className="cf-focus-ring h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                     />
                   </div>
                 </label>
 
                 <label className="block">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-slate-700">Senha</span>
+                    <span className="text-sm font-semibold text-slate-700">Senha</span>
                     <button
                       type="button"
                       onClick={() => setShowForgot((value) => !value)}
-                      className="text-xs font-semibold text-cyan-700 hover:text-cyan-900"
+                      className="rounded-lg px-2 py-1 text-xs font-semibold text-cyan-700 outline-none hover:bg-cyan-50 hover:text-cyan-900 focus-visible:ring-4 focus-visible:ring-cyan-100"
                     >
                       Esqueci minha senha
                     </button>
@@ -180,12 +181,12 @@ function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Digite sua senha"
-                      className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-12 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                      className="cf-focus-ring h-12 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-12 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((value) => !value)}
-                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 outline-none hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-4 focus-visible:ring-cyan-100"
                       aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -194,7 +195,10 @@ function LoginPage() {
                 </label>
 
                 {error ? (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  <div
+                    role="alert"
+                    className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                  >
                     {error}
                   </div>
                 ) : null}
@@ -202,7 +206,7 @@ function LoginPage() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="h-12 w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800"
+                  className="h-12 w-full rounded-xl bg-slate-950 text-white shadow-lg shadow-slate-950/10 hover:-translate-y-0.5 hover:bg-slate-800"
                 >
                   {submitting ? "Entrando..." : "Entrar na plataforma"}
                   {!submitting ? <ArrowRight className="h-4 w-4" /> : null}
@@ -222,7 +226,7 @@ function LoginPage() {
                       placeholder="seu@email.com"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
+                      className="cf-focus-ring h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-100"
                     />
                     {forgotErr ? (
                       <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -300,7 +304,7 @@ function BrandPanel() {
             {benefits.map((benefit) => (
               <div
                 key={benefit}
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-4"
+                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-4 cf-transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.1]"
               >
                 <CheckCircle2 className="h-5 w-5 text-emerald-300" />
                 <span className="text-sm font-medium text-slate-100">{benefit}</span>

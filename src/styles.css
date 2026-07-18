@@ -53,6 +53,22 @@
 :root {
   --radius: 0.75rem;
 
+  /* Enterprise UI tokens — 8px rhythm, restrained depth and one accent */
+  --cf-space-1: 0.25rem;
+  --cf-space-2: 0.5rem;
+  --cf-space-3: 0.75rem;
+  --cf-space-4: 1rem;
+  --cf-space-5: 1.25rem;
+  --cf-space-6: 1.5rem;
+  --cf-space-8: 2rem;
+  --cf-space-10: 2.5rem;
+  --cf-space-12: 3rem;
+  --cf-radius-control: 0.75rem;
+  --cf-radius-card: 1rem;
+  --cf-radius-modal: 1.25rem;
+  --cf-duration: 180ms;
+  --cf-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
   /* Conform Flow design tokens */
   --cf-deep: oklch(0.24 0.052 256);
   --cf-deep-hover: oklch(0.2 0.055 256);
@@ -67,8 +83,9 @@
   --cf-text-muted: oklch(0.52 0.035 256);
   --cf-red: oklch(0.58 0.21 27);
   --cf-yellow: oklch(0.78 0.16 82);
-  --cf-shadow: 0 18px 45px -34px oklch(0.24 0.052 256 / 55%);
-  --cf-shadow-soft: 0 12px 30px -28px oklch(0.24 0.052 256 / 40%);
+  --cf-shadow: 0 24px 60px -42px oklch(0.24 0.052 256 / 34%);
+  --cf-shadow-soft: 0 12px 30px -24px oklch(0.24 0.052 256 / 24%);
+  --cf-shadow-hover: 0 22px 52px -34px oklch(0.24 0.052 256 / 32%);
 
   --background: var(--cf-bg);
   --foreground: var(--cf-text);
@@ -155,16 +172,15 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-feature-settings:
-      "cv02",
-      "cv03",
-      "cv04",
-      "cv11";
+    min-width: 320px;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   :focus-visible {
-    outline: 2px solid oklch(0.58 0.18 258 / 45%);
-    outline-offset: 2px;
+    outline: 2px solid oklch(0.58 0.18 258 / 62%);
+    outline-offset: 3px;
   }
 
   ::selection {
@@ -176,16 +192,34 @@
   .cf-shell-surface {
     border: 1px solid var(--color-border);
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 98%), oklch(0.99 0.004 248 / 96%)),
-      var(--color-card);
-    box-shadow: var(--cf-shadow-soft);
+      linear-gradient(180deg, oklch(1 0 0 / 98%), oklch(0.99 0.004 248 / 96%)), var(--color-card);
+    box-shadow: var(--cf-shadow);
   }
 
   .cf-page-card {
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-2xl);
-    background: var(--color-card);
+    border-radius: var(--cf-radius-card);
+    background: color-mix(in oklab, var(--color-card) 96%, transparent);
     box-shadow: var(--cf-shadow-soft);
+    transition:
+      border-color var(--cf-duration) var(--cf-ease),
+      box-shadow var(--cf-duration) var(--cf-ease),
+      transform var(--cf-duration) var(--cf-ease);
+  }
+
+  .cf-page-card:hover {
+    border-color: color-mix(in oklab, var(--color-accent) 22%, var(--color-border));
+  }
+
+  .cf-focus-ring {
+    transition:
+      border-color var(--cf-duration) var(--cf-ease),
+      box-shadow var(--cf-duration) var(--cf-ease);
+  }
+
+  .cf-focus-ring:focus-within {
+    border-color: color-mix(in oklab, var(--color-accent) 60%, var(--color-border));
+    box-shadow: 0 0 0 4px oklch(0.58 0.18 258 / 10%);
   }
 
   .cf-subtle-grid {
@@ -197,9 +231,9 @@
   }
 
   .cf-transition {
-    transition-duration: 180ms;
+    transition-duration: var(--cf-duration);
     transition-property: color, background-color, border-color, box-shadow, transform, opacity;
-    transition-timing-function: ease;
+    transition-timing-function: var(--cf-ease);
   }
 }
 

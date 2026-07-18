@@ -91,8 +91,8 @@ export function ExecutiveMetricCard({
   const content = (
     <div
       className={cn(
-        "group flex h-full flex-col justify-between rounded-2xl border bg-card p-4 shadow-sm cf-transition",
-        "hover:-translate-y-0.5 hover:border-accent/35 hover:shadow-[var(--cf-shadow-soft)]",
+        "group flex h-full min-h-[156px] flex-col justify-between rounded-[var(--cf-radius-card)] border bg-card p-5 shadow-[var(--cf-shadow-soft)] cf-transition",
+        "hover:-translate-y-0.5 hover:border-accent/35 hover:shadow-[var(--cf-shadow-hover)]",
         toneStyles[tone].border,
       )}
     >
@@ -107,7 +107,7 @@ export function ExecutiveMetricCard({
         </div>
         <div
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-2xl",
+            "flex h-11 w-11 items-center justify-center rounded-2xl border border-current/10",
             toneStyles[tone].icon,
           )}
         >
@@ -147,8 +147,8 @@ export function ComplianceScore({
   const tone = value >= 95 ? "success" : value >= 85 ? "warning" : "danger";
 
   return (
-    <section className="cf-page-card relative overflow-hidden p-6">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-success via-warning to-danger" />
+    <section className="cf-page-card relative overflow-hidden p-6 md:p-7">
+      <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -172,7 +172,7 @@ export function ComplianceScore({
           {description}
         </div>
       </div>
-      <div className="mt-5 h-3 overflow-hidden rounded-full bg-muted">
+      <div className="mt-6 h-2.5 overflow-hidden rounded-full bg-muted">
         <div
           className={cn("h-full rounded-full cf-transition", toneStyles[tone].progress)}
           style={{ width: `${Math.max(0, Math.min(value, 100))}%` }}

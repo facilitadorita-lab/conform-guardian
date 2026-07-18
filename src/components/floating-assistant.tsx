@@ -112,7 +112,10 @@ export function FloatingAssistant() {
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
       {aberto ? (
-        <section className="flex h-[min(680px,calc(100vh-7rem))] w-[min(440px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-2xl">
+        <section
+          aria-label={`${ASSISTANT_NAME} — assistente de conformidade`}
+          className="animate-in fade-in slide-in-from-bottom-3 flex h-[min(680px,calc(100vh-7rem))] w-[min(440px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[var(--cf-radius-modal)] border border-border bg-card shadow-[var(--cf-shadow)] duration-200"
+        >
           <header className="flex items-center justify-between border-b border-border bg-gradient-to-br from-primary to-slate-900 px-4 py-3 text-primary-foreground">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/95 text-primary">
@@ -128,7 +131,7 @@ export function FloatingAssistant() {
             <button
               type="button"
               onClick={() => setAberto(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-white/10"
+              className="flex h-8 w-8 items-center justify-center rounded-lg outline-none cf-transition hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/70"
               aria-label="Fechar FlowIA"
             >
               <X className="h-4 w-4" />
@@ -177,7 +180,7 @@ export function FloatingAssistant() {
                       key={sugestao}
                       type="button"
                       onClick={() => usarSugestao(sugestao)}
-                      className="rounded-full border border-border bg-card px-3 py-1.5 text-left text-[11px] text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      className="rounded-full border border-border bg-card px-3 py-1.5 text-left text-[11px] text-muted-foreground outline-none cf-transition hover:-translate-y-0.5 hover:bg-muted hover:text-foreground focus-visible:ring-4 focus-visible:ring-accent/15"
                     >
                       {sugestao}
                     </button>
@@ -251,13 +254,13 @@ export function FloatingAssistant() {
               value={pergunta}
               onChange={(event) => setPergunta(event.target.value)}
               placeholder={placeholder}
-              className="h-10 flex-1 rounded-full border border-input bg-background px-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40"
+              className="cf-focus-ring h-10 flex-1 rounded-full border border-input bg-background px-4 text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring/40"
               disabled={enviando}
             />
             <button
               type="submit"
               disabled={!podeEnviar}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground outline-none cf-transition hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Enviar pergunta para o FlowIA"
             >
               <Send className="h-4 w-4" />
@@ -269,7 +272,7 @@ export function FloatingAssistant() {
       <button
         type="button"
         onClick={() => setAberto((atual) => !atual)}
-        className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl ring-4 ring-primary/15 cf-transition hover:-translate-y-0.5 hover:bg-primary/90"
+        className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[var(--cf-shadow)] ring-4 ring-primary/15 outline-none cf-transition hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:ring-4 focus-visible:ring-primary/30"
         aria-label="Abrir FlowIA"
       >
         <MessageCircle className="h-6 w-6" />
