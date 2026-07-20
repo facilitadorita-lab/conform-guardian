@@ -339,18 +339,26 @@ export function FeatureCard({
   icon: Icon,
   title,
   description,
+  wide,
 }: {
   icon: LucideIcon;
   title: string;
   description: string;
+  wide?: boolean;
 }) {
   return (
-    <article className="group rounded-2xl border border-slate-200/90 bg-white p-6 shadow-[0_18px_45px_-36px_rgba(15,23,42,0.45)] transition-[border-color,box-shadow,transform] duration-[180ms] ease-out hover:-translate-y-1 hover:border-cyan-200 hover:shadow-[0_24px_60px_-40px_rgba(15,23,42,0.5)]">
-      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-100 bg-cyan-50 text-cyan-700 transition-transform duration-[180ms] group-hover:scale-105">
+    <article
+      className={cn(
+        "group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_20px_50px_-38px_rgba(15,41,71,0.45)] transition-[border-color,box-shadow,transform] duration-[200ms] ease-out hover:-translate-y-1 hover:border-cyan-300/70 hover:shadow-[0_28px_60px_-38px_rgba(15,41,71,0.55)]",
+        wide && "md:col-span-2",
+      )}
+    >
+      <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-cyan-500/[0.06] blur-2xl transition-opacity duration-[200ms] group-hover:bg-cyan-500/[0.11]" />
+      <div className="relative mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-50 to-white text-cyan-700 ring-1 ring-cyan-100 transition-transform duration-[200ms] group-hover:scale-105">
         <Icon className="h-5 w-5" />
       </div>
-      <h3 className="text-base font-semibold text-slate-950">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+      <h3 className="relative text-base font-semibold tracking-tight text-slate-950">{title}</h3>
+      <p className="relative mt-2 text-sm leading-6 text-slate-600">{description}</p>
     </article>
   );
 }
