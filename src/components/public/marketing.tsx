@@ -3,23 +3,29 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   ArrowRight,
-  BadgeCheck,
   BellRing,
   Building2,
   CheckCircle2,
   ClipboardCheck,
-  ClipboardList,
   FileText,
   Gauge,
-  Layers3,
+  LineChart,
   LockKeyhole,
   type LucideIcon,
-  Network,
+  Mail,
+  MapPin,
+  Phone,
   PlusCircle,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Timer,
   Users,
   Wrench,
+  ScrollText,
+  Activity,
+  TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Accordion,
@@ -69,25 +75,40 @@ export const publicModules = [
 
 export const benefitCards = [
   {
-    title: "Menos planilhas soltas",
-    description: "Concentre prazos, anexos, evidências e responsáveis em uma plataforma única.",
-    icon: Layers3,
-  },
-  {
-    title: "Mais preparo para auditorias",
+    title: "Reduza riscos operacionais",
     description:
-      "Histórico, evidências e status ficam organizados para inspeções e rotinas internas.",
-    icon: BadgeCheck,
+      "Antecipe vencimentos, corrija pendências antes da fiscalização e evite multas ou interdições.",
+    icon: ShieldAlert,
   },
   {
-    title: "Controle por empresa e unidade",
-    description: "Cada cliente acessa somente o próprio ambiente, com dados separados.",
-    icon: Network,
+    title: "Chegue pronto na auditoria",
+    description:
+      "Evidências, versões e responsáveis organizados e prontos para apresentar quando o fiscal pedir.",
+    icon: ScrollText,
   },
   {
-    title: "Decisão com visibilidade",
-    description: "Indicadores ajudam a priorizar o que vence primeiro e o que gera mais risco.",
-    icon: ClipboardList,
+    title: "Economize horas por semana",
+    description:
+      "Substitua planilhas, e-mails e lembretes manuais por uma rotina automática e centralizada.",
+    icon: Timer,
+  },
+  {
+    title: "Alertas antes do vencimento",
+    description:
+      "Notificações automáticas de prazos críticos para o time certo, no momento certo.",
+    icon: BellRing,
+  },
+  {
+    title: "Rastreabilidade completa",
+    description:
+      "Histórico de quem alterou, o que mudou e quando — pronto para auditoria interna ou externa.",
+    icon: LineChart,
+  },
+  {
+    title: "Visão executiva em tempo real",
+    description:
+      "Indicadores de conformidade, riscos e prioridades para decidir com base em dados.",
+    icon: TrendingUp,
   },
 ];
 
@@ -101,11 +122,13 @@ export function LogoSignature({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div className={cn("flex items-center gap-3.5", className)}>
       <div
         className={cn(
-          "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl p-1.5 shadow-sm ring-1",
-          tone === "light" ? "bg-white ring-white/20" : "bg-white ring-slate-200",
+          "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl p-2 ring-1",
+          tone === "light"
+            ? "bg-white shadow-[0_10px_28px_-16px_rgba(0,0,0,0.55)] ring-white/25"
+            : "bg-white shadow-[0_12px_28px_-18px_rgba(15,41,71,0.55)] ring-slate-200/80",
         )}
       >
         <img
@@ -115,16 +138,21 @@ export function LogoSignature({
         />
       </div>
       {!compact ? (
-        <div className="leading-tight">
+        <div className="leading-[1.1]">
           <div
             className={cn(
-              "text-base font-bold tracking-tight",
+              "text-[1.15rem] font-bold tracking-[-0.02em]",
               tone === "light" ? "text-white" : "text-slate-950",
             )}
           >
             Conform Flow
           </div>
-          <div className={cn("text-xs", tone === "light" ? "text-slate-300" : "text-slate-500")}>
+          <div
+            className={cn(
+              "text-[11px] font-medium uppercase tracking-[0.14em]",
+              tone === "light" ? "text-cyan-200" : "text-cyan-700",
+            )}
+          >
             Conformidade operacional
           </div>
         </div>
@@ -135,26 +163,23 @@ export function LogoSignature({
 
 export function PublicHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/78 backdrop-blur-2xl">
-      <div className="mx-auto flex h-[4.75rem] w-full max-w-7xl items-center justify-between gap-4 px-5 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-2xl">
+      <div className="mx-auto flex h-[5.25rem] w-full max-w-7xl items-center justify-between gap-4 px-5 lg:px-8">
         <Link to="/" aria-label="Página inicial Conform Flow">
           <LogoSignature />
         </Link>
 
         <nav className="hidden items-center gap-7 text-sm font-medium text-slate-600 lg:flex">
-          <a className="hover:text-slate-950" href="/#recursos">
-            Recursos
+          <a className="transition-colors hover:text-slate-950" href="/#beneficios">
+            Benefícios
           </a>
-          <a className="hover:text-slate-950" href="/#modulos">
+          <a className="transition-colors hover:text-slate-950" href="/#modulos">
             Módulos
           </a>
-          <Link className="hover:text-slate-950" to="/planos">
+          <Link className="transition-colors hover:text-slate-950" to="/planos">
             Planos
           </Link>
-          <a className="hover:text-slate-950" href="/#seguranca">
-            Segurança
-          </a>
-          <a className="hover:text-slate-950" href="/#faq">
+          <a className="transition-colors hover:text-slate-950" href="/#faq">
             FAQ
           </a>
         </nav>
@@ -185,46 +210,98 @@ export function PublicHeader() {
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-12 md:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
-        <div>
-          <LogoSignature />
-          <p className="mt-4 max-w-md text-sm leading-6 text-slate-600">
-            Plataforma SaaS para gestão de conformidade, documentos, equipamentos e vencimentos em
-            empresas reguladas.
-          </p>
-        </div>
-        <FooterGroup title="Produto" links={["Recursos", "Módulos", "Planos", "Segurança"]} />
-        <div>
-          <h3 className="text-sm font-semibold text-slate-950">Acesso</h3>
-          <div className="mt-4 flex flex-col gap-3 text-sm text-slate-600">
-            <Link to="/login" search={{ msg: undefined }} className="hover:text-slate-950">
-              Entrar na plataforma
-            </Link>
-            <a
-              href="mailto:comercial@conformflow.com.br?subject=Solicitar demonstração Conform Flow"
-              className="hover:text-slate-950"
-            >
-              Solicitar demonstração
-            </a>
+    <footer className="border-t border-slate-200 bg-slate-950 text-slate-300">
+      <div className="mx-auto w-full max-w-7xl px-5 py-16 lg:px-8">
+        <div className="grid gap-12 md:grid-cols-[1.4fr_0.8fr_0.8fr_1fr]">
+          <div>
+            <LogoSignature tone="light" />
+            <p className="mt-5 max-w-sm text-sm leading-6 text-slate-400">
+              Plataforma SaaS para gestão de conformidade operacional em empresas reguladas.
+              Documentos, equipamentos e vencimentos sob controle.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 text-sm text-slate-400">
+              <a
+                href="mailto:comercial@conformflow.com.br"
+                className="flex items-center gap-2.5 transition-colors hover:text-white"
+              >
+                <Mail className="h-4 w-4 text-cyan-400" />
+                comercial@conformflow.com.br
+              </a>
+              <a
+                href="tel:+5511999999999"
+                className="flex items-center gap-2.5 transition-colors hover:text-white"
+              >
+                <Phone className="h-4 w-4 text-cyan-400" />
+                +55 (11) 9 9999-9999
+              </a>
+              <div className="flex items-center gap-2.5">
+                <MapPin className="h-4 w-4 text-cyan-400" />
+                São Paulo, Brasil
+              </div>
+            </div>
           </div>
+          <FooterGroup
+            title="Produto"
+            links={[
+              { label: "Benefícios", href: "/#beneficios" },
+              { label: "Módulos", href: "/#modulos" },
+              { label: "Planos", href: "/planos" },
+              { label: "FAQ", href: "/#faq" },
+            ]}
+          />
+          <FooterGroup
+            title="Empresa"
+            links={[
+              { label: "Sobre", href: "/#beneficios" },
+              { label: "Contato", href: "mailto:comercial@conformflow.com.br" },
+              { label: "Suporte", href: "mailto:suporte@conformflow.com.br" },
+            ]}
+          />
+          <FooterGroup
+            title="Acesso"
+            links={[
+              { label: "Entrar na plataforma", href: "/login" },
+              { label: "Solicitar demonstração", href: "mailto:comercial@conformflow.com.br" },
+              { label: "Definir nova senha", href: "/definir-senha" },
+            ]}
+          />
         </div>
       </div>
-      <div className="border-t border-slate-200 px-5 py-5 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} Conform Flow. Todos os direitos reservados.
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2 px-5 py-6 text-xs text-slate-500 md:flex-row lg:px-8">
+          <span>© {new Date().getFullYear()} Conform Flow. Todos os direitos reservados.</span>
+          <span className="flex items-center gap-4">
+            <a href="/#faq" className="transition-colors hover:text-slate-300">
+              Termos de uso
+            </a>
+            <a href="/#faq" className="transition-colors hover:text-slate-300">
+              Privacidade
+            </a>
+          </span>
+        </div>
       </div>
     </footer>
   );
 }
 
-function FooterGroup({ title, links }: { title: string; links: string[] }) {
+function FooterGroup({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
   return (
     <div>
-      <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
-      <div className="mt-4 flex flex-col gap-3 text-sm text-slate-600">
+      <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white">{title}</h3>
+      <div className="mt-5 flex flex-col gap-3 text-sm text-slate-400">
         {links.map((link) => (
-          <a key={link} href={`/#${slug(link)}`} className="hover:text-slate-950">
-            {link}
+          <a
+            key={link.label}
+            href={link.href}
+            className="transition-colors hover:text-white"
+          >
+            {link.label}
           </a>
         ))}
       </div>
