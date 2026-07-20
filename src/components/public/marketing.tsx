@@ -688,84 +688,193 @@ export function CtaSection() {
 }
 
 export function ProductMockup() {
-  const rows = [
-    ["AVCB", "Documentos", "04/08/2026", "Atenção"],
-    ["Geladeira de vacinas 01", "Calibração", "09/08/2026", "A vencer"],
-    ["Autoclave Central 01", "Manutenção", "24/08/2026", "Planejado"],
+  const rows: Array<{ nome: string; tipo: string; prazo: string; status: string; tone: "warn" | "danger" | "ok" }> = [
+    { nome: "AVCB — sede administrativa", tipo: "Documento", prazo: "vence em 12 dias", status: "Atenção", tone: "warn" },
+    { nome: "Geladeira de vacinas 01", tipo: "Calibração", prazo: "vence em 18 dias", status: "A vencer", tone: "warn" },
+    { nome: "Autoclave Central 01", tipo: "Manutenção preventiva", prazo: "agendada 24/08", status: "Planejado", tone: "ok" },
+    { nome: "Alvará sanitário", tipo: "Documento", prazo: "vencido há 3 dias", status: "Crítico", tone: "danger" },
+  ];
+  const toneClasses = {
+    warn: "bg-amber-50 text-amber-700 ring-amber-200",
+    danger: "bg-rose-50 text-rose-700 ring-rose-200",
+    ok: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  } as const;
+
+  const activity: Array<{ icon: LucideIcon; text: string; time: string; color: string }> = [
+    { icon: CheckCircle2, text: "Marina anexou evidência em AVCB", time: "há 8 min", color: "text-emerald-600" },
+    { icon: AlertTriangle, text: "Novo alerta: Alvará vencido", time: "há 32 min", color: "text-rose-600" },
+    { icon: Activity, text: "Manutenção preventiva concluída", time: "há 2h", color: "text-cyan-600" },
   ];
 
   return (
-    <div className="relative [transform:perspective(1400px)_rotateY(-3deg)_rotateX(1deg)] rounded-[1.25rem] border border-white/70 bg-white/75 p-3 shadow-[0_34px_90px_-48px_rgba(15,23,42,0.65)] backdrop-blur-xl transition-transform duration-[220ms] ease-out hover:[transform:perspective(1400px)_rotateY(-1deg)_rotateX(0deg)]">
-      <div className="rounded-xl border border-slate-200/90 bg-slate-50 p-4 shadow-inner">
-        <div className="mb-4 flex items-center justify-between">
+    <div className="relative isolate rounded-[1.4rem] border border-white/70 bg-white/80 p-3 shadow-[0_40px_100px_-50px_rgba(15,41,71,0.7)] backdrop-blur-xl">
+      <div className="pointer-events-none absolute -inset-8 -z-10 rounded-[2rem] bg-gradient-to-br from-cyan-400/15 via-white/0 to-blue-500/15 blur-3xl" />
+      <div className="rounded-[1rem] border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white p-5 shadow-inner">
+        {/* Chrome */}
+        <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
+            </div>
+            <div className="ml-2 flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+              <LockKeyhole className="h-3 w-3" />
+              app.conformflow.com.br / dashboard
+            </div>
+          </div>
+          <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium text-slate-500 sm:flex">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Online — atualizado agora
+          </div>
+        </div>
+
+        {/* Header row */}
+        <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Dashboard
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-700">
+              Dashboard executivo
             </div>
-            <div className="mt-1 text-lg font-semibold text-slate-950">Índice de conformidade</div>
-          </div>
-          <div className="rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-            87%
-          </div>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            ["Documentos vencidos", "4"],
-            ["Equip. em atenção", "6"],
-            ["Pendências críticas", "7"],
-          ].map(([label, value]) => (
-            <div
-              key={label}
-              className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.55)]"
-            >
-              <div className="text-xs text-slate-500">{label}</div>
-              <div className="mt-2 text-2xl font-semibold text-slate-950">{value}</div>
+            <div className="mt-1.5 text-xl font-semibold tracking-tight text-slate-950">
+              Índice de conformidade
             </div>
-          ))}
-        </div>
-        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_28px_-24px_rgba(15,23,42,0.55)]">
-          {rows.map((row) => (
-            <div
-              key={row.join("-")}
-              className="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.7fr] gap-3 border-b border-slate-100 px-4 py-3 text-xs last:border-b-0"
-            >
-              <span className="font-semibold text-slate-950">{row[0]}</span>
-              <span className="text-slate-600">{row[1]}</span>
-              <span className="text-slate-600">{row[2]}</span>
-              <span className="font-semibold text-amber-600">{row[3]}</span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              <span>Risco por prazo</span>
-              <span className="text-cyan-700">Atualizado agora</span>
-            </div>
-            <div className="mt-4 flex h-12 items-end gap-1.5">
-              {[42, 58, 38, 72, 54, 86, 64, 78, 52, 68, 44, 60].map((height, index) => (
-                <span
-                  key={index}
-                  className="flex-1 rounded-t-md bg-cyan-600/75 transition-all duration-[180ms] hover:bg-cyan-600"
-                  style={{ height: `${height}%` }}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              <BellRing className="h-3.5 w-3.5 text-amber-600" /> Alertas
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-2xl font-semibold text-slate-950">7</span>
-              <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">
-                Acompanhar
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-4xl font-semibold tracking-[-0.03em] text-slate-950 tabular-nums">
+                92
+              </span>
+              <span className="text-lg font-semibold text-slate-500">%</span>
+              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                <TrendingUp className="h-3 w-3" /> +4,2 pts
               </span>
             </div>
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full w-2/3 rounded-full bg-amber-500" />
+          </div>
+          <div className="hidden rounded-xl border border-slate-200 bg-white p-3 text-right shadow-sm sm:block">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Próx. auditoria
+            </div>
+            <div className="mt-1 text-sm font-semibold text-slate-950">14 dias</div>
+          </div>
+        </div>
+
+        {/* KPI grid */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Documentos vencidos", value: "4", tone: "text-rose-600", bar: "w-1/4 bg-rose-500" },
+            { label: "Equip. em atenção", value: "6", tone: "text-amber-600", bar: "w-2/5 bg-amber-500" },
+            { label: "Pendências críticas", value: "7", tone: "text-cyan-700", bar: "w-1/2 bg-cyan-600" },
+          ].map((k) => (
+            <div
+              key={k.label}
+              className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_24px_-22px_rgba(15,41,71,0.5)]"
+            >
+              <div className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                {k.label}
+              </div>
+              <div className={cn("mt-1 text-2xl font-semibold tabular-nums", k.tone)}>
+                {k.value}
+              </div>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-100">
+                <div className={cn("h-full rounded-full", k.bar)} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Chart + activity */}
+        <div className="mt-4 grid gap-3 lg:grid-cols-[1.4fr_1fr]">
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  Vencimentos nos próximos 90 dias
+                </div>
+                <div className="mt-0.5 text-sm font-semibold text-slate-950">
+                  Distribuição por semana
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-[10px] font-medium text-slate-500">
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-sm bg-cyan-600" /> Docs
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-sm bg-amber-500" /> Equip.
+                </span>
+              </div>
+            </div>
+            <div className="mt-4 flex h-20 items-end gap-2">
+              {[
+                [42, 22], [58, 30], [38, 48], [72, 34], [54, 60],
+                [86, 40], [64, 72], [78, 50], [52, 66], [68, 42],
+                [44, 58], [60, 74],
+              ].map(([a, b], i) => (
+                <div key={i} className="flex flex-1 flex-col-reverse gap-0.5">
+                  <span
+                    className="rounded-t-sm bg-cyan-600/85"
+                    style={{ height: `${a * 0.55}%` }}
+                  />
+                  <span
+                    className="rounded-t-sm bg-amber-500/80"
+                    style={{ height: `${b * 0.4}%` }}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex justify-between text-[9px] font-medium text-slate-400">
+              <span>Sem 1</span>
+              <span>Sem 6</span>
+              <span>Sem 12</span>
             </div>
           </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Atividade recente
+              </div>
+              <span className="rounded-full bg-cyan-50 px-2 py-0.5 text-[9px] font-semibold text-cyan-700">
+                ao vivo
+              </span>
+            </div>
+            <ul className="mt-3 space-y-3">
+              {activity.map((a, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <a.icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", a.color)} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[11px] font-medium text-slate-800">{a.text}</div>
+                    <div className="text-[9px] text-slate-400">{a.time}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Próximos vencimentos
+            </div>
+            <span className="text-[10px] font-medium text-cyan-700">Ver todos →</span>
+          </div>
+          {rows.map((r) => (
+            <div
+              key={r.nome}
+              className="grid grid-cols-[1.4fr_0.9fr_1fr_auto] items-center gap-3 border-b border-slate-50 px-4 py-2.5 text-[11px] last:border-b-0"
+            >
+              <span className="truncate font-semibold text-slate-900">{r.nome}</span>
+              <span className="text-slate-500">{r.tipo}</span>
+              <span className="text-slate-500">{r.prazo}</span>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[9px] font-semibold ring-1",
+                  toneClasses[r.tone],
+                )}
+              >
+                {r.status}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
