@@ -360,7 +360,11 @@ function validatePlano(plano: PlanoComercialResumo): string[] {
   if (!Number.isFinite(plano.valor_mensal_centavos) || plano.valor_mensal_centavos < 0) {
     errors.push("o valor mensal não pode ser negativo.");
   }
-  if (!Number.isFinite(plano.valor_anual_centavos) || plano.valor_anual_centavos < 0) {
+  if (
+    plano.valor_anual_centavos !== null &&
+    plano.valor_anual_centavos !== undefined &&
+    (!Number.isFinite(plano.valor_anual_centavos) || plano.valor_anual_centavos < 0)
+  ) {
     errors.push("o valor anual não pode ser negativo.");
   }
   if (!Number.isFinite(plano.limite_usuarios) || plano.limite_usuarios < 1) {
