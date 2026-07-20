@@ -443,19 +443,21 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
           <article
             key={plan.id}
             className={cn(
-              "relative flex rounded-2xl border bg-white p-7 shadow-[0_20px_55px_-42px_rgba(15,23,42,0.5)] transition-[border-color,box-shadow,transform] duration-[180ms] ease-out hover:-translate-y-1 hover:shadow-[0_26px_64px_-44px_rgba(15,23,42,0.55)]",
-              plan.mais_escolhido ? "border-cyan-400 ring-4 ring-cyan-100/80" : "border-slate-200",
+              "relative flex rounded-2xl border bg-white p-6 shadow-[0_18px_50px_-42px_rgba(15,41,71,0.4)] transition-[border-color,box-shadow,transform] duration-[200ms] ease-out hover:-translate-y-1 hover:shadow-[0_24px_58px_-42px_rgba(15,41,71,0.5)]",
+              plan.mais_escolhido
+                ? "border-cyan-500 ring-2 ring-cyan-200/60 shadow-[0_26px_60px_-38px_rgba(6,182,212,0.55)] lg:-translate-y-2 lg:scale-[1.02]"
+                : "border-slate-200",
             )}
           >
             {plan.mais_escolhido ? (
-              <div className="absolute right-5 top-5 rounded-full bg-cyan-600 px-3 py-1 text-xs font-semibold text-white">
-                Mais escolhido
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white shadow-lg">
+                Recomendado
               </div>
             ) : null}
             <div className="flex w-full flex-col">
               <h3 className="text-lg font-semibold text-slate-950">{plan.nome}</h3>
-              <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">{plan.descricao}</p>
-              <div className="mt-6 flex items-end gap-1">
+              <p className="mt-1.5 min-h-10 text-[13px] leading-5 text-slate-600">{plan.descricao}</p>
+              <div className="mt-4 flex items-end gap-1">
                 <span className="text-3xl font-semibold tracking-tight text-slate-950">
                   {formatPlanPrice(plan, interval)}
                 </span>
@@ -464,7 +466,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
                 </span>
               </div>
               {interval === "yearly" ? <AnnualSavings plan={plan} /> : null}
-              <div className="mt-5 grid gap-2 text-sm text-slate-600">
+              <div className="mt-4 grid gap-1.5 text-[13px] text-slate-600">
                 <PlanMeta icon={Users}>
                   {limitLabel(plan.limites.usuarios, "usuário", "usuários")}
                 </PlanMeta>
@@ -472,12 +474,12 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
                   {limitLabel(plan.limites.unidades, "unidade", "unidades")}
                 </PlanMeta>
               </div>
-              <div className={cn("mt-6 space-y-3", compact && "mt-5")}>
+              <div className={cn("mt-4 space-y-2", compact && "mt-4")}>
                 {enabledFeatureLabels(plan)
-                  .slice(0, compact ? 5 : 8)
+                  .slice(0, compact ? 4 : 6)
                   .map((feature) => (
-                    <div key={feature} className="flex items-start gap-2 text-sm text-slate-700">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                    <div key={feature} className="flex items-start gap-2 text-[13px] text-slate-700">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
                       <span>{feature}</span>
                     </div>
                   ))}
@@ -485,9 +487,9 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
               <Button
                 asChild
                 className={cn(
-                  "mt-7 h-11 rounded-xl",
+                  "mt-5 h-10 rounded-xl text-sm",
                   plan.mais_escolhido
-                    ? "bg-slate-950 text-white hover:bg-slate-800"
+                    ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500"
                     : "bg-white text-slate-950 ring-1 ring-slate-200 hover:bg-slate-50",
                 )}
               >
