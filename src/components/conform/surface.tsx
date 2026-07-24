@@ -23,13 +23,26 @@ export function PageHeader({
       )}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
-        <div className="min-w-0">
-          <h1 className="truncate text-[1.4rem] font-semibold tracking-[-0.025em] text-foreground md:text-[1.75rem]">
-            {title}
-          </h1>
-          {description ? (
-            <p className="mt-1.5 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
-          ) : null}
+        <div className="flex min-w-0 items-start gap-3">
+          <span
+            aria-hidden
+            className="mt-1.5 h-8 w-[3px] shrink-0 rounded-full bg-gradient-to-b from-[#2563EB] to-[#0B2340]"
+          />
+          <div className="min-w-0">
+            {eyebrow ? (
+              <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-accent/80">
+                {eyebrow}
+              </div>
+            ) : null}
+            <h1 className="truncate text-[1.55rem] font-[650] leading-[1.2] tracking-[-0.02em] text-[#0B2340] md:text-[1.85rem]">
+              {title}
+            </h1>
+            {description ? (
+              <p className="mt-1.5 max-w-[42rem] text-sm leading-6 text-muted-foreground">
+                {description}
+              </p>
+            ) : null}
+          </div>
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
