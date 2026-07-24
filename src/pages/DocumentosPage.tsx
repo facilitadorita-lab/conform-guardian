@@ -287,8 +287,8 @@ export function DocumentosPage() {
             }
           />
 
-          <div className="mt-5 grid gap-3 lg:grid-cols-[1.4fr_repeat(5,minmax(0,1fr))]">
-            <label className="relative">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <label className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 placeholder="Buscar por nome, número, órgão, setor..."
@@ -297,7 +297,29 @@ export function DocumentosPage() {
                 className="h-10 w-full rounded-xl border border-input bg-background pl-9 pr-3 text-sm cf-transition focus:border-accent focus:ring-4 focus:ring-accent/10"
               />
             </label>
+            <button
+              type="button"
+              onClick={() => setFiltrosAbertos((open) => !open)}
+              aria-expanded={filtrosAbertos}
+              className={cn(
+                "inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-medium cf-transition",
+                filtrosAbertos || filtrosAtivos > 0
+                  ? "border-accent/40 bg-accent/10 text-accent"
+                  : "border-border bg-card text-foreground hover:bg-muted",
+              )}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filtros
+              {filtrosAtivos > 0 ? (
+                <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-semibold text-accent-foreground">
+                  {filtrosAtivos}
+                </span>
+              ) : null}
+            </button>
+          </div>
 
+          {filtrosAbertos ? (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <Select
               ariaLabel="Filtrar por status"
               value={statusFiltro}
@@ -350,15 +372,7 @@ export function DocumentosPage() {
               ]}
             />
           </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span>
-              {filtrosAtivos > 0
-                ? `${filtrosAtivos} filtro(s) aplicado(s).`
-                : "Use os filtros para localizar documentos por situação, categoria, responsável ou anexo."}
-            </span>
-          </div>
+          ) : null}
         </div>
 
         {isLoading ? (
