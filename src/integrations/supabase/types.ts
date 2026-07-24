@@ -5738,6 +5738,10 @@ export type Database = {
         Args: { p_empresa_id: string }
         Returns: Json
       }
+      api_obter_qr_equipamento: {
+        Args: { p_equipamento_id: string }
+        Returns: Json
+      }
       api_onboarding_empresa: { Args: { p_empresa_id: string }; Returns: Json }
       api_onboarding_inteligente: {
         Args: { p_empresa_id: string }
@@ -5757,10 +5761,12 @@ export type Database = {
         Args: { p_qr_token: string }
         Returns: Json
       }
-      api_rotacionar_qr_equipamento: {
-        Args: { p_empresa_id: string; p_equipamento_id: string }
-        Returns: Json
-      }
+      api_rotacionar_qr_equipamento:
+        | {
+            Args: { p_empresa_id: string; p_equipamento_id: string }
+            Returns: Json
+          }
+        | { Args: { p_equipamento_id: string }; Returns: Json }
       api_salvar_configuracoes: {
         Args: { p_empresa_id: string; p_payload: Json }
         Returns: Json
