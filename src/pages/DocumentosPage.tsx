@@ -53,6 +53,7 @@ export function DocumentosPage() {
   const [anexoFiltro, setAnexoFiltro] = useState<AnexoFilter>("todos");
   const [ordenarPor, setOrdenarPor] = useState<SortKey>("vencimento");
   const [page, setPage] = useState(1);
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [lastUpload, setLastUpload] = useState<{
     label: string;
