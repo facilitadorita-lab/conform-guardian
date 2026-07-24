@@ -18,27 +18,24 @@ export function PageHeader({
   return (
     <section
       className={cn(
-        "relative overflow-hidden",
+        "cf-fade-up relative overflow-hidden",
         className,
       )}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
         <div className="flex min-w-0 items-start gap-3">
-          <span
-            aria-hidden
-            className="mt-1.5 h-8 w-[3px] shrink-0 rounded-full bg-gradient-to-b from-[#2563EB] to-[#0B2340]"
-          />
+          <span aria-hidden className="cf-header-bar mt-2 shrink-0" />
           <div className="min-w-0">
             {eyebrow ? (
               <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-accent/80">
                 {eyebrow}
               </div>
             ) : null}
-            <h1 className="truncate text-[1.55rem] font-[650] leading-[1.2] tracking-[-0.02em] text-[#0B2340] md:text-[1.85rem]">
+            <h1 className="truncate text-[1.6rem] font-[650] leading-[1.15] tracking-[-0.02em] text-[#0B2340] md:text-[1.95rem]">
               {title}
             </h1>
             {description ? (
-              <p className="mt-1.5 max-w-[42rem] text-sm leading-6 text-muted-foreground">
+              <p className="mt-1.5 max-w-[44rem] text-[14px] leading-6 text-muted-foreground">
                 {description}
               </p>
             ) : null}
