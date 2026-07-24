@@ -7,7 +7,6 @@ import type {
   ScheduledReportsData,
 } from "@/types";
 import { invokeRpc } from "./service-utils";
-import { getSupabaseClient } from "@/lib/supabaseClient";
 
 export const professionalService = {
   permissionMatrix(companyId: string) {
@@ -93,17 +92,16 @@ export const professionalService = {
       { p_qr_token: token },
     );
   },
-  rotateEquipmentQr(companyId: string, equipmentId: string) {
+  rotateEquipmentQr(equipmentId: string) {
     return invokeRpc<{ qr_token: string }>("api_rotacionar_qr_equipamento", {
-      p_empresa_id: companyId,
       p_equipamento_id: equipmentId,
     });
   },
-  async getEquipmentQrToken(companyId: string, equipmentId: string) {
-    const { data, error } = await getSupabaseClient().from("equipamentos").select("qr_token")
-      .eq("empresa_id", companyId).eq("id", equipmentId).is("deleted_at", null).single();
-    if (error) throw new Error(error.message);
-    return String(data.qr_token);
+  async getEquipmentQrToken(equipmentId: string) {
+    const data = await invokeRpc<{ qr_token: string }>("api_obter_qr_equipamento", {
+      p_equipamento_id: equipmentId,
+    });
+    return data.qr_token;
   },
   professionalFinance() {
     return invokeRpc<ProfessionalFinanceSummary>("api_master_financeiro_profissional");

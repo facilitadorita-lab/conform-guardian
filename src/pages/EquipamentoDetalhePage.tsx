@@ -77,15 +77,15 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
   } | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
   const qrQuery = useQuery({
-    queryKey: ["professional", "equipment-qr", selectedCompanyId, id],
-    queryFn: () => professionalService.getEquipmentQrToken(selectedCompanyId!, id),
-    enabled: Boolean(qrOpen && selectedCompanyId && id),
+    queryKey: ["professional", "equipment-qr", id],
+    queryFn: () => professionalService.getEquipmentQrToken(id),
+    enabled: Boolean(qrOpen && id),
   });
   const rotateQr = useMutation({
-    mutationFn: () => professionalService.rotateEquipmentQr(selectedCompanyId!, id),
+    mutationFn: () => professionalService.rotateEquipmentQr(id),
     onSuccess: (data) =>
       queryClient.setQueryData(
-        ["professional", "equipment-qr", selectedCompanyId, id],
+        ["professional", "equipment-qr", id],
         data.qr_token,
       ),
   });
@@ -577,6 +577,11 @@ function EquipmentQrDialog({
     link.download = `qr-${equipmentName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`;
     link.click();
   }
+  const friendlyError = error?.toUpperCase().includes("EQUIPMENT_NOT_FOUND")
+    ? "Não foi possível localizar este equipamento no ambiente atual. Atualize a página e gere o QR Code novamente."
+    : error?.toUpperCase().includes("FORBIDDEN")
+      ? "Seu usuário não possui permissão para acessar este equipamento."
+      : error;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-background p-6 text-center shadow-2xl">
@@ -598,7 +603,7 @@ function EquipmentQrDialog({
           O QR não contém dados do equipamento. Ele aponta para uma rota protegida que exige login e
           valida o acesso à empresa no backend.
         </p>
-        {error ? <p className="mt-3 text-xs text-danger">{error}</p> : null}
+        {friendlyError ? <p className="mt-3 text-xs text-danger">{friendlyError}</p> : null}
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <button
             type="button"
