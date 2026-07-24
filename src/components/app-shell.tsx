@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   Building2,
-  ChevronRight,
   CreditCard,
   LockKeyhole,
   LogOut,
@@ -84,7 +83,6 @@ export function AppShell({
   );
   const exibirAssistente = hasPlanFeature(activeAuthContext, "assistente_ia");
   const alertasCount = alertas?.length ?? 0;
-  const breadcrumbs = buildBreadcrumbs(pathname, title);
   useEffect(() => {
     if (runtimeConfig.useMocks || loading || user) return;
     navigate({ to: "/login", search: { msg: undefined } });
@@ -112,40 +110,45 @@ export function AppShell({
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground">
       <AppSidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
         <header className="sticky top-0 z-30 border-b border-border/70 bg-background/78 backdrop-blur-2xl">
-          <div className="flex min-h-[4.5rem] items-center gap-3 px-4 md:gap-5 md:px-7">
+          <div className="flex min-h-[3.75rem] items-center gap-3 px-4 md:gap-4 md:px-6">
             <button
               type="button"
               onClick={() => setMobileOpen((open) => !open)}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-[var(--cf-shadow-soft)] cf-transition hover:border-accent/30 hover:text-accent md:hidden"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground cf-transition hover:border-accent/30 hover:text-accent md:hidden"
               aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
               aria-expanded={mobileOpen}
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
-            <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
-              <Breadcrumbs items={breadcrumbs} />
-            </div>
 
-            <div className="relative hidden w-full max-w-xl flex-1 sm:block lg:flex-none">
+            <div className="relative hidden min-w-0 flex-1 sm:block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 placeholder="Buscar documentos, equipamentos, pendências..."
-                className="cf-focus-ring h-11 w-full rounded-xl border border-input bg-card/75 pl-10 pr-3 text-sm shadow-[var(--cf-shadow-soft)] placeholder:text-muted-foreground outline-none cf-transition focus:bg-card"
+                className="cf-focus-ring h-10 w-full max-w-[560px] rounded-xl border border-input bg-card/75 pl-10 pr-3 text-sm placeholder:text-muted-foreground outline-none cf-transition focus:bg-card"
                 aria-label="Busca global"
               />
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex shrink-0 items-center gap-2">
               {exibirAssistente ? (
-                <div className="hidden items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-2 text-xs font-semibold text-accent xl:flex">
+                <button
+                  type="button"
+                  title="Assistente FlowIA disponível"
+                  className="hidden h-10 items-center gap-2 rounded-xl border border-accent/20 bg-accent/5 px-3 text-xs font-semibold text-accent cf-transition hover:bg-accent/10 xl:inline-flex"
+                >
                   <Sparkles className="h-3.5 w-3.5" />
-                  FlowIA disponível
-                </div>
+                  FlowIA
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden />
+                </button>
               ) : null}
 
-              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-[var(--cf-shadow-soft)] cf-transition hover:border-accent/30 hover:text-accent">
+              <div
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground cf-transition hover:border-accent/30 hover:text-accent"
+                title={alertasCount > 0 ? `${alertasCount} alertas ativos` : "Sem alertas"}
+              >
                 <Bell className="h-4 w-4" />
                 {alertasCount > 0 ? (
                   <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-white">
@@ -155,7 +158,7 @@ export function AppShell({
               </div>
 
               {podeTrocarEmpresa ? (
-                <div className="hidden items-center gap-2 md:flex">
+                <div className="hidden max-w-[280px] items-center gap-2 md:flex">
                   <CompanySwitcher
                     empresas={authContext.empresasPermitidas}
                     empresaAtual={empresaAtual}
@@ -166,20 +169,15 @@ export function AppShell({
                       await router.navigate({ to: "/dashboard" });
                     }}
                   />
-                  {authContext.usuario.isMaster ? (
-                    <Link
-                      to="/master/empresas"
-                      className="hidden rounded-xl border border-border bg-card px-3 py-2.5 text-xs font-semibold shadow-[var(--cf-shadow-soft)] cf-transition hover:border-accent/40 hover:bg-muted xl:inline-flex"
-                    >
-                      Ver empresas
-                    </Link>
-                  ) : null}
                 </div>
               ) : (
-                <div className="hidden items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5 shadow-[var(--cf-shadow-soft)] md:flex">
+                <div
+                  className="hidden h-10 items-center gap-2.5 rounded-xl border border-border bg-card px-3 md:flex"
+                  title={`${empresaAtual.nome} — CNPJ ${empresaAtual.cnpj}`}
+                >
                   <Building2 className="h-4 w-4 text-accent" />
                   <div className="min-w-0 leading-tight">
-                    <span className="block max-w-[180px] truncate text-xs font-semibold">
+                    <span className="block max-w-[200px] truncate text-xs font-semibold">
                       {empresaAtual.nome}
                     </span>
                     <span className="block text-[11px] text-muted-foreground">
@@ -199,7 +197,7 @@ export function AppShell({
                     await navigate({ to: "/login", search: { msg: undefined } });
                   }
                 }}
-                className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-[var(--cf-shadow-soft)] cf-transition hover:border-danger/30 hover:bg-danger/5 hover:text-danger"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground cf-transition hover:border-danger/30 hover:bg-danger/5 hover:text-danger"
                 aria-label="Sair da plataforma"
               >
                 <LogOut className="h-4 w-4" />
@@ -218,10 +216,10 @@ export function AppShell({
           ) : null}
         </header>
 
-        <main className="flex-1">
-          <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-7 px-4 py-6 md:px-8 md:py-9">
+        <main className="relative flex-1">
+          <div className="cf-watermark cf-watermark-dark" aria-hidden />
+          <div className="relative mx-auto flex w-full min-w-0 max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-7">
             <PageHeader
-              eyebrow={authContext.usuario.isMaster ? "Admin Master" : "Ambiente do cliente"}
               title={title}
               description={description}
               actions={actions}
@@ -232,23 +230,6 @@ export function AppShell({
       </div>
       {exibirAssistente ? <FloatingAssistant /> : null}
     </div>
-  );
-}
-
-function Breadcrumbs({ items }: { items: string[] }) {
-  return (
-    <nav
-      className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground"
-      aria-label="Breadcrumb"
-    >
-      <span className="font-medium text-foreground">Conform Flow</span>
-      {items.map((item) => (
-        <span key={item} className="flex min-w-0 items-center gap-1">
-          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{item}</span>
-        </span>
-      ))}
-    </nav>
   );
 }
 
