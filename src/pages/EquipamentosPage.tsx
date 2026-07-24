@@ -188,11 +188,11 @@ export function EquipamentosPage() {
           tone={resumo.atencao > 0 ? "warning" : "neutral"}
         />
         <ResumoCard
-          title="Alta criticidade"
+          title="Equipamentos críticos"
           value={resumo.altaCriticidade}
-          description="Ativos que merecem prioridade operacional"
+          description="Ativos classificados como essenciais para a operação."
           icon={Activity}
-          tone={resumo.altaCriticidade > 0 ? "danger" : "neutral"}
+          tone="info"
         />
       </div>
 
