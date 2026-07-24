@@ -167,7 +167,8 @@
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    overflow-x: hidden;
+    height: 100%;
+    overflow: hidden;
   }
 
   body {
@@ -177,7 +178,13 @@
     font-size: 0.9375rem;
     line-height: 1.5;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    overflow-x: hidden;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
 
   :focus-visible {
@@ -193,17 +200,23 @@
 @layer components {
   .cf-watermark {
     position: absolute;
-    right: -3rem;
-    bottom: -3rem;
-    width: 22rem;
-    height: 22rem;
+    right: -4rem;
+    bottom: -4rem;
+    width: 28rem;
+    height: 28rem;
     pointer-events: none;
-    opacity: 0.035;
+    opacity: 0.025;
     background-image: url("/conform-flow-logo-transparent.png");
     background-repeat: no-repeat;
     background-position: bottom right;
     background-size: contain;
     z-index: 0;
+  }
+
+  @media (max-width: 768px) {
+    .cf-watermark {
+      display: none;
+    }
   }
 
   .cf-watermark-dark {

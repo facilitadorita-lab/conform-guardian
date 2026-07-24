@@ -200,16 +200,19 @@ export function AppSidebar() {
         className={cn("border-b border-sidebar-border bg-white/[0.03] px-5 py-4", collapsed && "px-3")}
       >
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-lg shadow-black/20 ring-1 ring-white/30">
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white shadow-md shadow-black/20 ring-1 ring-white/20"
+            title="Conform Flow"
+          >
             <img
               src="/conform-flow-logo-transparent.png"
               alt="Conform Flow"
-              className="h-8 w-8 object-contain"
+              className="h-12 w-12 object-contain [transform:scale(1.55)]"
             />
           </div>
           {!collapsed ? (
             <div className="min-w-0 leading-tight">
-              <div className="truncate text-[15px] font-semibold tracking-tight text-white">
+              <div className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-white">
                 Conform Flow
               </div>
               <div className="mt-0.5 whitespace-nowrap text-[11px] font-medium text-cyan-100/70">
