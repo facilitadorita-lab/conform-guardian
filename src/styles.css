@@ -167,7 +167,8 @@
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    overflow-x: hidden;
+    height: 100%;
+    overflow: hidden;
   }
 
   body {
@@ -177,7 +178,13 @@
     font-size: 0.9375rem;
     line-height: 1.5;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    overflow-x: hidden;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100%;
+    overflow: hidden;
   }
 
   :focus-visible {
