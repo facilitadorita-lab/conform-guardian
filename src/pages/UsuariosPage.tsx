@@ -110,7 +110,7 @@ export function UsuariosPage() {
   return (
     <AppShell
       title="Usuários e Perfis"
-      description="Gerencie convites, perfis e acessos por empresa. As permissões reais são validadas no backend."
+      description="Gerencie convites, perfis e acessos por empresa com segurança."
       actions={
         <button
           type="button"
