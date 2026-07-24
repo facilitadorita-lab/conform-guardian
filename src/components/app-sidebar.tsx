@@ -197,44 +197,27 @@ export function AppSidebar() {
       )}
     >
       <div
-        className={cn("border-b border-sidebar-border bg-white/[0.035] p-5", collapsed && "px-3")}
+        className={cn("border-b border-sidebar-border bg-white/[0.03] px-5 py-4", collapsed && "px-3")}
       >
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white p-1.5 shadow-lg shadow-black/10 ring-1 ring-white/20">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-lg shadow-black/20 ring-1 ring-white/30">
             <img
               src="/conform-flow-logo-transparent.png"
               alt="Conform Flow"
-              className="h-full w-full object-contain"
+              className="h-8 w-8 object-contain"
             />
           </div>
           {!collapsed ? (
             <div className="min-w-0 leading-tight">
-              <div className="truncate text-base font-bold tracking-tight text-white">
+              <div className="truncate text-[15px] font-semibold tracking-tight text-white">
                 Conform Flow
               </div>
-              <div className="truncate text-[11px] font-medium uppercase tracking-[0.16em] text-cyan-100/70">
+              <div className="mt-0.5 whitespace-nowrap text-[11px] font-medium text-cyan-100/70">
                 Gestão de conformidade
               </div>
             </div>
           ) : null}
         </div>
-
-        {!collapsed && empresaAtual ? (
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
-            <div className="flex items-start gap-2">
-              <Building2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" />
-              <div className="min-w-0">
-                <div className="truncate text-xs font-semibold">{empresaAtual.nome}</div>
-                <div className="mt-1 truncate text-[11px] text-sidebar-foreground/60">
-                  CNPJ {empresaAtual.cnpj}
-                </div>
-                <div className="mt-2 inline-flex rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-medium text-sidebar-foreground/80">
-                  {authContext?.usuario.isMaster ? "Admin Master" : planName}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : null}
       </div>
 
       <nav className={cn("flex-1 overflow-y-auto py-5", collapsed ? "px-3" : "px-4")}>
@@ -304,6 +287,17 @@ export function AppSidebar() {
       </nav>
 
       <div className={cn("border-t border-sidebar-border p-4", collapsed && "px-3")}>
+        {!collapsed && empresaAtual ? (
+          <div className="mb-3 flex items-start gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2">
+            <Building2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-200/80" />
+            <div className="min-w-0">
+              <div className="truncate text-[12px] font-medium text-white">{empresaAtual.nome}</div>
+              <div className="mt-0.5 truncate text-[10px] text-sidebar-foreground/55">
+                CNPJ {empresaAtual.cnpj} · {authContext?.usuario.isMaster ? "Admin Master" : planName}
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold ring-1 ring-white/10">
             {userInitials}
@@ -319,12 +313,6 @@ export function AppSidebar() {
             </div>
           ) : null}
         </div>
-        {!collapsed ? (
-          <div className="mt-4 flex items-center justify-between text-[10px] text-sidebar-foreground/45">
-            <span>Conform Flow v1.0</span>
-            <span>SaaS seguro</span>
-          </div>
-        ) : null}
       </div>
 
       <button

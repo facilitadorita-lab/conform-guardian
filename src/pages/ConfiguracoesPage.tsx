@@ -82,14 +82,14 @@ export function ConfiguracoesPage() {
         <ResumoCard
           title="Plano"
           value={plano?.nome ?? "Não identificado"}
-          description={plano?.codigo ? `Código: ${plano.codigo}` : "Valide no Admin Master"}
+          description={plano?.codigo ? `Código: ${plano.codigo}` : "Plano em validação"}
           icon={Tag}
           tone="success"
         />
         <ResumoCard
           title="Usuários"
           value={plano?.limite_usuarios ? `Até ${plano.limite_usuarios}` : "Sem limite"}
-          description="Limite aplicado pelo backend"
+          description="Limite do plano contratado"
           icon={Users}
           tone="neutral"
         />
@@ -117,7 +117,7 @@ export function ConfiguracoesPage() {
       <Surface className="space-y-4">
         <SectionHeader
           title="Permissões do plano"
-          description="O frontend reflete estas permissões, mas o bloqueio real de gravação permanece no backend."
+          description="Permissões efetivas do seu perfil neste ambiente."
         />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {recursosPrincipais.map((recurso) => {

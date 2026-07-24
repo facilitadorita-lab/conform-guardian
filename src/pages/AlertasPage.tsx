@@ -49,7 +49,7 @@ export function AlertasPage() {
   return (
     <AppShell
       title="Alertas"
-      description="Marcos automáticos de 60, 30, 15, 7 dias, vencimento e pós-vencimento processados pelo backend."
+      description="Acompanhe antecipadamente documentos, calibrações, qualificações e manutenções próximas do vencimento."
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ResumoCard
@@ -85,25 +85,25 @@ export function AlertasPage() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <ChannelCard
           icon={Monitor}
-          title="Dashboard"
-          desc="Notificações fixas no painel principal."
+          title="Notificações no painel"
+          desc="Receba avisos diretamente no sistema conforme os prazos configurados."
         />
         <ChannelCard
           icon={Bell}
-          title="Central interna"
-          desc="Feed com histórico por usuário e empresa."
+          title="Central de alertas"
+          desc="Consulte notificações ativas e o histórico de alertas da empresa."
         />
         <ChannelCard
           icon={Mail}
-          title="E-mail"
-          desc="Envio agendado em lote pela rotina do backend."
+          title="Alertas por e-mail"
+          desc="Envie lembretes automáticos aos responsáveis antes dos vencimentos."
         />
       </div>
 
       <Surface className="space-y-4">
         <SectionHeader
           title="Agenda de alertas"
-          description="Use esta visão para conferir o que o backend disparou e quais itens merecem atenção."
+          description="Confira os itens que exigem atenção e organize as tratativas por prioridade."
         />
 
         <div className="grid gap-3 lg:grid-cols-[1fr_220px]">
@@ -158,8 +158,8 @@ export function AlertasPage() {
         ) : alertasFiltrados.length === 0 ? (
           <EmptyState
             icon={Bell}
-            title="Nenhum alerta encontrado"
-            description="Ajuste os filtros ou aguarde novos alertas gerados pela rotina do backend."
+            title="Tudo em dia"
+            description="Não existem alertas ativos ou itens vencidos neste momento."
           />
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card">

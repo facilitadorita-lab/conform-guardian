@@ -302,7 +302,7 @@ export function DashboardPage() {
             <EmptyState
               icon={ClipboardList}
               title="Checklist ainda não disponível"
-              description="Assim que o backend retornar as etapas de implantação, o progresso será exibido aqui."
+              description="O progresso será exibido assim que as etapas de implantação forem registradas."
             />
           )}
         </Surface>

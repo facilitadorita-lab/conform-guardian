@@ -179,8 +179,8 @@ export function ComplianceScore({
         />
       </div>
       <div className="mt-3 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
-        <span>Calculado no backend com dados operacionais da empresa.</span>
-        <span>Histórico comparativo ainda não disponível.</span>
+        <span>Índice atualizado com base nos dados atuais da empresa.</span>
+        <span>O comparativo será exibido após o fechamento do primeiro período.</span>
       </div>
     </section>
   );

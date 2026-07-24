@@ -20,7 +20,7 @@ export function PlanFeatureGate({ recurso, nomeRecurso, children }: PlanFeatureG
   return (
     <AppShell
       title="Recurso indisponível no plano"
-      description="O acesso a módulos e gravações é validado no backend para proteger a configuração comercial de cada empresa."
+      description="O acesso a módulos é validado com segurança conforme a configuração comercial de cada empresa."
     >
       <section className="mx-auto flex max-w-3xl flex-col items-center rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -30,7 +30,7 @@ export function PlanFeatureGate({ recurso, nomeRecurso, children }: PlanFeatureG
         <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
           Esta empresa está no plano{" "}
           <span className="font-medium text-foreground">{getPlanName(authContext)}</span>. Para usar
-          este recurso, altere o plano no Admin Master ou libere o recurso no cadastro do plano.
+          este recurso, atualize o plano contratado ou libere o recurso no cadastro do plano.
         </p>
         <div className="mt-6 rounded-xl border border-success/30 bg-success/5 px-4 py-3 text-left text-sm text-success">
           <div className="flex gap-2">

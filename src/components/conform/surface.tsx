@@ -18,23 +18,17 @@ export function PageHeader({
   return (
     <section
       className={cn(
-        "cf-page-card overflow-hidden px-5 py-6 md:px-7 md:py-7",
-        "bg-[radial-gradient(circle_at_top_right,oklch(0.58_0.18_258/0.09),transparent_34%),linear-gradient(180deg,white,oklch(0.99_0.004_248))]",
+        "relative overflow-hidden",
         className,
       )}
     >
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
         <div className="min-w-0">
-          {eyebrow ? (
-            <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-accent">
-              {eyebrow}
-            </div>
-          ) : null}
-          <h1 className="text-[1.7rem] font-semibold tracking-[-0.035em] text-foreground md:text-[2rem]">
+          <h1 className="truncate text-[1.4rem] font-semibold tracking-[-0.025em] text-foreground md:text-[1.75rem]">
             {title}
           </h1>
           {description ? (
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
+            <p className="mt-1.5 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
           ) : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

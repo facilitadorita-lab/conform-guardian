@@ -110,7 +110,7 @@ export function UsuariosPage() {
   return (
     <AppShell
       title="Usuários e Perfis"
-      description="Gerencie convites, perfis e acessos por empresa. As permissões reais são validadas no backend."
+      description="Gerencie convites, perfis e acessos por empresa com segurança."
       actions={
         <button
           type="button"
@@ -429,7 +429,7 @@ function EditarPerfilModal({
           </label>
 
           <div className="rounded-2xl border border-success/25 bg-success/5 p-3 text-sm text-success">
-            Esta alteração será enviada para o backend, registrada na auditoria e aplicada somente à
+            Esta alteração será registrada na auditoria e aplicada somente à
             empresa selecionada.
           </div>
 

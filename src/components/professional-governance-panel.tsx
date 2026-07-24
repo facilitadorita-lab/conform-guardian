@@ -188,7 +188,7 @@ function PermissionsMatrixCard({ companyId, currentUserId }: { companyId: string
           <Users className="mt-0.5 h-5 w-5 text-accent" />
           <div>
             <h2 className="text-sm font-semibold">Matriz avançada de permissões</h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">Exceções individuais aplicadas e auditadas pelo backend.</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">Exceções individuais aplicadas e auditadas com rastreabilidade.</p>
           </div>
         </div>
         <select value={selected?.usuario_id ?? ""} onChange={(event) => {

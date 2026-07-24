@@ -63,7 +63,7 @@ export function AuditoriaPage() {
             </span>
           </div>
           <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground">
-            O backend classifica risco, categoria e mantém antes/depois quando disponível. Cada
+            Cada evento é classificado por risco e categoria, com registro do antes e depois quando disponível. Cada
             empresa enxerga apenas os eventos do próprio ambiente.
           </p>
         </div>

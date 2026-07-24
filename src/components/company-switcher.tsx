@@ -47,7 +47,7 @@ export function CompanySwitcher({ empresas, empresaAtual, onSelectEmpresa }: Com
           role="combobox"
           aria-expanded={open}
           aria-label="Selecionar empresa"
-          className="h-9 w-[280px] justify-between gap-2 px-3 text-left text-xs font-medium"
+          className="h-10 w-[240px] max-w-[280px] justify-between gap-2 px-3 text-left text-xs font-medium xl:w-[260px]"
         >
           <span className="flex min-w-0 items-center gap-2">
             <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
