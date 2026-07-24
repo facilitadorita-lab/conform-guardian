@@ -280,24 +280,6 @@ function MobileNavigation({
   );
 }
 
-function buildBreadcrumbs(pathname: string, title: string) {
-  if (pathname === "/dashboard") return [title];
-  const parts = pathname
-    .split("/")
-    .filter(Boolean)
-    .map((part) => humanizePath(part));
-  const last = parts.at(-1);
-  if (last?.toLowerCase() === title.toLowerCase()) return parts;
-  return [...parts.slice(0, -1), title];
-}
-
-function humanizePath(value: string) {
-  return value
-    .replaceAll("-", " ")
-    .replaceAll("_", " ")
-    .replace(/^\w/, (char) => char.toUpperCase());
-}
-
 function AccessValidationScreen({ error }: { error?: Error | null }) {
   const hasConfigurationError = Boolean(error?.message.toLowerCase().includes("supabase"));
   return (
