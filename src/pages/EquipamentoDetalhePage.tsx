@@ -313,7 +313,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
           icon={ShieldCheck}
           label="Status consolidado"
           value={statusLabel(equipamento.status)}
-          helper="Calculado pelo backend considerando registros atuais."
+          helper="Atualizado com base nos registros atuais do equipamento."
         >
           <StatusBadge tone={equipamento.status}>{statusLabel(equipamento.status)}</StatusBadge>
         </EquipmentSummaryCard>
@@ -601,7 +601,7 @@ function EquipmentQrDialog({
         </div>
         <p className="mt-3 text-xs leading-5 text-muted-foreground">
           O QR não contém dados do equipamento. Ele aponta para uma rota protegida que exige login e
-          valida o acesso à empresa no backend.
+          valida o acesso à empresa com segurança.
         </p>
         {friendlyError ? <p className="mt-3 text-xs text-danger">{friendlyError}</p> : null}
         <div className="mt-5 flex flex-wrap justify-center gap-2">
