@@ -188,7 +188,7 @@ export function GovernanceSettings({
             <div>
               <h2 className="text-sm font-semibold">Retenção e preservação legal</h2>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                Defina prazos por módulo. Alterações exigem MFA e são aplicadas no backend.
+                Defina prazos por módulo. Alterações exigem MFA e são aplicadas com segurança.
               </p>
             </div>
           </div>
