@@ -296,8 +296,8 @@ export function ManutencoesPage() {
                           {manutencao.equipamento}
                         </span>
                       )}
-                      <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                        {manutencao.id}
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        {manutencao.tipo}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{manutencao.tipo}</td>
