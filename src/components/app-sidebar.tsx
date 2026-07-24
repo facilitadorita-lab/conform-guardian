@@ -26,6 +26,7 @@ import { useSession } from "@/hooks/use-session";
 import type { PlanoRecurso } from "@/types";
 import { cn } from "@/lib/utils";
 import { getPlanName, hasPlanFeature } from "@/utils/plan-features";
+import { BrandMark, BrandText } from "./brand";
 
 type NavItem = {
   to: string;
@@ -191,48 +192,42 @@ export function AppSidebar() {
   return (
     <aside
       className={cn(
-        "hidden shrink-0 flex-col border-r border-sidebar-border bg-[linear-gradient(180deg,oklch(0.24_0.052_256),oklch(0.19_0.045_256))] text-sidebar-foreground md:flex",
+        "cf-sidebar-bg hidden shrink-0 flex-col border-r border-white/[0.06] text-sidebar-foreground md:flex",
         "cf-transition relative",
-        collapsed ? "w-[84px]" : "w-[288px]",
+        collapsed ? "w-[76px]" : "w-[268px]",
       )}
     >
       <div
-        className={cn("border-b border-sidebar-border bg-white/[0.03] px-5 py-4", collapsed && "px-3")}
+        className={cn(
+          "relative flex h-[80px] items-center border-b border-white/[0.08] px-5",
+          collapsed && "justify-center px-3",
+        )}
       >
-        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div
-            className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-[14px] bg-white shadow-md shadow-black/20 ring-1 ring-white/20"
-            title="Conform Flow"
-          >
-            <img
-              src="/conform-flow-logo-transparent.png"
-              alt="Conform Flow"
-              className="h-12 w-12 object-contain [transform:scale(1.55)]"
-            />
-          </div>
-          {!collapsed ? (
-            <div className="min-w-0 leading-tight">
-              <div className="whitespace-nowrap text-[15px] font-semibold tracking-tight text-white">
-                Conform Flow
-              </div>
-              <div className="mt-0.5 whitespace-nowrap text-[11px] font-medium text-cyan-100/70">
-                Gestão de conformidade
-              </div>
-            </div>
-          ) : null}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-70 [background:radial-gradient(circle_at_top_left,rgba(96,165,250,0.18),transparent_55%)]"
+        />
+        <div className={cn("relative flex items-center gap-3", collapsed && "justify-center")}>
+          <BrandMark size={50} />
+          {!collapsed ? <BrandText /> : null}
         </div>
       </div>
 
-      <nav className={cn("flex-1 overflow-y-auto py-5", collapsed ? "px-3" : "px-4")}>
+      <nav
+        className={cn(
+          "cf-scrollbar-thin min-h-0 flex-1 overflow-y-auto py-5",
+          collapsed ? "px-3" : "px-3",
+        )}
+      >
         <div className="space-y-7">
           {visibleGroups.map((group) => (
             <div key={group.label}>
               {!collapsed ? (
-                <div className="mb-3 px-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-foreground/45">
+                <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-100/40">
                   {group.label}
                 </div>
               ) : null}
-              <ul className="space-y-1.5">
+              <ul className="space-y-1">
                 {group.items.map((item) => {
                   const active = item.exact
                     ? pathname === item.to
@@ -246,32 +241,39 @@ export function AppSidebar() {
                         to={item.to as any}
                         title={collapsed ? item.label : undefined}
                         className={cn(
-                          "group relative flex items-center rounded-xl text-sm cf-transition",
-                          collapsed ? "h-11 justify-center px-0" : "gap-3 px-3.5 py-3",
+                          "group relative flex items-center rounded-[11px] text-sm cf-transition",
+                          collapsed ? "h-11 justify-center px-0" : "min-h-[50px] gap-3 px-3.5 py-2",
                           active
-                            ? "bg-white text-sidebar-primary-foreground shadow-sm"
-                            : "text-sidebar-foreground/78 hover:bg-white/[0.08] hover:text-white",
+                            ? "cf-active-nav text-[#0B2340]"
+                            : "text-sky-50/78 hover:bg-white/[0.055] hover:text-white",
                         )}
                       >
                         {active ? (
-                          <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-accent" />
+                          <span className="absolute -left-[7px] top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-[#3A86FF]" />
                         ) : null}
                         <Icon
                           className={cn(
                             "h-4 w-4 shrink-0",
                             active
-                              ? "text-accent"
-                              : "text-sidebar-foreground/65 group-hover:text-white",
+                              ? "text-[#2563EB]"
+                              : "text-sky-100/60 group-hover:text-white",
                           )}
                         />
                         {!collapsed ? (
                           <span className="min-w-0">
-                            <span className="block truncate font-medium">{item.label}</span>
+                            <span
+                              className={cn(
+                                "block truncate",
+                                active ? "font-semibold" : "font-medium",
+                              )}
+                            >
+                              {item.label}
+                            </span>
                             {item.description ? (
                               <span
                                 className={cn(
                                   "mt-0.5 block truncate text-[11px]",
-                                  active ? "text-primary/65" : "text-sidebar-foreground/42",
+                                  active ? "text-[#0B2340]/55" : "text-sky-100/40",
                                 )}
                               >
                                 {item.description}
@@ -289,29 +291,38 @@ export function AppSidebar() {
         </div>
       </nav>
 
-      <div className={cn("border-t border-sidebar-border p-4", collapsed && "px-3")}>
+      <div className={cn("shrink-0 border-t border-white/[0.08] p-3", collapsed && "px-2")}>
         {!collapsed && empresaAtual ? (
-          <div className="mb-3 flex items-start gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2">
-            <Building2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-200/80" />
-            <div className="min-w-0">
+          <div
+            className="mb-2 flex items-center gap-2 rounded-[10px] border border-white/[0.08] bg-white/[0.05] px-2.5 py-2"
+            title={`${empresaAtual.nome} — CNPJ ${empresaAtual.cnpj}`}
+          >
+            <Building2 className="h-3.5 w-3.5 shrink-0 text-sky-200/80" />
+            <div className="min-w-0 leading-tight">
               <div className="truncate text-[12px] font-medium text-white">{empresaAtual.nome}</div>
-              <div className="mt-0.5 truncate text-[10px] text-sidebar-foreground/55">
-                CNPJ {empresaAtual.cnpj} · {authContext?.usuario.isMaster ? "Admin Master" : planName}
+              <div className="mt-0.5 truncate text-[10px] text-sky-100/50">
+                {authContext?.usuario.isMaster ? "Admin Master" : planName}
               </div>
             </div>
           </div>
         ) : null}
-        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold ring-1 ring-white/10">
+        <div
+          className={cn(
+            "flex items-center gap-2.5 rounded-[10px] px-1.5 py-1.5",
+            collapsed && "justify-center px-0",
+          )}
+          title={authContext?.usuario.email ?? undefined}
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-[12px] font-semibold text-white ring-1 ring-white/10">
             {userInitials}
           </div>
           {!collapsed ? (
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">
+            <div className="min-w-0 flex-1 leading-tight">
+              <div className="truncate text-[13px] font-medium text-white">
                 {authContext?.usuario.nome ?? "Usuário"}
               </div>
-              <div className="truncate text-[11px] text-sidebar-foreground/55">
-                {authContext?.usuario.email ?? "Sessão ativa"}
+              <div className="truncate text-[11px] text-sky-100/55">
+                {authContext?.usuario.isMaster ? "Admin Master" : "Sessão ativa"}
               </div>
             </div>
           ) : null}
@@ -321,7 +332,7 @@ export function AppSidebar() {
       <button
         type="button"
         onClick={() => setCollapsed((current) => !current)}
-        className="absolute -right-3 top-6 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm cf-transition hover:bg-muted"
+        className="absolute -right-4 top-[58px] z-10 flex h-8 w-8 items-center justify-center rounded-full border border-border/70 bg-white text-foreground shadow-[0_4px_12px_rgba(8,28,51,0.14)] cf-transition hover:bg-muted"
         aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
       >
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}

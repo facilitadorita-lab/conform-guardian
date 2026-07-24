@@ -111,8 +111,8 @@ export function AppShell({
     <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
       <AppSidebar />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="z-30 shrink-0 border-b border-border/70 bg-background/90 backdrop-blur-xl">
-          <div className="flex min-h-[3.75rem] items-center gap-3 px-4 md:gap-4 md:px-6">
+        <header className="z-30 shrink-0 border-b border-border/60 bg-white/90 backdrop-blur-[12px] supports-[backdrop-filter]:bg-white/80">
+          <div className="flex h-16 items-center gap-3 px-4 md:gap-4 md:px-7">
             <button
               type="button"
               onClick={() => setMobileOpen((open) => !open)}
@@ -124,10 +124,10 @@ export function AppShell({
             </button>
 
             <div className="relative hidden min-w-0 flex-1 sm:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
               <input
                 placeholder="Buscar documentos, equipamentos, pendências..."
-                className="cf-focus-ring h-10 w-full max-w-[560px] rounded-xl border border-input bg-card/75 pl-10 pr-3 text-sm placeholder:text-muted-foreground outline-none cf-transition focus:bg-card"
+                className="cf-focus-ring h-[42px] w-full max-w-[540px] rounded-[11px] border border-border/70 bg-[rgba(248,250,252,0.9)] pl-10 pr-3 text-sm placeholder:text-muted-foreground/70 outline-none cf-transition focus:bg-white"
                 aria-label="Busca global"
               />
             </div>
@@ -137,7 +137,7 @@ export function AppShell({
                 <button
                   type="button"
                   title="Assistente FlowIA disponível"
-                  className="hidden h-10 items-center gap-2 rounded-xl border border-accent/20 bg-accent/5 px-3 text-xs font-semibold text-accent cf-transition hover:bg-accent/10 xl:inline-flex"
+                  className="hidden h-10 items-center gap-2 rounded-[11px] border border-accent/25 bg-accent/[0.06] px-3 text-xs font-semibold text-accent cf-transition hover:bg-accent/10 xl:inline-flex"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   FlowIA
@@ -145,8 +145,9 @@ export function AppShell({
                 </button>
               ) : null}
 
-              <div
-                className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground cf-transition hover:border-accent/30 hover:text-accent"
+              <button
+                type="button"
+                className="relative flex h-10 w-10 items-center justify-center rounded-[11px] text-muted-foreground cf-transition hover:bg-accent/[0.08] hover:text-accent"
                 title={alertasCount > 0 ? `${alertasCount} alertas ativos` : "Sem alertas"}
               >
                 <Bell className="h-4 w-4" />
@@ -155,7 +156,7 @@ export function AppShell({
                     {alertasCount > 99 ? "99+" : alertasCount}
                   </span>
                 ) : null}
-              </div>
+              </button>
 
               {podeTrocarEmpresa ? (
                 <div className="hidden max-w-[280px] items-center gap-2 md:flex">
@@ -172,7 +173,7 @@ export function AppShell({
                 </div>
               ) : (
                 <div
-                  className="hidden h-10 items-center gap-2.5 rounded-xl border border-border bg-card px-3 md:flex"
+                  className="hidden h-10 items-center gap-2.5 rounded-[11px] border border-border/70 bg-white px-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] md:flex"
                   title={`${empresaAtual.nome} — CNPJ ${empresaAtual.cnpj}`}
                 >
                   <Building2 className="h-4 w-4 text-accent" />
@@ -197,8 +198,9 @@ export function AppShell({
                     await navigate({ to: "/login", search: { msg: undefined } });
                   }
                 }}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground cf-transition hover:border-danger/30 hover:bg-danger/5 hover:text-danger"
+                className="flex h-10 w-10 items-center justify-center rounded-[11px] text-muted-foreground cf-transition hover:bg-danger/[0.08] hover:text-danger"
                 aria-label="Sair da plataforma"
+                title="Sair"
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -216,9 +218,9 @@ export function AppShell({
           ) : null}
         </header>
 
-        <main className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
-          <div className="cf-watermark cf-watermark-dark" aria-hidden />
-          <div className="relative mx-auto flex w-full min-w-0 max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-7">
+        <main className="cf-app-bg relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
+          <div className="cf-watermark" aria-hidden />
+          <div className="relative mx-auto flex w-full min-w-0 max-w-[1480px] flex-col gap-5 px-4 py-6 md:gap-6 md:px-8 md:py-8">
             <PageHeader
               title={title}
               description={description}
