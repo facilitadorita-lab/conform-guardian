@@ -108,10 +108,10 @@ export function AppShell({
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-background text-foreground">
+    <div className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
       <AppSidebar />
-      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
-        <header className="sticky top-0 z-30 border-b border-border/70 bg-background/78 backdrop-blur-2xl">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="z-30 shrink-0 border-b border-border/70 bg-background/90 backdrop-blur-xl">
           <div className="flex min-h-[3.75rem] items-center gap-3 px-4 md:gap-4 md:px-6">
             <button
               type="button"
@@ -216,7 +216,7 @@ export function AppShell({
           ) : null}
         </header>
 
-        <main className="relative flex-1">
+        <main className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
           <div className="cf-watermark cf-watermark-dark" aria-hidden />
           <div className="relative mx-auto flex w-full min-w-0 max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-7">
             <PageHeader
