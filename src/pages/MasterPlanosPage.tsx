@@ -72,7 +72,7 @@ export function MasterPlanosPage() {
     >
       {salvarPlano.isSuccess ? (
         <div className="rounded-xl border border-success/25 bg-success/5 px-4 py-3 text-sm text-success">
-          Plano atualizado no backend e pronto para refletir no catálogo público.
+          Plano atualizado com sucesso e pronto para refletir no catálogo público.
         </div>
       ) : null}
       {salvarPlano.error ? (
@@ -120,7 +120,7 @@ export function MasterPlanosPage() {
           <div className="rounded-xl border border-border bg-card p-5 xl:col-span-1">
             <h2 className="text-sm font-semibold">Valores e limites</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Campos preparados para salvar no backend via RPC do Admin Master.
+              Preencha os campos para atualizar o plano.
             </p>
 
             <div className="mt-5 space-y-4">
@@ -238,7 +238,7 @@ export function MasterPlanosPage() {
               <div>
                 <h2 className="text-sm font-semibold">Recursos liberados no plano</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  O frontend mostra/oculta módulos; o backend também bloqueia gravações fora do
+                  O painel mostra ou oculta módulos e as gravações fora do escopo também são bloqueadas fora do
                   plano.
                 </p>
               </div>
