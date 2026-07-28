@@ -28,7 +28,7 @@ export function ProfessionalGovernancePanel({
     <div className="grid gap-4 xl:grid-cols-2">
       <DataQualityCard companyId={companyId} canAdmin={canAdmin} />
       {canAdmin ? <IsolationDiagnosticCard companyId={companyId} /> : null}
-      <NotificationPreferencesCard companyId={companyId} />
+      <NotificationPreferencesCard companyId={companyId} canAdmin={canAdmin} />
       {canAdmin ? (
         <PermissionsMatrixCard companyId={companyId} currentUserId={currentUserId} />
       ) : null}
@@ -173,7 +173,13 @@ function DataQualityCard({ companyId, canAdmin }: { companyId: string; canAdmin:
   );
 }
 
-function NotificationPreferencesCard({ companyId }: { companyId: string }) {
+function NotificationPreferencesCard({
+  companyId,
+  canAdmin,
+}: {
+  companyId: string;
+  canAdmin: boolean;
+}) {
   const client = useQueryClient();
   const query = useQuery({
     queryKey: ["professional", "notifications", companyId],
@@ -183,6 +189,9 @@ function NotificationPreferencesCard({ companyId }: { companyId: string }) {
   const [inApp, setInApp] = useState(true);
   const [digest, setDigest] = useState(false);
   const [severity, setSeverity] = useState("info");
+  const [ruleName, setRuleName] = useState("");
+  const [ruleEvent, setRuleEvent] = useState("vencimento");
+  const [ruleHours, setRuleHours] = useState(24);
   useEffect(() => {
     const preference = query.data?.preferencias;
     if (!preference) return;
@@ -202,6 +211,22 @@ function NotificationPreferencesCard({ companyId }: { companyId: string }) {
       }),
     onSuccess: () =>
       client.invalidateQueries({ queryKey: ["professional", "notifications", companyId] }),
+  });
+  const saveRule = useMutation({
+    mutationFn: () =>
+      professionalService.saveNotificationRule(companyId, {
+        nome: ruleName.trim() || "Escalonamento de vencimento",
+        evento: ruleEvent,
+        antecedencia_dias: [30, 7, 1, 0],
+        canais: ["in_app", "email"],
+        escalonar_apos_horas: Math.max(1, Math.min(720, ruleHours)),
+        destinatarios_perfis: ["administrador", "responsavel_tecnico"],
+        ativa: true,
+      }),
+    onSuccess: () => {
+      setRuleName("");
+      void client.invalidateQueries({ queryKey: ["professional", "notifications", companyId] });
+    },
   });
   const delivery = query.data?.entregas_30d;
   return (
@@ -256,6 +281,61 @@ function NotificationPreferencesCard({ companyId }: { companyId: string }) {
       </Button>
       {save.error || query.error ? (
         <ErrorText message={(save.error ?? query.error)?.message} />
+      ) : null}
+      {canAdmin ? (
+        <div className="mt-5 border-t border-border pt-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Regras de escalonamento
+          </div>
+          <div className="mt-3 space-y-2">
+            {(query.data?.regras ?? []).slice(0, 4).map((rule) => (
+              <div
+                key={rule.id}
+                className="flex items-center justify-between rounded-xl border border-border bg-muted/20 px-3 py-2 text-xs"
+              >
+                <span className="font-medium">{rule.nome}</span>
+                <span className="text-muted-foreground">
+                  {rule.escalonar_apos_horas ?? "—"}h · {rule.ativa ? "ativa" : "pausada"}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_150px_90px_auto]">
+            <input
+              value={ruleName}
+              onChange={(event) => setRuleName(event.target.value)}
+              placeholder="Nome da regra"
+              className="h-9 rounded-lg border border-input bg-background px-3 text-xs"
+            />
+            <select
+              value={ruleEvent}
+              onChange={(event) => setRuleEvent(event.target.value)}
+              className="h-9 rounded-lg border border-input bg-background px-2 text-xs"
+            >
+              <option value="vencimento">Vencimento</option>
+              <option value="pendencia_critica">Pendência crítica</option>
+              <option value="pagamento_falhou">Pagamento falhou</option>
+            </select>
+            <input
+              type="number"
+              min={1}
+              max={720}
+              value={ruleHours}
+              onChange={(event) => setRuleHours(Number(event.target.value))}
+              className="h-9 rounded-lg border border-input bg-background px-2 text-xs"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => saveRule.mutate()}
+              disabled={saveRule.isPending}
+            >
+              Adicionar
+            </Button>
+          </div>
+          {saveRule.error ? <ErrorText message={saveRule.error.message} /> : null}
+        </div>
       ) : null}
     </section>
   );

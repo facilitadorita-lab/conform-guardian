@@ -77,6 +77,12 @@ export const professionalService = {
       p_payload: payload,
     });
   },
+  saveNotificationRule(companyId: string, payload: Record<string, unknown>) {
+    return invokeRpc("api_salvar_regra_notificacao", {
+      p_empresa_id: companyId,
+      p_payload: payload,
+    });
+  },
   dataQuality(companyId: string) {
     return invokeRpc<DataQualityResult>("api_qualidade_dados", { p_empresa_id: companyId });
   },
