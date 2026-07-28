@@ -18,6 +18,10 @@ export interface VencimentoConsolidado {
 }
 
 export const vencimentosService = {
+  async calendario(empresaId: string, start: string, end: string) {
+    const { professionalService } = await import("./professionalService");
+    return professionalService.calendar(empresaId, start, end);
+  },
   async listar(empresaId: string): Promise<VencimentoConsolidado[]> {
     const [documentos, equipamentos, manutencoes] = await Promise.all([
       documentosService.listar(empresaId, { limite: 250 }),

@@ -1,9 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Activity, AlertTriangle, CheckCircle2, DatabaseBackup, Webhook, BellRing, CalendarClock, Bug, Rocket, WalletCards } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  CheckCircle2,
+  DatabaseBackup,
+  Webhook,
+  BellRing,
+  CalendarClock,
+  Bug,
+  Rocket,
+  WalletCards,
+} from "lucide-react";
 import { MasterOnly } from "@/components/master-guard";
 import { adminMasterService } from "@/services";
 import { formatDateTimeBR } from "@/utils/date";
+import { MasterOperationalControls } from "@/components/master-operational-controls";
 
 export const Route = createFileRoute("/master/saude")({ component: MasterHealthPage });
 
@@ -37,10 +49,30 @@ function MasterHealthPage() {
           value={String(data?.webhook_failures_24h ?? 0)}
           danger={Boolean(data?.webhook_failures_24h)}
         />
-        <Kpi icon={Bug} label="Erros do frontend (24h)" value={String(data?.client_errors_24h ?? 0)} danger={Boolean(data?.client_errors_24h)} />
-        <Kpi icon={BellRing} label="Falhas de notificação (24h)" value={String(data?.notification_failures_24h ?? 0)} danger={Boolean(data?.notification_failures_24h)} />
-        <Kpi icon={CalendarClock} label="Falhas de relatórios (24h)" value={String(data?.scheduled_report_failures_24h ?? 0)} danger={Boolean(data?.scheduled_report_failures_24h)} />
-        <Kpi icon={WalletCards} label="Cobranças pendentes" value={String(data?.pending_dunning ?? 0)} danger={Boolean(data?.pending_dunning)} />
+        <Kpi
+          icon={Bug}
+          label="Erros do frontend (24h)"
+          value={String(data?.client_errors_24h ?? 0)}
+          danger={Boolean(data?.client_errors_24h)}
+        />
+        <Kpi
+          icon={BellRing}
+          label="Falhas de notificação (24h)"
+          value={String(data?.notification_failures_24h ?? 0)}
+          danger={Boolean(data?.notification_failures_24h)}
+        />
+        <Kpi
+          icon={CalendarClock}
+          label="Falhas de relatórios (24h)"
+          value={String(data?.scheduled_report_failures_24h ?? 0)}
+          danger={Boolean(data?.scheduled_report_failures_24h)}
+        />
+        <Kpi
+          icon={WalletCards}
+          label="Cobranças pendentes"
+          value={String(data?.pending_dunning ?? 0)}
+          danger={Boolean(data?.pending_dunning)}
+        />
       </div>
       {query.error ? (
         <div className="rounded-xl border border-danger/30 bg-danger/5 p-4 text-sm text-danger">
@@ -108,8 +140,19 @@ function MasterHealthPage() {
           </div>
         </div>
       </section>
+      <MasterOperationalControls />
       <section className="rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center gap-3"><Rocket className="h-5 w-5 text-accent" /><div><h2 className="text-sm font-semibold">Última publicação em produção</h2><p className="text-xs text-muted-foreground">{data?.last_deployment ? `${data.last_deployment.versao} · ${data.last_deployment.status} · ${formatDateTimeBR(data.last_deployment.concluido_at ?? data.last_deployment.iniciado_at)}` : "Ainda não há publicação registrada pelo pipeline profissional."}</p></div></div>
+        <div className="flex items-center gap-3">
+          <Rocket className="h-5 w-5 text-accent" />
+          <div>
+            <h2 className="text-sm font-semibold">Última publicação em produção</h2>
+            <p className="text-xs text-muted-foreground">
+              {data?.last_deployment
+                ? `${data.last_deployment.versao} · ${data.last_deployment.status} · ${formatDateTimeBR(data.last_deployment.concluido_at ?? data.last_deployment.iniciado_at)}`
+                : "Ainda não há publicação registrada pelo pipeline profissional."}
+            </p>
+          </div>
+        </div>
       </section>
     </MasterOnly>
   );

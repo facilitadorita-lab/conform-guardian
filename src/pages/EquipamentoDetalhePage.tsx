@@ -39,6 +39,7 @@ import {
 } from "@/services/equipamentosService";
 import { formatDateBR } from "@/utils/date";
 import { statusLabel } from "@/utils/status";
+import { cacheQrEquipment } from "@/lib/offline-cache";
 
 const tabs = [
   "Dados gerais",
@@ -84,11 +85,19 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
   const rotateQr = useMutation({
     mutationFn: () => professionalService.rotateEquipmentQr(id),
     onSuccess: (data) =>
-      queryClient.setQueryData(
-        ["professional", "equipment-qr", id],
-        data.qr_token,
-      ),
+      queryClient.setQueryData(["professional", "equipment-qr", id], data.qr_token),
   });
+
+  useEffect(() => {
+    if (!qrQuery.data || !equipamento || !selectedCompanyId) return;
+    cacheQrEquipment({
+      empresa_id: selectedCompanyId,
+      equipamento_id: equipamento.id,
+      qr_token: qrQuery.data,
+      nome: equipamento.nome,
+      codigo: equipamento.codigo,
+    });
+  }, [equipamento, qrQuery.data, selectedCompanyId]);
 
   function changeTab(nextTab: Tab) {
     setTab(nextTab);

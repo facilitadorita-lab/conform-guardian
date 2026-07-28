@@ -8,12 +8,14 @@ import {
   LockKeyhole,
   MailCheck,
   ShieldCheck,
+  Sparkles,
   Tag,
   Users,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAuthContext, useConfiguracoes, useMatrizDocumental } from "@/hooks/use-conform-data";
@@ -25,7 +27,7 @@ import type { ConfiguracaoCatalogoItem, PlanoRecurso } from "@/types";
 import { statusLabel } from "@/utils/status";
 import { GovernanceSettings } from "@/components/governance-settings";
 import { ProfessionalGovernancePanel } from "@/components/professional-governance-panel";
-import { stripeService } from "@/services";
+import { professionalService, stripeService } from "@/services";
 
 const iconMap: Record<string, LucideIcon> = {
   "bell-ring": BellRing,
@@ -71,6 +73,12 @@ export function ConfiguracoesPage() {
   );
   const recursos = plano?.recursos ?? {};
   const recursosLiberados = recursosPrincipais.filter((recurso) => Boolean(recursos[recurso.key]));
+  const segmentAssessment = useQuery({
+    queryKey: ["segment-assessment", empresaAtual?.id],
+    queryFn: () => professionalService.segmentAssessment(empresaAtual!.id),
+    enabled: Boolean(empresaAtual?.id),
+    staleTime: 10 * 60_000,
+  });
 
   async function openBillingPortal() {
     if (!empresaAtual?.id) return;
@@ -142,6 +150,14 @@ export function ConfiguracoesPage() {
       </Surface>
 
       {permissions?.limits ? <UsageMeters limits={permissions.limits} /> : null}
+
+      {empresaAtual?.id ? (
+        <SegmentAssessmentCard
+          data={segmentAssessment.data}
+          isLoading={segmentAssessment.isLoading}
+          error={segmentAssessment.error}
+        />
+      ) : null}
 
       <Surface className="space-y-4">
         <SectionHeader
@@ -301,6 +317,74 @@ export function ConfiguracoesPage() {
         </>
       ) : null}
     </AppShell>
+  );
+}
+
+function SegmentAssessmentCard({
+  data,
+  isLoading,
+  error,
+}: {
+  data?: Awaited<ReturnType<typeof professionalService.segmentAssessment>>;
+  isLoading: boolean;
+  error: Error | null;
+}) {
+  const matriz = data?.matriz_documental as { exigidos?: number; cadastrados?: number } | undefined;
+  return (
+    <Surface className="space-y-4 border-accent/20 bg-accent/5">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+          <Sparkles className="h-5 w-5" />
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold">Leitura inteligente do segmento</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            A IA cruza segmento, tipo de estabelecimento e dados estruturados para sugerir
+            prioridades. Anexos e PDFs não são lidos.
+          </p>
+        </div>
+      </div>
+      {isLoading ? (
+        <div className="h-16 animate-pulse rounded-xl bg-background/70" />
+      ) : error ? (
+        <p className="text-xs text-danger">{error.message}</p>
+      ) : data ? (
+        <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="rounded-xl border border-border bg-background/70 p-4">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Perfil identificado
+            </div>
+            <div className="mt-2 text-lg font-semibold">
+              {data.segmento ?? "Segmento não informado"}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {data.tipo_estabelecimento ?? "Tipo não informado"} · confiança da IA:{" "}
+              {data.confianca}
+            </p>
+            <div className="mt-3 text-xs text-muted-foreground">
+              {matriz?.exigidos ?? 0} documentos exigidos · {matriz?.cadastrados ?? 0} cadastrados
+            </div>
+          </div>
+          <div className="space-y-2">
+            {[...(data.analise_ia ?? []), ...(data.recomendacoes ?? [])]
+              .slice(0, 4)
+              .map((item, index) => (
+                <div
+                  key={`${index}-${item}`}
+                  className="rounded-xl border border-border bg-background/70 p-3 text-sm leading-5"
+                >
+                  {item}
+                </div>
+              ))}
+            {!data.analise_ia?.length && !data.recomendacoes?.length ? (
+              <p className="text-xs text-muted-foreground">
+                Cadastre segmento e tipo de estabelecimento para uma avaliação mais precisa.
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </Surface>
   );
 }
 

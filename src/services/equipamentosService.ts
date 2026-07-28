@@ -3,6 +3,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import { equipamentosMock } from "@/mocks";
 import type { Equipamento, EquipamentoResumo, StatusConformidade } from "@/types";
 import { cloneMock, extractRpcItems, invokeRpc, type PaginatedRpcResponse } from "./service-utils";
+import { cacheEquipmentDetail, getCachedEquipmentDetail } from "@/lib/offline-cache";
 
 export interface ListarEquipamentosParams {
   busca?: string;
@@ -62,21 +63,36 @@ export const equipamentosService = {
         : null;
     }
 
-    const data = await invokeRpc<
+    let data:
       | ApiEquipamentoDetalheResponse
       | ApiEquipamento
       | ApiEquipamentoDetalheResponse[]
       | ApiEquipamento[]
-      | null
-    >("api_equipamento_detalhe", {
-      p_empresa_id: empresaId,
-      p_equipamento_id: equipamentoId,
-    });
+      | null;
+    try {
+      data = await invokeRpc<
+        | ApiEquipamentoDetalheResponse
+        | ApiEquipamento
+        | ApiEquipamentoDetalheResponse[]
+        | ApiEquipamento[]
+        | null
+      >("api_equipamento_detalhe", {
+        p_empresa_id: empresaId,
+        p_equipamento_id: equipamentoId,
+      });
+    } catch (error) {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        return getCachedEquipmentDetail(empresaId, equipamentoId) as EquipamentoDetalhe | null;
+      }
+      throw error;
+    }
 
     if (!data) return null;
 
     const detalhe = normalizeEquipamentoDetalhe(data);
-    return hydrateEquipamentoAttachmentUrls(empresaId, detalhe);
+    const hydrated = await hydrateEquipamentoAttachmentUrls(empresaId, detalhe);
+    cacheEquipmentDetail(empresaId, equipamentoId, hydrated);
+    return hydrated;
   },
 
   criarCalibracao(empresaId: string, equipamentoId: string, payload: CriarCalibracaoPayload) {

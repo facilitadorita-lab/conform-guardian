@@ -9,6 +9,16 @@ import type {
 import { invokeRpc } from "./service-utils";
 
 export const professionalService = {
+  tenantIsolationSuite(companyId?: string | null) {
+    return invokeRpc<{
+      id: string;
+      status: "passed" | "failed" | "warning";
+      total_checks: number;
+      failed_checks: number;
+      checks: Array<{ codigo: string; status: string; inconsistencias: number }>;
+      executed_at: string;
+    }>("api_master_testar_isolamento", { p_empresa_id: companyId ?? null });
+  },
   permissionMatrix(companyId: string) {
     return invokeRpc<PermissionMatrix>("api_matriz_permissoes_empresa", {
       p_empresa_id: companyId,
@@ -122,5 +132,35 @@ export const professionalService = {
       checks: Array<{ tabela: string; registros_empresa: number }>;
       executado_em: string;
     }>("api_diagnostico_isolamento", { p_empresa_id: companyId });
+  },
+  segmentAssessment(companyId: string) {
+    return invokeRpc<{
+      empresa_id: string;
+      segmento: string | null;
+      tipo_estabelecimento: string | null;
+      cnae: string | null;
+      confianca: "alta" | "media" | "baixa";
+      chaves_documentais: string[];
+      analise_ia: string[];
+      recomendacoes: string[];
+      matriz_documental: Record<string, unknown>;
+      politica: { leu_anexos: boolean; fonte: string };
+    }>("api_avaliar_segmento_ia", { p_empresa_id: companyId });
+  },
+  calendar(companyId: string, start: string, end: string) {
+    return invokeRpc<
+      Array<{
+        id: string;
+        modulo: string;
+        titulo: string;
+        vencimento: string;
+        responsavel_id: string | null;
+        status: string;
+      }>
+    >("api_calendario_vencimentos", {
+      p_empresa_id: companyId,
+      p_inicio: start,
+      p_fim: end,
+    });
   },
 };

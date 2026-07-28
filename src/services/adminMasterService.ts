@@ -45,6 +45,78 @@ export interface CriarEmpresaResult {
 }
 
 export const adminMasterService = {
+  listarEnsaiosBackup() {
+    return invokeRpc<
+      Array<{
+        id: string;
+        ambiente: string;
+        backup_reference: string;
+        evidence_reference: string | null;
+        status: string;
+        notes: string | null;
+        rpo_minutes: number | null;
+        rto_minutes: number | null;
+        completed_at: string | null;
+        created_at: string;
+      }>
+    >("api_master_listar_ensaios_backup", { p_limite: 20 });
+  },
+  registrarEnsaioBackup(payload: Record<string, unknown>) {
+    return invokeRpc("api_master_registrar_ensaio_backup", { p_payload: payload });
+  },
+  testarIsolamento(companyId?: string | null) {
+    return invokeRpc<{
+      id: string;
+      status: "passed" | "failed" | "warning";
+      total_checks: number;
+      failed_checks: number;
+      checks: Array<Record<string, unknown>>;
+      executed_at: string;
+    }>("api_master_testar_isolamento", { p_empresa_id: companyId ?? null });
+  },
+  apiSecuritySnapshot() {
+    return invokeRpc<{
+      rls_tables: number;
+      security_definer_functions: number;
+      public_execute_functions: number;
+      generated_at: string;
+    }>("api_master_api_security_snapshot");
+  },
+  filaCobranca() {
+    return invokeRpc<
+      Array<{
+        id: string;
+        empresa_id: string;
+        nome_fantasia: string;
+        email_principal: string | null;
+        status: string;
+        tentativa: number;
+        valor_centavos: number | null;
+        erro_codigo: string | null;
+        proxima_tentativa_at: string | null;
+        created_at: string;
+      }>
+    >("api_master_fila_cobranca", { p_limite: 50 });
+  },
+  enfileirarCobranca(tentativaId: string) {
+    return invokeRpc("api_master_enfileirar_cobranca", { p_tentativa_id: tentativaId });
+  },
+  consumoEmpresas() {
+    return invokeRpc<
+      Array<{
+        empresa_id: string;
+        nome_fantasia: string | null;
+        documentos: number | null;
+        equipamentos: number | null;
+        storage_bytes: number | null;
+        limite_documentos: number | null;
+        limite_equipamentos: number | null;
+        limite_storage_mb: number | null;
+        segmento: string | null;
+        tipo_estabelecimento: string | null;
+      }>
+    >("api_master_consumo_empresas");
+  },
   async financeiroResumo(): Promise<FinanceiroResumoMaster> {
     return invokeRpc<FinanceiroResumoMaster>("api_master_financeiro_resumo");
   },
