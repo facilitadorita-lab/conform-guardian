@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LogoSignature } from "@/components/public/marketing";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { usePublicCatalog } from "@/hooks/use-public-catalog";
+import { usePublicCatalog, usePublicPartnerCatalog } from "@/hooks/use-public-catalog";
 import { signupService } from "@/services";
 import type { BillingInterval, PreparedSignup } from "@/types";
 import { formatCnpj } from "@/utils/cnpj";
@@ -33,6 +33,10 @@ type Relationship =
 function CadastroPage() {
   const search = Route.useSearch();
   const catalog = usePublicCatalog();
+  const partnerCatalog = usePublicPartnerCatalog();
+  const [commercialMode, setCommercialMode] = useState<"empresa" | "parceiro">(
+    search.plan?.startsWith("parceiro_") ? "parceiro" : "empresa",
+  );
   const [planCode, setPlanCode] = useState(search.plan ?? "profissional");
   const [interval, setInterval] = useState<BillingInterval>(search.interval as BillingInterval);
   const [extraUsers, setExtraUsers] = useState(0);
@@ -58,10 +62,14 @@ function CadastroPage() {
     }
   }, [search.checkout]);
 
-  const selectedPlan = useMemo(
-    () => catalog.data?.plans.find((plan) => plan.codigo === planCode) ?? catalog.data?.plans[0],
-    [catalog.data?.plans, planCode],
-  );
+  const selectedPlan = useMemo(() => {
+    if (commercialMode === "parceiro") {
+      return (
+        partnerCatalog.data?.find((plan) => plan.codigo === planCode) ?? partnerCatalog.data?.[0]
+      );
+    }
+    return catalog.data?.plans.find((plan) => plan.codigo === planCode) ?? catalog.data?.plans[0];
+  }, [catalog.data?.plans, commercialMode, partnerCatalog.data, planCode]);
 
   async function onPrepare(event: React.FormEvent) {
     event.preventDefault();
@@ -81,7 +89,10 @@ function CadastroPage() {
       const result = await signupService.preparar({
         planCode: selectedPlan.codigo,
         billingInterval: interval,
-        addOns: { users: extraUsers, units: extraUnits },
+        addOns:
+          commercialMode === "parceiro"
+            ? { users: 0, units: 0 }
+            : { users: extraUsers, units: extraUnits },
         responsible: { name, email, phone, role, relationship },
         company: { cnpj, establishmentType, segment },
         terms: {
@@ -179,6 +190,22 @@ function CadastroPage() {
             <form onSubmit={onPrepare} className="mt-8 space-y-7">
               <FormSection title="Plano e cobrança">
                 <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Perfil de contratação" className="sm:col-span-2">
+                    <select
+                      value={commercialMode}
+                      onChange={(event) => {
+                        const mode = event.target.value as "empresa" | "parceiro";
+                        setCommercialMode(mode);
+                        setPlanCode(mode === "parceiro" ? "parceiro_start" : "profissional");
+                        setExtraUsers(0);
+                        setExtraUnits(0);
+                      }}
+                      className={inputClass}
+                    >
+                      <option value="empresa">Minha própria empresa</option>
+                      <option value="parceiro">Quero gerenciar empresas clientes</option>
+                    </select>
+                  </Field>
                   <Field label="Plano">
                     <select
                       value={planCode}
@@ -186,7 +213,10 @@ function CadastroPage() {
                       className={inputClass}
                       required
                     >
-                      {(catalog.data?.plans ?? []).map((plan) => (
+                      {(commercialMode === "parceiro"
+                        ? (partnerCatalog.data ?? [])
+                        : (catalog.data?.plans ?? [])
+                      ).map((plan) => (
                         <option key={plan.id} value={plan.codigo}>
                           {plan.nome}
                         </option>
@@ -203,17 +233,30 @@ function CadastroPage() {
                       <option value="yearly">Anual</option>
                     </select>
                   </Field>
+                  {commercialMode === "parceiro" && selectedPlan ? (
+                    <div className="sm:col-span-2 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm leading-6 text-cyan-950">
+                      Este plano inclui{" "}
+                      {Number((selectedPlan as { limite_clientes?: number }).limite_clientes ?? 0)}{" "}
+                      clientes. A cobrança fica no parceiro; cada cliente terá um ambiente separado.
+                    </div>
+                  ) : null}
                   <Field label="Usuários extras (opcional)">
                     <input
                       type="number"
                       min={0}
                       max={100}
                       value={extraUsers}
-                      onChange={(event) => setExtraUsers(Math.max(0, Math.min(100, Number(event.target.value) || 0)))}
+                      onChange={(event) =>
+                        setExtraUsers(Math.max(0, Math.min(100, Number(event.target.value) || 0)))
+                      }
                       className={inputClass}
                     />
                     <span className="mt-1 block text-xs text-slate-500">
-                      {formatCurrencyFromCents(catalog.data?.add_ons.usuario_extra_centavos ?? 0, catalog.data?.add_ons.moeda ?? "BRL")} por usuário/mês.
+                      {formatCurrencyFromCents(
+                        catalog.data?.add_ons.usuario_extra_centavos ?? 0,
+                        catalog.data?.add_ons.moeda ?? "BRL",
+                      )}{" "}
+                      por usuário/mês.
                     </span>
                   </Field>
                   <Field label="Unidades extras (opcional)">
@@ -222,11 +265,17 @@ function CadastroPage() {
                       min={0}
                       max={100}
                       value={extraUnits}
-                      onChange={(event) => setExtraUnits(Math.max(0, Math.min(100, Number(event.target.value) || 0)))}
+                      onChange={(event) =>
+                        setExtraUnits(Math.max(0, Math.min(100, Number(event.target.value) || 0)))
+                      }
                       className={inputClass}
                     />
                     <span className="mt-1 block text-xs text-slate-500">
-                      {formatCurrencyFromCents(catalog.data?.add_ons.unidade_extra_centavos ?? 0, catalog.data?.add_ons.moeda ?? "BRL")} por unidade/mês.
+                      {formatCurrencyFromCents(
+                        catalog.data?.add_ons.unidade_extra_centavos ?? 0,
+                        catalog.data?.add_ons.moeda ?? "BRL",
+                      )}{" "}
+                      por unidade/mês.
                     </span>
                   </Field>
                 </div>

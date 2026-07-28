@@ -61,7 +61,21 @@ export function MasterPlanosPage() {
   }, [addonsDraft, addonsQuery.data]);
 
   const salvarPlano = useMutation({
-    mutationFn: (plano: PlanoComercialResumo) => adminMasterService.salvarPlano(plano.id, plano),
+    mutationFn: async (plano: PlanoComercialResumo) => {
+      if (plano.tipo_plano === "parceiro") {
+        const saved = await adminMasterService.salvarPlanoParceiro(plano.id, plano);
+        await adminMasterService.configurarGatewayParceiro({
+          plano_id: plano.id,
+          stripe_product_id: plano.stripe_product_id,
+          stripe_monthly_price_id: plano.stripe_monthly_price_id,
+          stripe_yearly_price_id: plano.stripe_yearly_price_id,
+          stripe_client_extra_monthly_price_id: plano.stripe_client_extra_monthly_price_id,
+          stripe_client_extra_yearly_price_id: plano.stripe_client_extra_yearly_price_id,
+        });
+        return saved;
+      }
+      return adminMasterService.salvarPlano(plano.id, plano);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["master", "planos"] }),
   });
   const salvarAddons = useMutation({
@@ -102,7 +116,8 @@ export function MasterPlanosPage() {
             <div>
               <h2 className="text-sm font-semibold">Add-ons Stripe</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Configure os valores e Price IDs dos usuários e unidades extras. Os IDs nunca são expostos no catálogo público.
+                Configure os valores e Price IDs dos usuários e unidades extras. Os IDs nunca são
+                expostos no catálogo público.
               </p>
             </div>
             <button
@@ -111,27 +126,80 @@ export function MasterPlanosPage() {
               onClick={() => salvarAddons.mutate(addonsDraft)}
               className="inline-flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary disabled:opacity-50"
             >
-              <Save className="h-3.5 w-3.5" /> {salvarAddons.isPending ? "Salvando..." : "Salvar add-ons"}
+              <Save className="h-3.5 w-3.5" />{" "}
+              {salvarAddons.isPending ? "Salvando..." : "Salvar add-ons"}
             </button>
           </div>
-          {salvarAddons.error ? <p className="mt-3 text-xs text-danger">{salvarAddons.error.message}</p> : null}
+          {salvarAddons.error ? (
+            <p className="mt-3 text-xs text-danger">{salvarAddons.error.message}</p>
+          ) : null}
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <Field
               label="Usuário extra (mensal)"
               prefix="R$"
               value={centsToInputValue(addonsDraft.preco_usuario_extra_centavos)}
-              onChange={(value) => setAddonsDraft({ ...addonsDraft, preco_usuario_extra_centavos: moneyToCents(value) })}
+              onChange={(value) =>
+                setAddonsDraft({
+                  ...addonsDraft,
+                  preco_usuario_extra_centavos: moneyToCents(value),
+                })
+              }
             />
             <Field
               label="Unidade extra (mensal)"
               prefix="R$"
               value={centsToInputValue(addonsDraft.preco_unidade_extra_centavos)}
-              onChange={(value) => setAddonsDraft({ ...addonsDraft, preco_unidade_extra_centavos: moneyToCents(value) })}
+              onChange={(value) =>
+                setAddonsDraft({
+                  ...addonsDraft,
+                  preco_unidade_extra_centavos: moneyToCents(value),
+                })
+              }
             />
-            <Field label="Price ID usuário extra mensal" placeholder="price_..." value={addonsDraft.stripe_usuario_extra_monthly_price_id ?? ""} onChange={(value) => setAddonsDraft({ ...addonsDraft, stripe_usuario_extra_monthly_price_id: value || null })} />
-            <Field label="Price ID usuário extra anual" placeholder="price_..." value={addonsDraft.stripe_usuario_extra_yearly_price_id ?? ""} onChange={(value) => setAddonsDraft({ ...addonsDraft, stripe_usuario_extra_yearly_price_id: value || null })} />
-            <Field label="Price ID unidade extra mensal" placeholder="price_..." value={addonsDraft.stripe_unidade_extra_monthly_price_id ?? ""} onChange={(value) => setAddonsDraft({ ...addonsDraft, stripe_unidade_extra_monthly_price_id: value || null })} />
-            <Field label="Price ID unidade extra anual" placeholder="price_..." value={addonsDraft.stripe_unidade_extra_yearly_price_id ?? ""} onChange={(value) => setAddonsDraft({ ...addonsDraft, stripe_unidade_extra_yearly_price_id: value || null })} />
+            <Field
+              label="Price ID usuário extra mensal"
+              placeholder="price_..."
+              value={addonsDraft.stripe_usuario_extra_monthly_price_id ?? ""}
+              onChange={(value) =>
+                setAddonsDraft({
+                  ...addonsDraft,
+                  stripe_usuario_extra_monthly_price_id: value || null,
+                })
+              }
+            />
+            <Field
+              label="Price ID usuário extra anual"
+              placeholder="price_..."
+              value={addonsDraft.stripe_usuario_extra_yearly_price_id ?? ""}
+              onChange={(value) =>
+                setAddonsDraft({
+                  ...addonsDraft,
+                  stripe_usuario_extra_yearly_price_id: value || null,
+                })
+              }
+            />
+            <Field
+              label="Price ID unidade extra mensal"
+              placeholder="price_..."
+              value={addonsDraft.stripe_unidade_extra_monthly_price_id ?? ""}
+              onChange={(value) =>
+                setAddonsDraft({
+                  ...addonsDraft,
+                  stripe_unidade_extra_monthly_price_id: value || null,
+                })
+              }
+            />
+            <Field
+              label="Price ID unidade extra anual"
+              placeholder="price_..."
+              value={addonsDraft.stripe_unidade_extra_yearly_price_id ?? ""}
+              onChange={(value) =>
+                setAddonsDraft({
+                  ...addonsDraft,
+                  stripe_unidade_extra_yearly_price_id: value || null,
+                })
+              }
+            />
           </div>
         </section>
       ) : null}
@@ -220,6 +288,29 @@ export function MasterPlanosPage() {
                   updatePlano(planoSelecionado.id, "limite_unidades", numberOrNull(value))
                 }
               />
+              {planoSelecionado.tipo_plano === "parceiro" ? (
+                <>
+                  <Field
+                    label="Clientes incluídos"
+                    value={String(planoSelecionado.limite_clientes ?? "")}
+                    onChange={(value) =>
+                      updatePlano(planoSelecionado.id, "limite_clientes", numberOrNull(value))
+                    }
+                  />
+                  <Field
+                    label="Cliente adicional (mensal)"
+                    value={centsToInputValue(planoSelecionado.preco_cliente_extra_centavos)}
+                    prefix="R$"
+                    onChange={(value) =>
+                      updatePlano(
+                        planoSelecionado.id,
+                        "preco_cliente_extra_centavos",
+                        moneyToCents(value),
+                      )
+                    }
+                  />
+                </>
+              ) : null}
               <Field
                 label="Limite de documentos"
                 value={String(planoSelecionado.limite_documentos ?? "")}
@@ -285,6 +376,34 @@ export function MasterPlanosPage() {
                   updatePlano(planoSelecionado.id, "stripe_yearly_price_id", value || null)
                 }
               />
+              {planoSelecionado.tipo_plano === "parceiro" ? (
+                <>
+                  <Field
+                    label="Price ID cliente extra mensal"
+                    value={planoSelecionado.stripe_client_extra_monthly_price_id ?? ""}
+                    placeholder="price_..."
+                    onChange={(value) =>
+                      updatePlano(
+                        planoSelecionado.id,
+                        "stripe_client_extra_monthly_price_id",
+                        value || null,
+                      )
+                    }
+                  />
+                  <Field
+                    label="Price ID cliente extra anual"
+                    value={planoSelecionado.stripe_client_extra_yearly_price_id ?? ""}
+                    placeholder="price_..."
+                    onChange={(value) =>
+                      updatePlano(
+                        planoSelecionado.id,
+                        "stripe_client_extra_yearly_price_id",
+                        value || null,
+                      )
+                    }
+                  />
+                </>
+              ) : null}
             </div>
           </div>
 
@@ -293,8 +412,8 @@ export function MasterPlanosPage() {
               <div>
                 <h2 className="text-sm font-semibold">Recursos liberados no plano</h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  O painel mostra ou oculta módulos e as gravações fora do escopo também são bloqueadas fora do
-                  plano.
+                  O painel mostra ou oculta módulos e as gravações fora do escopo também são
+                  bloqueadas fora do plano.
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-md border border-warning/40 bg-warning/5 px-3 py-2 text-xs text-warning">

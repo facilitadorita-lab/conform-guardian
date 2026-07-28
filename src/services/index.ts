@@ -1,4 +1,5 @@
 export * from "./adminMasterService";
+export * from "./partnerService";
 export * from "./alertasService";
 export * from "./assistantService";
 export * from "./auditoriaService";

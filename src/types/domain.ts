@@ -32,6 +32,8 @@ export interface Empresa extends EntidadeAuditavel {
   responsavel_tecnico?: string | null;
   conselho_profissional?: string | null;
   plano_id?: UUID | null;
+  tipo_conta?: "direta" | "parceira" | "cliente";
+  parceiro_origem_id?: UUID | null;
   status: "ativa" | "bloqueada" | "cancelada";
   observacoes?: string | null;
 }

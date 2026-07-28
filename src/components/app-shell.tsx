@@ -31,6 +31,7 @@ const mobileNavigationItems: Array<{
   recurso?: PlanoRecurso;
   adminOnly?: boolean;
   masterOnly?: boolean;
+  partnerOnly?: boolean;
 }> = [
   { label: "Dashboard", to: "/dashboard" },
   { label: "Documentos", to: "/documentos", recurso: "documentos" },
@@ -48,6 +49,7 @@ const mobileNavigationItems: Array<{
   { label: "Planos", to: "/master/planos", masterOnly: true },
   { label: "Saúde do sistema", to: "/master/saude", masterOnly: true },
   { label: "Histórico comercial", to: "/master/historico-comercial", masterOnly: true },
+  { label: "Meus clientes", to: "/master/empresas", partnerOnly: true },
 ];
 
 export function AppShell({
@@ -221,11 +223,7 @@ export function AppShell({
         <main className="cf-app-bg relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
           <div className="cf-watermark" aria-hidden />
           <div className="relative mx-auto flex w-full min-w-0 max-w-[1480px] flex-col gap-5 px-4 py-6 md:gap-6 md:px-8 md:py-8">
-            <PageHeader
-              title={title}
-              description={description}
-              actions={actions}
-            />
+            <PageHeader title={title} description={description} actions={actions} />
             {children}
           </div>
         </main>
@@ -250,7 +248,9 @@ function MobileNavigation({
     (item) =>
       (!item.recurso || hasPlanFeature(authContext, item.recurso)) &&
       (!item.adminOnly || canAdminister) &&
-      (!item.masterOnly || authContext.usuario.isMaster),
+      (!item.masterOnly || authContext.usuario.isMaster) &&
+      (!item.partnerOnly ||
+        authContext.empresasPermitidas.some((empresa) => empresa.tipoConta === "parceira")),
   );
 
   return (

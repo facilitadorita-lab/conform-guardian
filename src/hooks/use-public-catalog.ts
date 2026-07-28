@@ -9,3 +9,12 @@ export function usePublicCatalog() {
     retry: 2,
   });
 }
+
+export function usePublicPartnerCatalog() {
+  return useQuery({
+    queryKey: ["public", "partner-catalog"],
+    queryFn: () => publicCatalogService.obterParceiros(),
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+  });
+}

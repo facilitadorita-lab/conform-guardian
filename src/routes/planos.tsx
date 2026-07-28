@@ -10,7 +10,7 @@ import {
   PublicHeader,
   SectionTitle,
 } from "@/components/public/marketing";
-import { usePublicCatalog } from "@/hooks/use-public-catalog";
+import { usePublicCatalog, usePublicPartnerCatalog } from "@/hooks/use-public-catalog";
 import { formatCurrencyFromCents } from "@/utils/money";
 
 export const Route = createFileRoute("/planos")({
@@ -29,6 +29,7 @@ export const Route = createFileRoute("/planos")({
 
 function PlanosPage() {
   const catalog = usePublicCatalog();
+  const partnerCatalog = usePublicPartnerCatalog();
   const addOns = catalog.data?.add_ons;
 
   return (
@@ -124,6 +125,56 @@ function PlanosPage() {
                       </div>
                     ))}
                   </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {partnerCatalog.data?.length ? (
+        <section className="bg-white px-5 py-20 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            <SectionTitle
+              eyebrow="Programa de parceiros"
+              title="Uma única assinatura para cuidar da sua carteira de clientes."
+              description="O parceiro paga a mensalidade e os clientes adicionais. Cada empresa cliente permanece em um ambiente independente, com acesso restrito aos próprios dados."
+            />
+            <div className="mt-10 grid gap-5 lg:grid-cols-3">
+              {partnerCatalog.data.map((plan) => (
+                <article
+                  key={plan.id}
+                  className="rounded-3xl border border-slate-200 bg-slate-50 p-6"
+                >
+                  <h3 className="text-lg font-semibold text-slate-950">{plan.nome}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{plan.descricao}</p>
+                  <p className="mt-6 text-3xl font-semibold text-slate-950">
+                    {formatCurrencyFromCents(plan.valor_mensal_centavos, plan.moeda)}
+                    <span className="text-sm font-normal text-slate-500">/mês</span>
+                  </p>
+                  <div className="mt-5 space-y-3 text-sm text-slate-700">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                      {plan.limite_clientes} clientes incluídos
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                      Cliente adicional por{" "}
+                      {formatCurrencyFromCents(plan.preco_cliente_extra_centavos, plan.moeda)}/mês
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                      Visão consolidada e relatórios por cliente
+                    </div>
+                  </div>
+                  <Button
+                    asChild
+                    className="mt-7 w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800"
+                  >
+                    <Link to="/cadastro">
+                      Quero ser parceiro <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
                 </article>
               ))}
             </div>

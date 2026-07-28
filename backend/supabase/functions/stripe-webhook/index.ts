@@ -54,7 +54,11 @@ Deno.serve(async (request: Request) => {
 
   try {
     if (eventType === "checkout.session.completed") {
-      await handleCheckoutCompleted(admin, object);
+      if (text(isObject(object.metadata) ? object.metadata.partner_empresa_id : "")) {
+        await handlePartnerCheckoutCompleted(admin, object);
+      } else {
+        await handleCheckoutCompleted(admin, object);
+      }
     } else if (eventType === "invoice.payment_failed") {
       await handleInvoiceStatus(admin, object, "inadimplente");
     } else if (eventType === "invoice.payment_action_required") {
@@ -170,6 +174,48 @@ async function handleCheckoutCompleted(admin: SupabaseClient, checkout: JsonObje
   await syncProvisionedAddons(admin, signupId);
 }
 
+async function handlePartnerCheckoutCompleted(admin: SupabaseClient, checkout: JsonObject) {
+  const metadata = isObject(checkout.metadata) ? checkout.metadata : {};
+  const partnerId = text(metadata.partner_empresa_id);
+  const planId = text(metadata.partner_plan_id);
+  const subscriptionId = stripeId(checkout.subscription);
+  const customerId = stripeId(checkout.customer);
+  if (!isUuid(partnerId) || !isUuid(planId) || !subscriptionId || !customerId) {
+    throw new Error("INVALID_PARTNER_CHECKOUT_REFERENCE");
+  }
+  if (!['paid', 'no_payment_required'].includes(text(checkout.payment_status))) {
+    throw new Error("PARTNER_PAYMENT_NOT_CONFIRMED");
+  }
+  const { data: plan, error: planError } = await admin
+    .from("planos")
+    .select("id, tipo_plano, valor_mensal_centavos, valor_anual_centavos, preco_cliente_extra_centavos, limite_clientes")
+    .eq("id", planId)
+    .eq("tipo_plano", "parceiro")
+    .maybeSingle();
+  if (planError || !plan) throw new Error("PARTNER_PLAN_NOT_FOUND");
+  const interval = text(metadata.partner_billing_interval) === "yearly" ? "anual" : "mensal";
+  const { error } = await admin
+    .from("assinaturas_empresas")
+    .update({
+      plano_id: plan.id,
+      status: "ativa",
+      ciclo: interval,
+      valor_mensal_centavos: interval === "mensal" ? plan.valor_mensal_centavos : 0,
+      valor_anual_centavos: interval === "anual" ? plan.valor_anual_centavos : null,
+      gateway: "stripe",
+      gateway_customer_id: customerId,
+      gateway_subscription_id: subscriptionId,
+      clientes_incluidos: plan.limite_clientes,
+      preco_cliente_extra_centavos: plan.preco_cliente_extra_centavos,
+      cobranca_consolidada: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("empresa_id", partnerId);
+  if (error) throw new Error("PARTNER_SUBSCRIPTION_UPDATE_FAILED");
+  await admin.from("empresas").update({ access_status: "active", status: "ativa", updated_at: new Date().toISOString() }).eq("id", partnerId);
+  await syncPartnerClientAccess(admin, partnerId, "ativa");
+}
+
 async function syncProvisionedAddons(admin: SupabaseClient, signupId: string) {
   const [{ data: signup, error: signupError }, { data: snapshot, error: snapshotError }] =
     await Promise.all([
@@ -208,7 +254,7 @@ async function handleInvoiceStatus(
     );
   if (!subscriptionId) return;
 
-  const { data: subscription, error } = await admin
+    const { data: subscription, error } = await admin
     .from("assinaturas_empresas")
     .update({
       status,
@@ -233,6 +279,7 @@ async function handleInvoiceStatus(
       erro_codigo: status === "ativa" ? null : "INVOICE_PAYMENT_FAILED",
       completed_at: new Date().toISOString(),
     });
+    await syncPartnerClientAccess(admin, subscription.empresa_id, status);
   }
 }
 
@@ -257,7 +304,7 @@ async function handleSubscriptionUpdated(admin: SupabaseClient, subscription: Js
   const [{ data: plans, error: plansError }, { data: config, error: configError }] = await Promise.all([
     admin
       .from("planos")
-      .select("id, valor_mensal_centavos, valor_anual_centavos, stripe_monthly_price_id, stripe_yearly_price_id")
+      .select("id, codigo, tipo_plano, limite_clientes, valor_mensal_centavos, valor_anual_centavos, preco_cliente_extra_centavos, stripe_monthly_price_id, stripe_yearly_price_id, stripe_client_extra_monthly_price_id, stripe_client_extra_yearly_price_id")
       .eq("ativo", true),
     admin
       .from("configuracoes_comerciais")
@@ -279,6 +326,7 @@ async function handleSubscriptionUpdated(admin: SupabaseClient, subscription: Js
   if (!plan) throw new Error("STRIPE_PRICE_NOT_MAPPED");
 
   const isYearly = plan.stripe_yearly_price_id === primaryPriceId || interval === "year";
+  const isPartnerPlan = plan.tipo_plano === "parceiro";
   const userPriceId = isYearly
     ? config?.stripe_usuario_extra_yearly_price_id
     : config?.stripe_usuario_extra_monthly_price_id;
@@ -287,10 +335,15 @@ async function handleSubscriptionUpdated(admin: SupabaseClient, subscription: Js
     : config?.stripe_unidade_extra_monthly_price_id;
   const usersExtra = userPriceId ? quantityByPrice.get(userPriceId) ?? 0 : 0;
   const unitsExtra = unitPriceId ? quantityByPrice.get(unitPriceId) ?? 0 : 0;
+  const clientExtraPriceId = isYearly
+    ? plan.stripe_client_extra_yearly_price_id
+    : plan.stripe_client_extra_monthly_price_id;
+  const clientsExtra = clientExtraPriceId ? quantityByPrice.get(clientExtraPriceId) ?? 0 : 0;
   const addonMultiplier = isYearly ? 10 : 1;
-  const addonsCents =
-    usersExtra * Number(config?.preco_usuario_extra_centavos ?? 0) * addonMultiplier +
-    unitsExtra * Number(config?.preco_unidade_extra_centavos ?? 0) * addonMultiplier;
+  const addonsCents = isPartnerPlan
+    ? clientsExtra * Number(plan.preco_cliente_extra_centavos ?? 0) * addonMultiplier
+    : usersExtra * Number(config?.preco_usuario_extra_centavos ?? 0) * addonMultiplier +
+      unitsExtra * Number(config?.preco_unidade_extra_centavos ?? 0) * addonMultiplier;
   const stripeStatus = text(subscription.status);
   const status = subscriptionStatus(stripeStatus);
   const currentPeriodEnd = Number(subscription.current_period_end ?? 0);
@@ -307,6 +360,12 @@ async function handleSubscriptionUpdated(admin: SupabaseClient, subscription: Js
     usuarios_extras: usersExtra,
     unidades_extras: unitsExtra,
     valor_addons_centavos: addonsCents,
+    clientes_extras: isPartnerPlan ? clientsExtra : 0,
+    clientes_ativos: isPartnerPlan ? Number(plan.limite_clientes ?? 0) + clientsExtra : 0,
+    clientes_incluidos: isPartnerPlan ? Number(plan.limite_clientes ?? 0) : 0,
+    preco_cliente_extra_centavos: isPartnerPlan ? Number(plan.preco_cliente_extra_centavos ?? 0) : 0,
+    stripe_cliente_extra_price_id: isPartnerPlan ? clientExtraPriceId : null,
+    cobranca_consolidada: isPartnerPlan,
     proximo_vencimento: nextDueDate,
     updated_at: new Date().toISOString(),
   };
@@ -321,6 +380,7 @@ async function handleSubscriptionUpdated(admin: SupabaseClient, subscription: Js
     .eq("gateway", "stripe")
     .eq("gateway_subscription_id", subscriptionId);
   if (error) throw new Error("SUBSCRIPTION_UPDATE_FAILED");
+  if (isPartnerPlan) await syncPartnerClientAccess(admin, subscriptionId, status, true);
 }
 
 async function handleSubscriptionCanceled(admin: SupabaseClient, subscription: JsonObject) {
@@ -338,6 +398,52 @@ async function handleSubscriptionCanceled(admin: SupabaseClient, subscription: J
     .select("id")
     .maybeSingle();
   if (error) throw new Error("SUBSCRIPTION_CANCEL_FAILED");
+  await syncPartnerClientAccess(admin, subscriptionId, "cancelada", true);
+}
+
+async function syncPartnerClientAccess(
+  admin: SupabaseClient,
+  empresaIdOrSubscriptionId: string,
+  status: "ativa" | "pagamento_pendente" | "inadimplente" | "bloqueada" | "cancelada",
+  bySubscriptionId = false,
+) {
+  let partnerId = empresaIdOrSubscriptionId;
+  if (bySubscriptionId) {
+    const { data } = await admin
+      .from("assinaturas_empresas")
+      .select("empresa_id, plano_id, planos(tipo_plano)")
+      .eq("gateway", "stripe")
+      .eq("gateway_subscription_id", empresaIdOrSubscriptionId)
+      .maybeSingle();
+    if (!data || !isObject(data.planos) || data.planos.tipo_plano !== "parceiro") return;
+    partnerId = data.empresa_id;
+  } else {
+    const { data } = await admin
+      .from("assinaturas_empresas")
+      .select("empresa_id, plano_id, planos(tipo_plano)")
+      .eq("empresa_id", empresaIdOrSubscriptionId)
+      .maybeSingle();
+    if (!data || !isObject(data.planos) || data.planos.tipo_plano !== "parceiro") return;
+    partnerId = data.empresa_id;
+  }
+  const blocked = status !== "ativa";
+  const { data: relations } = await admin
+    .from("relacionamentos_parceiro_clientes")
+    .select("cliente_empresa_id")
+    .eq("parceiro_empresa_id", partnerId)
+    .eq("status", "ativo");
+  const clientIds = (relations ?? []).map((relation) => text(relation.cliente_empresa_id)).filter(Boolean);
+  if (clientIds.length === 0) return;
+  await admin
+    .from("empresas")
+    .update({
+      access_status: blocked ? (status === "inadimplente" ? "restricted" : "blocked") : "active",
+      status: blocked ? "bloqueada" : "ativa",
+      updated_at: new Date().toISOString(),
+    })
+    .in("id", clientIds)
+    .eq("tipo_conta", "cliente")
+    .is("deleted_at", null);
 }
 
 async function verifyStripeSignature(payload: string, header: string, secret: string) {

@@ -80,6 +80,13 @@ export const adminMasterService = {
     });
   },
 
+  async salvarPlanoParceiro(planoId: string, payload: Partial<PlanoComercialResumo>) {
+    return invokeRpc<PlanoComercialResumo>("api_master_salvar_partner_plan", {
+      p_plano_id: planoId,
+      p_payload: payload,
+    });
+  },
+
   listarAddons(): Promise<CommercialAddOnsAdmin> {
     return invokeRpc<CommercialAddOnsAdmin>("api_master_listar_addons");
   },
@@ -100,6 +107,37 @@ export const adminMasterService = {
   criarEmpresa(payload: CriarEmpresaPayload) {
     return invokeRpc<CriarEmpresaResult>("api_master_criar_empresa", {
       p_payload: payload,
+    });
+  },
+
+  criarParceiro(payload: {
+    razao_social: string;
+    nome_fantasia: string;
+    cnpj: string;
+    email_principal?: string;
+    plano_codigo: "parceiro_start" | "parceiro_pro" | "parceiro_enterprise";
+  }) {
+    return invokeRpc<{ empresa: Record<string, unknown>; plano: Record<string, unknown> }>(
+      "api_master_criar_parceiro",
+      { p_payload: payload },
+    );
+  },
+
+  configurarGatewayParceiro(payload: {
+    plano_id: string;
+    stripe_product_id?: string | null;
+    stripe_monthly_price_id?: string | null;
+    stripe_yearly_price_id?: string | null;
+    stripe_client_extra_monthly_price_id?: string | null;
+    stripe_client_extra_yearly_price_id?: string | null;
+  }) {
+    return invokeRpc("api_master_configurar_partner_gateway", {
+      p_plano_id: payload.plano_id,
+      p_stripe_product_id: payload.stripe_product_id ?? null,
+      p_stripe_monthly_price_id: payload.stripe_monthly_price_id ?? null,
+      p_stripe_yearly_price_id: payload.stripe_yearly_price_id ?? null,
+      p_stripe_client_extra_monthly_price_id: payload.stripe_client_extra_monthly_price_id ?? null,
+      p_stripe_client_extra_yearly_price_id: payload.stripe_client_extra_yearly_price_id ?? null,
     });
   },
 };

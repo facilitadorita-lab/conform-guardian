@@ -27,6 +27,8 @@ interface ApiContextoUsuarioResponse {
     verification_status?: CompanyVerificationStatus;
     access_status?: CompanyAccessStatus;
     subscription_status?: SubscriptionStatusNormalized;
+    tipo_conta?: "direta" | "parceira" | "cliente";
+    parceiro_empresa_id?: string | null;
     plano?: EmpresaPlanoResumo | null;
     perfil:
       | "administrador_provisorio"
@@ -34,6 +36,8 @@ interface ApiContextoUsuarioResponse {
       | "responsavel_tecnico"
       | "colaborador"
       | "somente_leitura"
+      | "parceiro_administrador"
+      | "parceiro_colaborador"
       | "master";
   }>;
 }
@@ -92,6 +96,8 @@ export const authService = {
         verificationStatus: empresaAtual.verification_status,
         accessStatus: empresaAtual.access_status,
         subscriptionStatus: empresaAtual.subscription_status,
+        tipoConta: empresaAtual.tipo_conta,
+        parceiroEmpresaId: empresaAtual.parceiro_empresa_id,
         plano: normalizePlano(empresaAtual.plano),
       },
       empresasPermitidas: contexto.empresas.map((empresa) => ({
@@ -102,6 +108,8 @@ export const authService = {
         verificationStatus: empresa.verification_status,
         accessStatus: empresa.access_status,
         subscriptionStatus: empresa.subscription_status,
+        tipoConta: empresa.tipo_conta,
+        parceiroEmpresaId: empresa.parceiro_empresa_id,
         plano: normalizePlano(empresa.plano),
       })),
       perfilAtual: empresaAtual.perfil,

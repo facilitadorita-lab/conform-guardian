@@ -112,6 +112,8 @@ export interface EmpresaResumo {
   verificationStatus?: CompanyVerificationStatus;
   accessStatus?: CompanyAccessStatus;
   subscriptionStatus?: SubscriptionStatusNormalized;
+  tipoConta?: "direta" | "parceira" | "cliente";
+  parceiroEmpresaId?: UUID | null;
   plano?: EmpresaPlanoResumo | null;
 }
 
@@ -130,6 +132,8 @@ export interface AuthContexto {
     | "responsavel_tecnico"
     | "colaborador"
     | "somente_leitura"
+    | "parceiro_administrador"
+    | "parceiro_colaborador"
     | "master";
 }
 
@@ -287,11 +291,16 @@ export interface PlanoComercialResumo {
   ativo: boolean;
   recursos: Partial<Record<PlanoRecurso, boolean>>;
   limite_unidades?: number | null;
+  tipo_plano?: "direto" | "parceiro";
+  limite_clientes?: number | null;
+  preco_cliente_extra_centavos?: number | null;
   publico_recomendado?: string | null;
   nivel_suporte?: "padrao" | "prioritario" | "dedicado";
   stripe_product_id?: string | null;
   stripe_monthly_price_id?: string | null;
   stripe_yearly_price_id?: string | null;
+  stripe_client_extra_monthly_price_id?: string | null;
+  stripe_client_extra_yearly_price_id?: string | null;
 }
 
 export interface AssinaturaEmpresaResumo {

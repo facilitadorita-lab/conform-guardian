@@ -45,6 +45,78 @@ export interface CommercialAddOnsAdmin {
   stripe_unidade_extra_yearly_price_id?: string | null;
 }
 
+export interface PublicPartnerCatalogItem {
+  id: UUID;
+  codigo: PartnerPlanCode | string;
+  nome: string;
+  descricao: string | null;
+  valor_mensal_centavos: number;
+  valor_anual_centavos: number | null;
+  moeda: string;
+  limite_clientes: number;
+  preco_cliente_extra_centavos: number;
+  recursos: Record<string, boolean>;
+}
+
+export type PartnerPlanCode = "parceiro_start" | "parceiro_pro" | "parceiro_enterprise";
+
+export interface PartnerPlanCatalogItem {
+  id: UUID;
+  codigo: PartnerPlanCode | string;
+  nome: string;
+  descricao?: string | null;
+  valor_mensal_centavos: number;
+  valor_anual_centavos?: number | null;
+  limite_clientes: number;
+  preco_cliente_extra_centavos: number;
+  limite_usuarios: number;
+  limite_unidades?: number | null;
+  recursos: Record<string, boolean>;
+  stripe_product_id?: string | null;
+  stripe_monthly_price_id?: string | null;
+  stripe_yearly_price_id?: string | null;
+  stripe_client_extra_monthly_price_id?: string | null;
+  stripe_client_extra_yearly_price_id?: string | null;
+}
+
+export interface PartnerClient {
+  id: UUID;
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  status: "ativa" | "bloqueada" | "cancelada";
+  access_status?: string | null;
+  segmento?: string | null;
+  tipo_estabelecimento?: string | null;
+  plano?: { id: UUID; nome: string; codigo: string } | null;
+  relacionamento: {
+    id: UUID;
+    status: "ativo" | "suspenso" | "encerrado";
+    inicio_em: string;
+    encerrado_em?: string | null;
+  };
+}
+
+export interface PartnerSummary {
+  parceiro_empresa_id: UUID;
+  plano: PartnerPlanCatalogItem | null;
+  assinatura: Record<string, unknown> | null;
+  clientes_ativos: number;
+  clientes_incluidos: number;
+  clientes_extras: number;
+}
+
+export interface PartnerClientPayload {
+  parceiro_empresa_id: UUID;
+  razao_social: string;
+  nome_fantasia: string;
+  cnpj: string;
+  tipo_estabelecimento?: string;
+  segmento?: string;
+  email_principal?: string;
+  plano_servico_codigo: "essencial" | "profissional" | "rede";
+}
+
 export interface PrepareSignupInput {
   planCode: string;
   billingInterval: BillingInterval;

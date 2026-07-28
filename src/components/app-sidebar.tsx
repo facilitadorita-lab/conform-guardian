@@ -36,6 +36,7 @@ type NavItem = {
   exact?: boolean;
   recurso?: PlanoRecurso;
   adminOnly?: boolean;
+  partnerOnly?: boolean;
 };
 
 const groups: { label: string; items: NavItem[] }[] = [
@@ -164,6 +165,19 @@ const masterGroup: { label: string; items: NavItem[] } = {
   ],
 };
 
+const partnerGroup: { label: string; items: NavItem[] } = {
+  label: "Parcerias",
+  items: [
+    {
+      to: "/master/empresas",
+      label: "Meus clientes",
+      description: "Carteira e ambientes",
+      icon: Building2,
+      partnerOnly: true,
+    },
+  ],
+};
+
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { data: authContext } = useAuthContext();
@@ -178,13 +192,23 @@ export function AppSidebar() {
     [authContext?.usuario.nome],
   );
 
-  const visibleGroups = (authContext?.usuario.isMaster ? [...groups, masterGroup] : groups)
+  const isParceiro = authContext?.empresasPermitidas.some(
+    (company) => company.tipoConta === "parceira",
+  );
+  const visibleGroups = (
+    authContext?.usuario.isMaster
+      ? [...groups, masterGroup]
+      : isParceiro
+        ? [...groups, partnerGroup]
+        : groups
+  )
     .map((group) => ({
       ...group,
       items: group.items.filter(
         (item) =>
           (!item.recurso || hasPlanFeature(authContext, item.recurso)) &&
-          (!item.adminOnly || authContext?.usuario.isMaster || podeAdministrar),
+          (!item.adminOnly || authContext?.usuario.isMaster || podeAdministrar) &&
+          (!item.partnerOnly || isParceiro),
       ),
     }))
     .filter((group) => group.items.length > 0);
@@ -254,9 +278,7 @@ export function AppSidebar() {
                         <Icon
                           className={cn(
                             "h-4 w-4 shrink-0",
-                            active
-                              ? "text-[#2563EB]"
-                              : "text-sky-100/60 group-hover:text-white",
+                            active ? "text-[#2563EB]" : "text-sky-100/60 group-hover:text-white",
                           )}
                         />
                         {!collapsed ? (
