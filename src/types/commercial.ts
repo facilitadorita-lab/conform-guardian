@@ -258,6 +258,31 @@ export interface MasterStripeHealth {
   checked_at: string;
 }
 
+export interface ProductionReadinessCheck {
+  codigo: string;
+  titulo: string;
+  status: "passed" | "attention" | "blocked";
+  resumo: string;
+  failed_checks?: number;
+  threshold?: number;
+  max_age_days?: number;
+}
+
+export interface MasterProductionReadiness {
+  status: "ready" | "attention" | "blocked";
+  blocked_count: number;
+  attention_count: number;
+  checks: ProductionReadinessCheck[];
+  checked_at: string;
+  configuration: {
+    monthly_cost_alert_cents: number;
+    backup_max_age_days: number;
+    webhook_failure_threshold_24h: number;
+    client_error_threshold_24h: number;
+    attachment_pending_max_hours: number;
+  };
+}
+
 export interface MfaPolicyStatus {
   required: boolean;
   current_level: "aal1" | "aal2";

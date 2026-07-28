@@ -46,6 +46,9 @@ jobs:
       - env:
           PGPASSWORD: postgres
         run: psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/supabase/tests/sandbox_owner_isolation.sql
+      - env:
+          PGPASSWORD: postgres
+        run: psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/supabase/tests/production_readiness.sql
       - if: always()
         run: supabase stop --workdir backend --no-backup
 

@@ -25,6 +25,7 @@ import { useMfaAssurance } from "@/hooks/use-mfa-assurance";
 import { useAppSession } from "@/hooks/use-app-session";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/master/saude")({ component: MasterHealthPage });
 
@@ -46,6 +47,12 @@ function MasterHealthPage() {
   const stripe = useQuery({
     queryKey: ["master", "stripe-health"],
     queryFn: () => adminMasterService.stripeHealth(),
+    enabled: mfaReady,
+    refetchInterval: 60_000,
+  });
+  const readiness = useQuery({
+    queryKey: ["master", "production-readiness"],
+    queryFn: () => adminMasterService.productionReadiness(),
     enabled: mfaReady,
     refetchInterval: 60_000,
   });
@@ -173,6 +180,9 @@ function MasterHealthPage() {
           {stripe.error ? <p className="mt-3 text-xs text-danger">{stripe.error.message}</p> : null}
         </section>
       ) : null}
+      {mfaReady ? (
+        <MasterProductionReadinessCard data={readiness.data} error={readiness.error} />
+      ) : null}
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card">
           <header className="border-b border-border p-4">
@@ -250,6 +260,160 @@ function MasterHealthPage() {
         </div>
       </section>
     </MasterOnly>
+  );
+}
+
+function MasterProductionReadinessCard({
+  data,
+  error,
+}: {
+  data: Awaited<ReturnType<typeof adminMasterService.productionReadiness>> | undefined;
+  error: Error | null;
+}) {
+  const client = useQueryClient();
+  const [draft, setDraft] = useState({
+    monthly_cost_alert_cents: 100000,
+    backup_max_age_days: 7,
+    webhook_failure_threshold_24h: 5,
+    client_error_threshold_24h: 10,
+    attachment_pending_max_hours: 24,
+  });
+  useEffect(() => {
+    if (!data?.configuration) return;
+    setDraft(data.configuration);
+  }, [data?.configuration]);
+  const save = useMutation({
+    mutationFn: () => adminMasterService.salvarConfiguracoesPlataforma(draft),
+    onSuccess: () => client.invalidateQueries({ queryKey: ["master", "production-readiness"] }),
+  });
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-sm font-semibold">Prontidão para operação comercial</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Um painel único para acompanhar segurança, recuperação, cobrança, anexos e publicação.
+          </p>
+        </div>
+        <span
+          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${data?.status === "ready" ? "bg-success/10 text-success" : data?.status === "blocked" ? "bg-danger/10 text-danger" : "bg-warning/10 text-warning"}`}
+        >
+          {data?.status === "ready"
+            ? "Pronto"
+            : data?.status === "blocked"
+              ? "Bloqueado"
+              : "Atenção"}
+        </span>
+      </div>
+      {error ? <p className="mt-3 text-xs text-danger">{error.message}</p> : null}
+      <div className="mt-4 grid gap-2 md:grid-cols-2">
+        {(data?.checks ?? []).map((check) => (
+          <div
+            key={check.codigo}
+            className="flex items-start gap-3 rounded-xl border border-border bg-muted/10 p-3"
+          >
+            {check.status === "passed" ? (
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            ) : check.status === "blocked" ? (
+              <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
+            ) : (
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+            )}
+            <div className="min-w-0">
+              <div className="text-xs font-semibold">{check.titulo}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{check.resumo}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-xs font-semibold">Limites de alerta operacional</h3>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Apenas o Admin Master pode alterar estes limites.
+            </p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => save.mutate()}
+            disabled={save.isPending || !data}
+          >
+            {save.isPending ? "Salvando…" : "Salvar limites"}
+          </Button>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <ReadinessInput
+            label="Alerta mensal (R$)"
+            value={draft.monthly_cost_alert_cents / 100}
+            step="0.01"
+            onChange={(value) =>
+              setDraft((current) => ({
+                ...current,
+                monthly_cost_alert_cents: Math.round(value * 100),
+              }))
+            }
+          />
+          <ReadinessInput
+            label="Backup (dias)"
+            value={draft.backup_max_age_days}
+            onChange={(value) =>
+              setDraft((current) => ({ ...current, backup_max_age_days: value }))
+            }
+          />
+          <ReadinessInput
+            label="Falhas Stripe/24h"
+            value={draft.webhook_failure_threshold_24h}
+            onChange={(value) =>
+              setDraft((current) => ({ ...current, webhook_failure_threshold_24h: value }))
+            }
+          />
+          <ReadinessInput
+            label="Erros frontend/24h"
+            value={draft.client_error_threshold_24h}
+            onChange={(value) =>
+              setDraft((current) => ({ ...current, client_error_threshold_24h: value }))
+            }
+          />
+          <ReadinessInput
+            label="Anexo pendente (h)"
+            value={draft.attachment_pending_max_hours}
+            onChange={(value) =>
+              setDraft((current) => ({ ...current, attachment_pending_max_hours: value }))
+            }
+          />
+        </div>
+        {save.error ? <p className="mt-2 text-xs text-danger">{save.error.message}</p> : null}
+      </div>
+    </section>
+  );
+}
+
+function ReadinessInput({
+  label,
+  value,
+  onChange,
+  step = "1",
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  step?: string;
+}) {
+  return (
+    <label className="text-[11px] font-medium text-muted-foreground">
+      {label}
+      <input
+        className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2 text-xs text-foreground"
+        type="number"
+        min="0"
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value) || 0)}
+      />
+    </label>
   );
 }
 

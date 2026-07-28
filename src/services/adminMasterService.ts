@@ -7,6 +7,7 @@ import type {
   CommercialAddOnsAdmin,
   MasterSandbox,
   MasterStripeHealth,
+  MasterProductionReadiness,
 } from "@/types";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { invokeRpc } from "./service-utils";
@@ -137,6 +138,27 @@ export const adminMasterService = {
 
   stripeHealth(): Promise<MasterStripeHealth> {
     return invokeRpc<MasterStripeHealth>("api_master_stripe_health");
+  },
+
+  productionReadiness(): Promise<MasterProductionReadiness> {
+    return invokeRpc<MasterProductionReadiness>("api_master_production_readiness");
+  },
+
+  listarConfiguracoesPlataforma(): Promise<
+    Record<
+      string,
+      {
+        valor: number;
+        descricao: string;
+        updated_at: string;
+      }
+    >
+  > {
+    return invokeRpc("api_master_listar_configuracoes_plataforma");
+  },
+
+  salvarConfiguracoesPlataforma(payload: Record<string, number>) {
+    return invokeRpc("api_master_salvar_configuracoes_plataforma", { p_payload: payload });
   },
 
   listarSandbox(): Promise<MasterSandbox[]> {
