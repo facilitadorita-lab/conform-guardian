@@ -1,10 +1,10 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@^2";
-import { isValidCnpj, normalizeCnpj } from "../lookup-company-registration/cnpj.ts";
+import { isValidCnpj, normalizeCnpj } from "./cnpj.ts";
 import {
   CompanyRegistrationProviderError,
   type NormalizedCompanyRegistration,
-} from "../lookup-company-registration/provider.ts";
-import { BrasilApiCompanyRegistrationProvider } from "../lookup-company-registration/providers/brasil-api.ts";
+} from "./provider.ts";
+import { BrasilApiCompanyRegistrationProvider } from "./providers/brasil-api.ts";
 
 type JsonObject = Record<string, unknown>;
 
