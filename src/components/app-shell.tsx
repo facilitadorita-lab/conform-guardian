@@ -121,6 +121,7 @@ export function AppShell({
         empresaCnpj={empresaAtual.cnpj}
         status={empresaAtual.status}
         reason={permissions?.reason_code}
+        onSignOut={signOut}
       />
     );
   }
@@ -336,13 +337,27 @@ function BlockedAccessScreen({
   empresaCnpj,
   status,
   reason,
+  onSignOut,
 }: {
   empresaNome: string;
   empresaCnpj: string;
   status: string;
   reason?: string | null;
+  onSignOut: () => Promise<void>;
 }) {
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
   const paymentIssue = reason === "SUBSCRIPTION_PAST_DUE" || reason === "SUBSCRIPTION_REQUIRED";
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    try {
+      await onSignOut();
+      await navigate({ to: "/login", search: { msg: undefined } });
+    } finally {
+      setSigningOut(false);
+    }
+  }
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 text-white">
       <section className="w-full max-w-2xl rounded-3xl border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur">
@@ -398,6 +413,18 @@ function BlockedAccessScreen({
               Caso o pagamento já tenha sido realizado, aguarde a confirmação automática ou fale com
               o suporte da Conform Flow.
             </p>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => void handleSignOut()}
+                disabled={signingOut}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/[0.12] disabled:cursor-wait disabled:opacity-60"
+              >
+                <LogOut className="h-4 w-4" />
+                {signingOut ? "Saindo..." : "Sair e trocar de conta"}
+              </button>
+            </div>
           </div>
         </div>
       </section>
