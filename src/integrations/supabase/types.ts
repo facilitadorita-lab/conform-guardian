@@ -534,8 +534,11 @@ export type Database = {
           status: string
           trial_termina_em: string | null
           ultimo_pagamento_em: string | null
+          unidades_extras: number
           updated_at: string
           updated_by: string | null
+          usuarios_extras: number
+          valor_addons_centavos: number
           valor_anual_centavos: number | null
           valor_mensal_centavos: number
         }
@@ -563,8 +566,11 @@ export type Database = {
           status?: string
           trial_termina_em?: string | null
           ultimo_pagamento_em?: string | null
+          unidades_extras?: number
           updated_at?: string
           updated_by?: string | null
+          usuarios_extras?: number
+          valor_addons_centavos?: number
           valor_anual_centavos?: number | null
           valor_mensal_centavos?: number
         }
@@ -592,8 +598,11 @@ export type Database = {
           status?: string
           trial_termina_em?: string | null
           ultimo_pagamento_em?: string | null
+          unidades_extras?: number
           updated_at?: string
           updated_by?: string | null
+          usuarios_extras?: number
+          valor_addons_centavos?: number
           valor_anual_centavos?: number | null
           valor_mensal_centavos?: number
         }
@@ -932,6 +941,10 @@ export type Database = {
           politica_privacidade_versao: string
           preco_unidade_extra_centavos: number
           preco_usuario_extra_centavos: number
+          stripe_unidade_extra_monthly_price_id: string | null
+          stripe_unidade_extra_yearly_price_id: string | null
+          stripe_usuario_extra_monthly_price_id: string | null
+          stripe_usuario_extra_yearly_price_id: string | null
           termos_versao: string
           updated_at: string
           updated_by: string | null
@@ -942,6 +955,10 @@ export type Database = {
           politica_privacidade_versao?: string
           preco_unidade_extra_centavos?: number
           preco_usuario_extra_centavos?: number
+          stripe_unidade_extra_monthly_price_id?: string | null
+          stripe_unidade_extra_yearly_price_id?: string | null
+          stripe_usuario_extra_monthly_price_id?: string | null
+          stripe_usuario_extra_yearly_price_id?: string | null
           termos_versao?: string
           updated_at?: string
           updated_by?: string | null
@@ -952,6 +969,10 @@ export type Database = {
           politica_privacidade_versao?: string
           preco_unidade_extra_centavos?: number
           preco_usuario_extra_centavos?: number
+          stripe_unidade_extra_monthly_price_id?: string | null
+          stripe_unidade_extra_yearly_price_id?: string | null
+          stripe_usuario_extra_monthly_price_id?: string | null
+          stripe_usuario_extra_yearly_price_id?: string | null
           termos_versao?: string
           updated_at?: string
           updated_by?: string | null
@@ -2419,6 +2440,7 @@ export type Database = {
       }
       fotografias_contratacao: {
         Row: {
+          addons_json: Json
           consulta_cnpj_json: Json
           created_at: string
           empresa_json: Json
@@ -2436,10 +2458,14 @@ export type Database = {
           sessao_contratacao_id: string
           stripe_price_id: string
           termos_versao: string
+          unidades_extras: number
+          usuarios_extras: number
+          valor_addons_centavos: number
           valor_centavos: number
           versao: number
         }
         Insert: {
+          addons_json?: Json
           consulta_cnpj_json: Json
           created_at?: string
           empresa_json: Json
@@ -2457,10 +2483,14 @@ export type Database = {
           sessao_contratacao_id: string
           stripe_price_id: string
           termos_versao: string
+          unidades_extras?: number
+          usuarios_extras?: number
+          valor_addons_centavos?: number
           valor_centavos: number
           versao?: number
         }
         Update: {
+          addons_json?: Json
           consulta_cnpj_json?: Json
           created_at?: string
           empresa_json?: Json
@@ -2478,6 +2508,9 @@ export type Database = {
           sessao_contratacao_id?: string
           stripe_price_id?: string
           termos_versao?: string
+          unidades_extras?: number
+          usuarios_extras?: number
+          valor_addons_centavos?: number
           valor_centavos?: number
           versao?: number
         }
@@ -5681,6 +5714,7 @@ export type Database = {
         Args: { p_empresa_id: string; p_payload: Json }
         Returns: Json
       }
+      api_master_configurar_addons: { Args: { p_payload: Json }; Returns: Json }
       api_master_configurar_gateway_plano: {
         Args: {
           p_plano_id: string
@@ -5700,6 +5734,7 @@ export type Database = {
       }
       api_master_financeiro_profissional: { Args: never; Returns: Json }
       api_master_financeiro_resumo: { Args: never; Returns: Json }
+      api_master_listar_addons: { Args: never; Returns: Json }
       api_master_listar_assinaturas: { Args: never; Returns: Json }
       api_master_listar_planos: { Args: never; Returns: Json }
       api_master_rejeitar_empresa: {
