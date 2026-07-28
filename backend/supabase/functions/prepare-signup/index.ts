@@ -11,6 +11,7 @@ type JsonObject = Record<string, unknown>;
 interface PrepareSignupInput {
   plan_code?: unknown;
   billing_interval?: unknown;
+  add_ons?: unknown;
   responsible?: unknown;
   company?: unknown;
   terms?: unknown;
@@ -105,7 +106,9 @@ Deno.serve(async (request: Request) => {
         .maybeSingle(),
       admin
         .from("configuracoes_comerciais")
-        .select("termos_versao, politica_privacidade_versao")
+        .select(
+          "termos_versao, politica_privacidade_versao, preco_usuario_extra_centavos, preco_unidade_extra_centavos, stripe_usuario_extra_monthly_price_id, stripe_usuario_extra_yearly_price_id, stripe_unidade_extra_monthly_price_id, stripe_unidade_extra_yearly_price_id",
+        )
         .eq("id", true)
         .maybeSingle(),
     ]);
@@ -126,12 +129,37 @@ Deno.serve(async (request: Request) => {
       parsed.value.interval === "yearly"
         ? plan.stripe_yearly_price_id
         : plan.stripe_monthly_price_id;
-    const priceCents =
+    const planPriceCents =
       parsed.value.interval === "yearly" ? plan.valor_anual_centavos : plan.valor_mensal_centavos;
 
-    if (!priceId || priceCents === null || priceCents === undefined) {
+    if (!priceId || planPriceCents === null || planPriceCents === undefined) {
       return respond({ error: "PLAN_PAYMENT_NOT_CONFIGURED" }, 503, cors);
     }
+
+    const userExtraPriceId =
+      parsed.value.interval === "yearly"
+        ? commercialConfig.stripe_usuario_extra_yearly_price_id
+        : commercialConfig.stripe_usuario_extra_monthly_price_id;
+    const unitExtraPriceId =
+      parsed.value.interval === "yearly"
+        ? commercialConfig.stripe_unidade_extra_yearly_price_id
+        : commercialConfig.stripe_unidade_extra_monthly_price_id;
+    if (parsed.value.addOns.users > 0 && !userExtraPriceId) {
+      return respond({ error: "PLAN_ADDON_PAYMENT_NOT_CONFIGURED" }, 503, cors);
+    }
+    if (parsed.value.addOns.units > 0 && !unitExtraPriceId) {
+      return respond({ error: "PLAN_ADDON_PAYMENT_NOT_CONFIGURED" }, 503, cors);
+    }
+    const userExtraCents =
+      (parsed.value.addOns.users ?? 0) *
+      Number(commercialConfig.preco_usuario_extra_centavos ?? 0) *
+      (parsed.value.interval === "yearly" ? 10 : 1);
+    const unitExtraCents =
+      (parsed.value.addOns.units ?? 0) *
+      Number(commercialConfig.preco_unidade_extra_centavos ?? 0) *
+      (parsed.value.interval === "yearly" ? 10 : 1);
+    const addonsCents = userExtraCents + unitExtraCents;
+    const priceCents = planPriceCents + addonsCents;
 
     const registration = await lookupRegistration(admin, parsed.value.cnpj);
     const registrationActive = normalizeStatus(registration.data.registration_status) === "ATIVA";
@@ -188,6 +216,13 @@ Deno.serve(async (request: Request) => {
       price_cents: priceCents,
       currency: plan.moeda,
       stripe_price_id: priceId,
+      add_ons: {
+        users: parsed.value.addOns.users,
+        units: parsed.value.addOns.units,
+        users_price_id: userExtraPriceId,
+        units_price_id: unitExtraPriceId,
+        value_cents: addonsCents,
+      },
       limits,
       features: plan.recursos,
       responsible,
@@ -228,6 +263,16 @@ Deno.serve(async (request: Request) => {
       valor_centavos: priceCents,
       moeda: plan.moeda,
       stripe_price_id: priceId,
+      usuarios_extras: parsed.value.addOns.users,
+      unidades_extras: parsed.value.addOns.units,
+      valor_addons_centavos: addonsCents,
+      addons_json: {
+        usuarios_extras: parsed.value.addOns.users,
+        unidades_extras: parsed.value.addOns.units,
+        usuario_extra_price_id: userExtraPriceId,
+        unidade_extra_price_id: unitExtraPriceId,
+        valor_centavos: addonsCents,
+      },
       limites_json: limits,
       recursos_json: plan.recursos,
       responsavel_json: responsible,
@@ -264,6 +309,11 @@ Deno.serve(async (request: Request) => {
           billing_interval: parsed.value.interval,
           price_cents: priceCents,
           currency: plan.moeda,
+          add_ons: {
+            users: parsed.value.addOns.users,
+            units: parsed.value.addOns.units,
+            value_cents: addonsCents,
+          },
           limits,
           features: plan.recursos,
         },
@@ -290,6 +340,7 @@ function parseInput(input: PrepareSignupInput) {
   const responsible = isObject(input.responsible) ? input.responsible : {};
   const company = isObject(input.company) ? input.company : {};
   const terms = isObject(input.terms) ? input.terms : {};
+  const addOns = isObject(input.add_ons) ? input.add_ons : {};
   const planCode = text(input.plan_code).toLowerCase();
   const interval = text(input.billing_interval);
   const cnpj = normalizeCnpj(company.cnpj);
@@ -300,6 +351,8 @@ function parseInput(input: PrepareSignupInput) {
   const accepted = terms.accepted === true;
   const termsVersion = text(terms.terms_version);
   const privacyVersion = text(terms.privacy_version);
+  const usersExtra = boundedNonNegativeInteger(addOns.users, 0, 100);
+  const unitsExtra = boundedNonNegativeInteger(addOns.units, 0, 100);
 
   if (!/^[a-z0-9-]{2,40}$/.test(planCode)) return { ok: false as const, error: "INVALID_PLAN" };
   if (interval !== "monthly" && interval !== "yearly")
@@ -345,6 +398,7 @@ function parseInput(input: PrepareSignupInput) {
       segment: optionalText(company.segment, 120),
       termsVersion,
       privacyVersion,
+      addOns: { users: usersExtra, units: unitsExtra },
     },
   };
 }
@@ -518,6 +572,12 @@ async function sha256(value: string) {
 function boundedInteger(value: string | undefined, fallback: number, min: number, max: number) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed >= min && parsed <= max ? parsed : fallback;
+}
+
+function boundedNonNegativeInteger(value: unknown, fallback: number, max: number) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= max ? parsed : fallback;
 }
 
 function isObject(value: unknown): value is JsonObject {

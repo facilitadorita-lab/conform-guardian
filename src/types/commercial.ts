@@ -36,9 +36,22 @@ export interface PublicCommercialCatalog {
   };
 }
 
+export interface CommercialAddOnsAdmin {
+  preco_usuario_extra_centavos: number;
+  preco_unidade_extra_centavos: number;
+  stripe_usuario_extra_monthly_price_id?: string | null;
+  stripe_usuario_extra_yearly_price_id?: string | null;
+  stripe_unidade_extra_monthly_price_id?: string | null;
+  stripe_unidade_extra_yearly_price_id?: string | null;
+}
+
 export interface PrepareSignupInput {
   planCode: string;
   billingInterval: BillingInterval;
+  addOns?: {
+    users: number;
+    units: number;
+  };
   responsible: {
     name: string;
     email: string;
@@ -92,6 +105,11 @@ export interface PreparedSignup {
     currency: string;
     limits: PublicPlanCatalogItem["limites"];
     features: Record<string, boolean>;
+    add_ons?: {
+      users: number;
+      units: number;
+      value_cents: number;
+    };
   };
   company: {
     cnpj: string;

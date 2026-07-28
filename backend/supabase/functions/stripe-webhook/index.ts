@@ -57,8 +57,16 @@ Deno.serve(async (request: Request) => {
       await handleCheckoutCompleted(admin, object);
     } else if (eventType === "invoice.payment_failed") {
       await handleInvoiceStatus(admin, object, "inadimplente");
+    } else if (eventType === "invoice.payment_action_required") {
+      await handleInvoiceStatus(admin, object, "inadimplente");
     } else if (eventType === "invoice.paid") {
       await handleInvoiceStatus(admin, object, "ativa");
+    } else if (eventType === "customer.subscription.updated") {
+      await handleSubscriptionUpdated(admin, object);
+    } else if (eventType === "customer.subscription.paused") {
+      await handleSubscriptionUpdated(admin, { ...object, status: "paused" });
+    } else if (eventType === "customer.subscription.resumed") {
+      await handleSubscriptionUpdated(admin, { ...object, status: "active" });
     } else if (eventType === "customer.subscription.deleted") {
       await handleSubscriptionCanceled(admin, object);
     }
@@ -159,6 +167,31 @@ async function handleCheckoutCompleted(admin: SupabaseClient, checkout: JsonObje
     p_stripe_subscription_id: subscriptionId,
   });
   if (provisionError) throw new Error(`PROVISIONING_FAILED:${provisionError.code ?? "unknown"}`);
+  await syncProvisionedAddons(admin, signupId);
+}
+
+async function syncProvisionedAddons(admin: SupabaseClient, signupId: string) {
+  const [{ data: signup, error: signupError }, { data: snapshot, error: snapshotError }] =
+    await Promise.all([
+      admin.from("sessoes_contratacao").select("assinatura_id").eq("id", signupId).maybeSingle(),
+      admin
+        .from("fotografias_contratacao")
+        .select("usuarios_extras, unidades_extras, valor_addons_centavos")
+        .eq("sessao_contratacao_id", signupId)
+        .order("versao", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+  if (signupError || snapshotError || !signup?.assinatura_id || !snapshot) return;
+  await admin
+    .from("assinaturas_empresas")
+    .update({
+      usuarios_extras: Number(snapshot.usuarios_extras ?? 0),
+      unidades_extras: Number(snapshot.unidades_extras ?? 0),
+      valor_addons_centavos: Number(snapshot.valor_addons_centavos ?? 0),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", signup.assinatura_id);
 }
 
 async function handleInvoiceStatus(
@@ -201,6 +234,93 @@ async function handleInvoiceStatus(
       completed_at: new Date().toISOString(),
     });
   }
+}
+
+async function handleSubscriptionUpdated(admin: SupabaseClient, subscription: JsonObject) {
+  const subscriptionId = text(subscription.id);
+  if (!subscriptionId) return;
+
+  const items = Array.isArray((subscription.items as JsonObject | undefined)?.data)
+    ? ((subscription.items as JsonObject).data as unknown[]).filter(isObject)
+    : [];
+  const primaryItem = items[0] ?? {};
+  const primaryPrice = isObject(primaryItem.price) ? primaryItem.price : {};
+  const primaryPriceId = text(primaryPrice.id);
+  const interval = text(isObject(primaryPrice.recurring) ? primaryPrice.recurring.interval : "");
+  const quantityByPrice = new Map(
+    items.map((item) => {
+      const price = isObject(item.price) ? item.price : {};
+      return [text(price.id), boundedQuantity(item.quantity)] as const;
+    }),
+  );
+
+  const [{ data: plans, error: plansError }, { data: config, error: configError }] = await Promise.all([
+    admin
+      .from("planos")
+      .select("id, valor_mensal_centavos, valor_anual_centavos, stripe_monthly_price_id, stripe_yearly_price_id")
+      .eq("ativo", true),
+    admin
+      .from("configuracoes_comerciais")
+      .select(
+        "preco_usuario_extra_centavos, preco_unidade_extra_centavos, stripe_usuario_extra_monthly_price_id, stripe_usuario_extra_yearly_price_id, stripe_unidade_extra_monthly_price_id, stripe_unidade_extra_yearly_price_id",
+      )
+      .eq("id", true)
+      .maybeSingle(),
+  ]);
+  if (plansError || configError) throw new Error("STRIPE_CATALOG_LOOKUP_FAILED");
+
+  const plan = (plans ?? []).find((candidate) =>
+    items.some((item) => {
+      const price = isObject(item.price) ? item.price : {};
+      const priceId = text(price.id);
+      return candidate.stripe_monthly_price_id === priceId || candidate.stripe_yearly_price_id === priceId;
+    }),
+  );
+  if (!plan) throw new Error("STRIPE_PRICE_NOT_MAPPED");
+
+  const isYearly = plan.stripe_yearly_price_id === primaryPriceId || interval === "year";
+  const userPriceId = isYearly
+    ? config?.stripe_usuario_extra_yearly_price_id
+    : config?.stripe_usuario_extra_monthly_price_id;
+  const unitPriceId = isYearly
+    ? config?.stripe_unidade_extra_yearly_price_id
+    : config?.stripe_unidade_extra_monthly_price_id;
+  const usersExtra = userPriceId ? quantityByPrice.get(userPriceId) ?? 0 : 0;
+  const unitsExtra = unitPriceId ? quantityByPrice.get(unitPriceId) ?? 0 : 0;
+  const addonMultiplier = isYearly ? 10 : 1;
+  const addonsCents =
+    usersExtra * Number(config?.preco_usuario_extra_centavos ?? 0) * addonMultiplier +
+    unitsExtra * Number(config?.preco_unidade_extra_centavos ?? 0) * addonMultiplier;
+  const stripeStatus = text(subscription.status);
+  const status = subscriptionStatus(stripeStatus);
+  const currentPeriodEnd = Number(subscription.current_period_end ?? 0);
+  const nextDueDate = Number.isFinite(currentPeriodEnd) && currentPeriodEnd > 0
+    ? new Date(currentPeriodEnd * 1000).toISOString().slice(0, 10)
+    : null;
+
+  const updatePayload: Record<string, unknown> = {
+    plano_id: plan.id,
+    status,
+    ciclo: isYearly ? "anual" : "mensal",
+    valor_mensal_centavos: isYearly ? 0 : Number(plan.valor_mensal_centavos ?? 0) + addonsCents,
+    valor_anual_centavos: isYearly ? Number(plan.valor_anual_centavos ?? 0) + addonsCents : null,
+    usuarios_extras: usersExtra,
+    unidades_extras: unitsExtra,
+    valor_addons_centavos: addonsCents,
+    proximo_vencimento: nextDueDate,
+    updated_at: new Date().toISOString(),
+  };
+  if (status === "ativa") updatePayload.grace_period_ends_at = null;
+  if (status === "inadimplente") {
+    updatePayload.grace_period_ends_at = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  const { error } = await admin
+    .from("assinaturas_empresas")
+    .update(updatePayload)
+    .eq("gateway", "stripe")
+    .eq("gateway_subscription_id", subscriptionId);
+  if (error) throw new Error("SUBSCRIPTION_UPDATE_FAILED");
 }
 
 async function handleSubscriptionCanceled(admin: SupabaseClient, subscription: JsonObject) {
@@ -262,6 +382,19 @@ function signupSessionId(object: JsonObject) {
 function stripeId(value: unknown) {
   if (typeof value === "string") return value;
   return isObject(value) ? text(value.id) : "";
+}
+
+function boundedQuantity(value: unknown) {
+  const parsed = Number(value ?? 0);
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 100 ? parsed : 0;
+}
+
+function subscriptionStatus(value: string) {
+  if (["active", "trialing"].includes(value)) return "ativa";
+  if (["past_due"].includes(value)) return "inadimplente";
+  if (["unpaid"].includes(value)) return "bloqueada";
+  if (["canceled", "incomplete_expired"].includes(value)) return "cancelada";
+  return "pagamento_pendente";
 }
 
 function isObject(value: unknown): value is JsonObject {

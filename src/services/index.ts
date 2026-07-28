@@ -15,6 +15,7 @@ export * from "./pendenciasService";
 export * from "./professionalService";
 export * from "./publicCatalogService";
 export * from "./signupService";
+export * from "./stripeService";
 export * from "./governanceService";
 export * from "./relatoriosService";
 export * from "./usuariosService";

@@ -3,6 +3,8 @@ import { useSession } from "@/hooks/use-session";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { shouldUseMocks } from "@/lib/runtime-config";
+import { stripeService } from "@/services";
+import { useState } from "react";
 
 const motivos: Record<string, { titulo: string; texto: string }> = {
   inadimplente: {
@@ -33,6 +35,20 @@ export function AccessBlocked() {
   const navigate = useNavigate();
   const info = motivos[empresaAtual.status] ?? motivos.bloqueada;
   const bypassAuth = shouldUseMocks();
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
+
+  async function openBillingPortal() {
+    setPortalLoading(true);
+    setPortalError(null);
+    try {
+      const url = await stripeService.abrirPortal(empresaAtual.id);
+      window.location.assign(url);
+    } catch (error) {
+      setPortalError(error instanceof Error ? error.message : "Não foi possível abrir o portal financeiro.");
+      setPortalLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground flex flex-col">
@@ -88,6 +104,16 @@ export function AccessBlocked() {
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
+              {empresaAtual.subscriptionStatus === "past_due" ? (
+                <button
+                  type="button"
+                  onClick={openBillingPortal}
+                  disabled={portalLoading}
+                  className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {portalLoading ? "Abrindo portal..." : "Regularizar pagamento"}
+                </button>
+              ) : null}
               <a
                 href="mailto:financeiro@conformflow.com"
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
@@ -101,6 +127,7 @@ export function AccessBlocked() {
                 <Phone className="h-4 w-4" /> Suporte comercial
               </a>
             </div>
+            {portalError ? <p className="text-xs text-danger">{portalError}</p> : null}
           </div>
         </div>
       </main>

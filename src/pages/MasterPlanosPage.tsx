@@ -1,10 +1,10 @@
 import { CheckCircle2, Save, ShieldAlert, ToggleLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMasterPlanos } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { adminMasterService } from "@/services";
-import type { PlanoComercialResumo, PlanoRecurso } from "@/types";
+import type { CommercialAddOnsAdmin, PlanoComercialResumo, PlanoRecurso } from "@/types";
 import { centsToInputValue, formatCurrencyFromCents } from "@/utils/money";
 
 const recursoLabels: Record<PlanoRecurso, string> = {
@@ -32,6 +32,11 @@ export function MasterPlanosPage() {
   const { data: planos = [] } = useMasterPlanos();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, PlanoComercialResumo>>({});
+  const addonsQuery = useQuery({
+    queryKey: ["master", "addons"],
+    queryFn: () => adminMasterService.listarAddons(),
+  });
+  const [addonsDraft, setAddonsDraft] = useState<CommercialAddOnsAdmin | null>(null);
   const planoSelecionado = useMemo(
     () =>
       drafts[selectedId ?? planos[0]?.id] ??
@@ -51,9 +56,20 @@ export function MasterPlanosPage() {
     });
   }, [planos]);
 
+  useEffect(() => {
+    if (addonsQuery.data && !addonsDraft) setAddonsDraft(addonsQuery.data);
+  }, [addonsDraft, addonsQuery.data]);
+
   const salvarPlano = useMutation({
     mutationFn: (plano: PlanoComercialResumo) => adminMasterService.salvarPlano(plano.id, plano),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["master", "planos"] }),
+  });
+  const salvarAddons = useMutation({
+    mutationFn: (payload: CommercialAddOnsAdmin) => adminMasterService.salvarAddons(payload),
+    onSuccess: (data) => {
+      setAddonsDraft(data);
+      queryClient.invalidateQueries({ queryKey: ["master", "addons"] });
+    },
   });
 
   return (
@@ -79,6 +95,45 @@ export function MasterPlanosPage() {
         <div className="rounded-xl border border-danger/25 bg-danger/5 px-4 py-3 text-sm text-danger">
           {salvarPlano.error.message}
         </div>
+      ) : null}
+      {addonsDraft ? (
+        <section className="rounded-xl border border-border bg-card p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold">Add-ons Stripe</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Configure os valores e Price IDs dos usuários e unidades extras. Os IDs nunca são expostos no catálogo público.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={salvarAddons.isPending}
+              onClick={() => salvarAddons.mutate(addonsDraft)}
+              className="inline-flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary disabled:opacity-50"
+            >
+              <Save className="h-3.5 w-3.5" /> {salvarAddons.isPending ? "Salvando..." : "Salvar add-ons"}
+            </button>
+          </div>
+          {salvarAddons.error ? <p className="mt-3 text-xs text-danger">{salvarAddons.error.message}</p> : null}
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Field
+              label="Usuário extra (mensal)"
+              prefix="R$"
+              value={centsToInputValue(addonsDraft.preco_usuario_extra_centavos)}
+              onChange={(value) => setAddonsDraft({ ...addonsDraft, preco_usuario_extra_centavos: moneyToCents(value) })}
+            />
+            <Field
+              label="Unidade extra (mensal)"
+              prefix="R$"
+              value={centsToInputValue(addonsDraft.preco_unidade_extra_centavos)}
+              onChange={(value) => setAddonsDraft({ ...addonsDraft, preco_unidade_extra_centavos: moneyToCents(value) })}
+            />
+            <Field label="Price ID usuário extra mensal" placeholder="price_..." value={addonsDraft.stripe_usuario_extra_monthly_price_id ?? ""} onChange={(value) => setAddonsDraft({ ...addonsDraft, stripe_usuario_extra_monthly_price_id: value || null })} />
+            <Field label="Price ID usuário extra anual" placeholder="price_..." value={addonsDraft.stripe_usuario_extra_yearly_price_id ?? ""} onChange={(value) => setAddonsDraft({ ...addonsDraft, stripe_usuario_extra_yearly_price_id: value || null })} />
+            <Field label="Price ID unidade extra mensal" placeholder="price_..." value={addonsDraft.stripe_unidade_extra_monthly_price_id ?? ""} onChange={(value) => setAddonsDraft({ ...addonsDraft, stripe_unidade_extra_monthly_price_id: value || null })} />
+            <Field label="Price ID unidade extra anual" placeholder="price_..." value={addonsDraft.stripe_unidade_extra_yearly_price_id ?? ""} onChange={(value) => setAddonsDraft({ ...addonsDraft, stripe_unidade_extra_yearly_price_id: value || null })} />
+          </div>
+        </section>
       ) : null}
       {validationErrors.length > 0 ? (
         <div className="rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning">

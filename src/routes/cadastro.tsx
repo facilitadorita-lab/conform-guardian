@@ -35,6 +35,8 @@ function CadastroPage() {
   const catalog = usePublicCatalog();
   const [planCode, setPlanCode] = useState(search.plan ?? "profissional");
   const [interval, setInterval] = useState<BillingInterval>(search.interval as BillingInterval);
+  const [extraUsers, setExtraUsers] = useState(0);
+  const [extraUnits, setExtraUnits] = useState(0);
   const [cnpj, setCnpj] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -79,6 +81,7 @@ function CadastroPage() {
       const result = await signupService.preparar({
         planCode: selectedPlan.codigo,
         billingInterval: interval,
+        addOns: { users: extraUsers, units: extraUnits },
         responsible: { name, email, phone, role, relationship },
         company: { cnpj, establishmentType, segment },
         terms: {
@@ -199,6 +202,32 @@ function CadastroPage() {
                       <option value="monthly">Mensal</option>
                       <option value="yearly">Anual</option>
                     </select>
+                  </Field>
+                  <Field label="Usuários extras (opcional)">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={extraUsers}
+                      onChange={(event) => setExtraUsers(Math.max(0, Math.min(100, Number(event.target.value) || 0)))}
+                      className={inputClass}
+                    />
+                    <span className="mt-1 block text-xs text-slate-500">
+                      {formatCurrencyFromCents(catalog.data?.add_ons.usuario_extra_centavos ?? 0, catalog.data?.add_ons.moeda ?? "BRL")} por usuário/mês.
+                    </span>
+                  </Field>
+                  <Field label="Unidades extras (opcional)">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={extraUnits}
+                      onChange={(event) => setExtraUnits(Math.max(0, Math.min(100, Number(event.target.value) || 0)))}
+                      className={inputClass}
+                    />
+                    <span className="mt-1 block text-xs text-slate-500">
+                      {formatCurrencyFromCents(catalog.data?.add_ons.unidade_extra_centavos ?? 0, catalog.data?.add_ons.moeda ?? "BRL")} por unidade/mês.
+                    </span>
                   </Field>
                 </div>
               </FormSection>
@@ -334,6 +363,12 @@ function CadastroPage() {
                   value={prepared.company.registration_status ?? "Ativa"}
                 />
                 <Review label="Plano" value={prepared.plan.name} />
+                {prepared.plan.add_ons && prepared.plan.add_ons.value_cents > 0 ? (
+                  <Review
+                    label="Extras"
+                    value={`${prepared.plan.add_ons.users} usuÃ¡rio(s) e ${prepared.plan.add_ons.units} unidade(s)`}
+                  />
+                ) : null}
                 <Review
                   label="Valor contratado"
                   value={`${formatCurrencyFromCents(prepared.plan.price_cents, prepared.plan.currency)} / ${prepared.plan.billing_interval === "yearly" ? "ano" : "mês"}`}

@@ -12,6 +12,10 @@ export const signupService = {
     return invokePublicFunction<PreparedSignup>("prepare-signup", {
       plan_code: input.planCode,
       billing_interval: input.billingInterval,
+      add_ons: {
+        users: input.addOns?.users ?? 0,
+        units: input.addOns?.units ?? 0,
+      },
       responsible: {
         name: input.responsible.name,
         email: input.responsible.email,
@@ -93,6 +97,8 @@ async function invokePublicFunction<T>(name: string, body: Record<string, unknow
 
 function translateSignupError(code: string) {
   const messages: Record<string, string> = {
+    PLAN_ADDON_PAYMENT_NOT_CONFIGURED:
+      "Os extras selecionados ainda nao estao configurados para pagamento online.",
     INVALID_CNPJ: "O CNPJ informado não é válido.",
     COMPANY_ALREADY_REGISTERED: "Este CNPJ já possui cadastro no Conform Flow.",
     SIGNUP_ALREADY_IN_PROGRESS: "Já existe uma contratação em andamento para este CNPJ.",

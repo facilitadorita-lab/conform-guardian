@@ -23,12 +23,18 @@ O código não contém chaves privadas. Todas as configurações abaixo devem se
 
 ## 3. Stripe
 
+PreÃ§os vigentes: Essencial R$ 159,90/mÃªs; Profissional R$ 189,90/mÃªs; Plano Rede R$ 289,90/mÃªs; usuÃ¡rio extra R$ 29,90/mÃªs; unidade extra R$ 59,90/mÃªs. Criar tambÃ©m os preÃ§os anuais correspondentes no Stripe.
+
 1. Criar produtos e preços mensais/anuais imutáveis.
 2. No Admin Master, informar `prod_...` e `price_...` para cada plano.
 3. Criar webhook apontando para `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`.
 4. Assinar pelo menos `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed` e `customer.subscription.deleted`.
 5. Copiar o signing secret para `STRIPE_WEBHOOK_SECRET`.
 6. Executar checkout em modo de teste e confirmar idempotência antes de ativar o modo live.
+
+7. No Admin Master, preencher também os quatro Price IDs dos add-ons: usuário extra mensal/anual e unidade extra mensal/anual.
+8. Habilitar no webhook os eventos `customer.subscription.updated`, `customer.subscription.paused`, `customer.subscription.resumed` e `invoice.payment_action_required` para manter limites e bloqueios sincronizados.
+9. Validar o Customer Portal em modo de teste antes de liberar o botão de regularização ao cliente.
 
 ## 4. Supabase Auth
 

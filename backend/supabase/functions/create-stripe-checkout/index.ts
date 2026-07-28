@@ -77,7 +77,7 @@ Deno.serve(async (request: Request) => {
 
   const { data: snapshot, error: snapshotError } = await admin
     .from("fotografias_contratacao")
-    .select("id, stripe_price_id, plano_nome, periodicidade, valor_centavos, moeda")
+    .select("id, stripe_price_id, plano_nome, periodicidade, valor_centavos, moeda, addons_json")
     .eq("sessao_contratacao_id", signup.id)
     .order("versao", { ascending: false })
     .limit(1)
@@ -90,6 +90,20 @@ Deno.serve(async (request: Request) => {
   form.set("mode", "subscription");
   form.set("line_items[0][price]", snapshot.stripe_price_id);
   form.set("line_items[0][quantity]", "1");
+  const addons = isObject(snapshot.addons_json) ? snapshot.addons_json : {};
+  const usersExtra = boundedQuantity(addons.usuarios_extras);
+  const unitsExtra = boundedQuantity(addons.unidades_extras);
+  const userExtraPriceId = text(addons.usuario_extra_price_id);
+  const unitExtraPriceId = text(addons.unidade_extra_price_id);
+  if (usersExtra > 0 && userExtraPriceId) {
+    form.set("line_items[1][price]", userExtraPriceId);
+    form.set("line_items[1][quantity]", String(usersExtra));
+  }
+  if (unitsExtra > 0 && unitExtraPriceId) {
+    const index = usersExtra > 0 ? 2 : 1;
+    form.set(`line_items[${index}][price]`, unitExtraPriceId);
+    form.set(`line_items[${index}][quantity]`, String(unitsExtra));
+  }
   form.set("customer_email", signup.email_responsavel);
   form.set("client_reference_id", signup.id);
   form.set("metadata[signup_session_id]", signup.id);
@@ -209,4 +223,17 @@ async function sha256(value: string) {
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function isObject(value: unknown): value is JsonObject {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function text(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function boundedQuantity(value: unknown) {
+  const parsed = Number(value ?? 0);
+  return Number.isInteger(parsed) && parsed > 0 && parsed <= 100 ? parsed : 0;
 }

@@ -4,6 +4,7 @@ import type {
   PlanoComercialResumo,
   MasterSystemHealth,
   CommercialHistoryEntry,
+  CommercialAddOnsAdmin,
 } from "@/types";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { invokeRpc } from "./service-utils";
@@ -75,6 +76,16 @@ export const adminMasterService = {
   async salvarPlano(planoId: string | null, payload: Partial<PlanoComercialResumo>) {
     return invokeRpc<PlanoComercialResumo>("api_master_salvar_plano", {
       p_plano_id: planoId,
+      p_payload: payload,
+    });
+  },
+
+  listarAddons(): Promise<CommercialAddOnsAdmin> {
+    return invokeRpc<CommercialAddOnsAdmin>("api_master_listar_addons");
+  },
+
+  salvarAddons(payload: Partial<CommercialAddOnsAdmin>) {
+    return invokeRpc<CommercialAddOnsAdmin>("api_master_configurar_addons", {
       p_payload: payload,
     });
   },

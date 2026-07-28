@@ -13,6 +13,7 @@ export interface EmpresaAtualMock {
   status: EmpresaStatus;
   plano: string;
   proximo_vencimento: string;
+  subscriptionStatus?: "active" | "trialing" | "past_due" | "paused" | "canceled" | "incomplete";
   motivo_bloqueio?: string;
 }
 

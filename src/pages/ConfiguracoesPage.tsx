@@ -13,6 +13,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
+import { useState } from "react";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAuthContext, useConfiguracoes, useMatrizDocumental } from "@/hooks/use-conform-data";
@@ -23,6 +24,7 @@ import type { ConfiguracaoCatalogoItem, PlanoRecurso } from "@/types";
 import { statusLabel } from "@/utils/status";
 import { GovernanceSettings } from "@/components/governance-settings";
 import { ProfessionalGovernancePanel } from "@/components/professional-governance-panel";
+import { stripeService } from "@/services";
 
 const iconMap: Record<string, LucideIcon> = {
   "bell-ring": BellRing,
@@ -51,6 +53,8 @@ const recursosPrincipais: Array<{ key: PlanoRecurso; label: string }> = [
 ];
 
 export function ConfiguracoesPage() {
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
   const { data: configuracoes = [] } = useConfiguracoes();
   const { data: matriz } = useMatrizDocumental();
   const { data: authContext } = useAuthContext();
@@ -65,6 +69,19 @@ export function ConfiguracoesPage() {
   );
   const recursos = plano?.recursos ?? {};
   const recursosLiberados = recursosPrincipais.filter((recurso) => Boolean(recursos[recurso.key]));
+
+  async function openBillingPortal() {
+    if (!empresaAtual?.id) return;
+    setPortalLoading(true);
+    setPortalError(null);
+    try {
+      const url = await stripeService.abrirPortal(empresaAtual.id);
+      window.location.assign(url);
+    } catch (error) {
+      setPortalError(error instanceof Error ? error.message : "Não foi possível abrir o portal financeiro.");
+      setPortalLoading(false);
+    }
+  }
 
   return (
     <AppShell
@@ -101,6 +118,24 @@ export function ConfiguracoesPage() {
           tone="success"
         />
       </div>
+
+      <Surface className="flex flex-wrap items-center justify-between gap-4 border-primary/20 bg-primary/5">
+        <div>
+          <h2 className="text-sm font-semibold">Assinatura e cobrança</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Atualize o cartão, consulte faturas ou altere o plano pelo portal seguro da Stripe.
+          </p>
+          {portalError ? <p className="mt-2 text-xs text-danger">{portalError}</p> : null}
+        </div>
+        <button
+          type="button"
+          onClick={openBillingPortal}
+          disabled={portalLoading || !empresaAtual?.id}
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+        >
+          {portalLoading ? "Abrindo portal..." : "Gerenciar assinatura"}
+        </button>
+      </Surface>
 
       <Surface className="space-y-4">
         <SectionHeader
