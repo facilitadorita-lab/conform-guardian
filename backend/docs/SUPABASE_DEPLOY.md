@@ -98,3 +98,15 @@ O Admin Master deve chamar `registrar_acesso_master` antes de carregar qualquer 
 - testar anexos acima do limite e formatos inválidos;
 - confirmar que exclusões são lógicas;
 - revisar logs de auditoria e acesso Master.
+
+### Segurança dos anexos e Sandbox
+
+Os anexos permanecem no bucket privado `evidencias`, separados por empresa, módulo e registro.
+O Edge Function valida o tamanho real, assinatura/MIME, pacote Office e SHA-256 antes de criar o
+registro. Por padrão a validação é local e nenhum documento confidencial sai do Supabase. Para
+habilitar um antivírus interno (por exemplo, ClamAV em rede privada), configure somente o segredo
+`INTERNAL_ANTIVIRUS_URL`; quando configurado, uma falha do serviço bloqueia o upload.
+
+O Sandbox do Admin Master é criado por RPC com MFA AAL2, recebe um tenant separado e fica vinculado
+ao `owner_user_id`. O contexto de empresas e as RPCs de listagem filtram esse proprietário; outros
+Admins Master não recebem o ambiente.

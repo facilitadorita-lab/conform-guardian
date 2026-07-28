@@ -113,20 +113,33 @@ Deno.serve(async (req: Request) => {
     if (listError || !files?.some((file) => file.name === filename))
       return respond({ error: "upload_not_found" }, 404);
 
-    // Validação de assinatura (magic bytes) para impedir que um arquivo com
-    // extensão/MIME forjados entre no acervo. Isso não substitui antivírus,
-    // mas bloqueia o vetor mais comum sem ler o conteúdo confidencial.
+    // A varredura acontece dentro da Edge Function: assinatura, pacote Office,
+    // tamanho real e SHA-256. O arquivo confidencial nunca é enviado para
+    // um antivírus de terceiros.
     const { data: uploadedObject, error: downloadError } = await adminClient.storage
       .from("evidencias")
       .download(path);
     if (downloadError || !uploadedObject) return respond({ error: "upload_not_found" }, 404);
-    const validSignature = await validateFileSignature(
+    if (uploadedObject.size <= 0 || uploadedObject.size > 20 * 1024 * 1024) {
+      await adminClient.storage.from("evidencias").remove([path]);
+      return respond({ error: "invalid_file_size" }, 400);
+    }
+    const scan = await scanFileLocally(
       uploadedObject,
       String(input.mime_type ?? ""),
     );
-    if (!validSignature) {
+    if (!scan.ok) {
       await adminClient.storage.from("evidencias").remove([path]);
-      return respond({ error: "invalid_file_signature" }, 400);
+      return respond({ error: scan.reason }, 400);
+    }
+    const antivirus = await scanWithOptionalAntivirus(uploadedObject);
+    if (antivirus.status === "infected") {
+      await adminClient.storage.from("evidencias").remove([path]);
+      return respond({ error: "malware_detected" }, 400);
+    }
+    if (antivirus.status === "error") {
+      await adminClient.storage.from("evidencias").remove([path]);
+      return respond({ error: "antivirus_unavailable" }, 503);
     }
 
     const finalidade = String(input.finalidade ?? "principal");
@@ -177,6 +190,12 @@ Deno.serve(async (req: Request) => {
         versao: version,
         substitui_anexo_id: replacementId,
         created_by: authData.user.id,
+        scan_status: "clean",
+        scan_engine: antivirus.status === "clean"
+          ? "local-signature-v1+internal-antivirus"
+          : "local-signature-v1",
+        scan_sha256: scan.sha256,
+        scan_completed_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -205,16 +224,54 @@ Deno.serve(async (req: Request) => {
   return respond({ error: "invalid_action" }, 400);
 });
 
-async function validateFileSignature(file: Blob, mimeType: string) {
+async function scanFileLocally(file: Blob, mimeType: string) {
   const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
   const startsWith = (signature: number[]) =>
     signature.every((value, index) => bytes[index] === value);
+  let ok = false;
   if (mimeType === "application/pdf")
-    return new TextDecoder().decode(bytes.slice(0, 5)) === "%PDF-";
-  if (mimeType === "image/jpeg") return startsWith([0xff, 0xd8, 0xff]);
-  if (mimeType === "image/png") return startsWith([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    ok = new TextDecoder().decode(bytes.slice(0, 5)) === "%PDF-";
+  else if (mimeType === "image/jpeg") ok = startsWith([0xff, 0xd8, 0xff]);
+  else if (mimeType === "image/png") ok = startsWith([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   if (mimeType.includes("wordprocessingml") || mimeType.includes("spreadsheetml")) {
-    return startsWith([0x50, 0x4b, 0x03, 0x04]);
+    ok = startsWith([0x50, 0x4b, 0x03, 0x04]);
+    if (ok) {
+      const packageText = new TextDecoder().decode(await file.slice(0, 2 * 1024 * 1024).arrayBuffer());
+      ok = packageText.includes("[Content_Types].xml") && (
+        mimeType.includes("wordprocessingml") ? packageText.includes("word/") : packageText.includes("xl/")
+      );
+    }
   }
-  return false;
+  if (!ok) return { ok: false as const, reason: "invalid_file_signature", sha256: null };
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  const sha256 = Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  return { ok: true as const, reason: null, sha256 };
+}
+
+async function scanWithOptionalAntivirus(file: Blob): Promise<
+  { status: "not_configured" | "clean" | "infected" | "error" }
+> {
+  const endpoint = Deno.env.get("INTERNAL_ANTIVIRUS_URL");
+  if (!endpoint) return { status: "not_configured" };
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/octet-stream", "x-scan-source": "conform-flow" },
+      body: await file.arrayBuffer(),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const payload = (await response.text()).toLowerCase();
+    if (!response.ok) return { status: "error" };
+    if (payload.includes("infected") || payload.includes("found") || payload.includes("malware")) {
+      return { status: "infected" };
+    }
+    if (payload.includes("clean") || payload.includes("ok") || payload.includes("passed")) {
+      return { status: "clean" };
+    }
+    return { status: "error" };
+  } catch {
+    return { status: "error" };
+  }
 }

@@ -5,6 +5,8 @@ import type {
   MasterSystemHealth,
   CommercialHistoryEntry,
   CommercialAddOnsAdmin,
+  MasterSandbox,
+  MasterStripeHealth,
 } from "@/types";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { invokeRpc } from "./service-utils";
@@ -131,6 +133,25 @@ export const adminMasterService = {
 
   saudeSistema(): Promise<MasterSystemHealth> {
     return invokeRpc<MasterSystemHealth>("api_master_saude_sistema");
+  },
+
+  stripeHealth(): Promise<MasterStripeHealth> {
+    return invokeRpc<MasterStripeHealth>("api_master_stripe_health");
+  },
+
+  listarSandbox(): Promise<MasterSandbox[]> {
+    return invokeRpc<MasterSandbox[]>("api_master_listar_sandbox");
+  },
+
+  criarSandbox(nome: string): Promise<MasterSandbox> {
+    return invokeRpc<MasterSandbox>("api_master_criar_sandbox", { p_nome: nome });
+  },
+
+  arquivarSandbox(id: string) {
+    return invokeRpc<{ ok: boolean; id: string; status: "archived" }>(
+      "api_master_arquivar_sandbox",
+      { p_sandbox_id: id },
+    );
   },
 
   async historicoComercial(): Promise<CommercialHistoryEntry[]> {

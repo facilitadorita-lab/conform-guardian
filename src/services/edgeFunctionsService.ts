@@ -53,6 +53,15 @@ function translateFunctionError(message: string): string {
   if (normalized.includes("invalid_file_signature")) {
     return "O conteúdo do arquivo não corresponde ao formato informado. Escolha o arquivo original e tente novamente.";
   }
+  if (normalized.includes("invalid_file_size")) {
+    return "O tamanho real do arquivo excede o limite de 20 MB. Escolha um arquivo menor e tente novamente.";
+  }
+  if (normalized.includes("malware_detected")) {
+    return "O arquivo foi bloqueado pela verificação de segurança. Não foi salvo no ambiente.";
+  }
+  if (normalized.includes("antivirus_unavailable")) {
+    return "A verificação de segurança está indisponível. O upload foi bloqueado para proteger seus dados; tente novamente em instantes.";
+  }
   if (normalized.includes("invalid_file")) {
     return "Arquivo invalido. Envie PDF, PNG, JPG, Word ou Excel com ate 20 MB.";
   }

@@ -246,3 +246,34 @@ export interface MasterSystemHealth {
     concluido_at?: string | null;
   } | null;
 }
+
+export interface MasterStripeHealth {
+  status: "healthy" | "degraded" | "critical" | "unknown";
+  total_24h: number;
+  failed_24h: number;
+  pending_total: number;
+  success_rate_24h: number;
+  last_failure_at: string | null;
+  last_success_at: string | null;
+  checked_at: string;
+}
+
+export interface MfaPolicyStatus {
+  required: boolean;
+  current_level: "aal1" | "aal2";
+  satisfied: boolean;
+  needs_enrollment: boolean;
+}
+
+export interface MasterSandbox {
+  id: UUID;
+  empresa_id: UUID;
+  nome: string;
+  status: "active" | "archived";
+  created_at: string;
+  archived_at?: string | null;
+  empresa?: {
+    nome_fantasia: string;
+    cnpj: string;
+  };
+}

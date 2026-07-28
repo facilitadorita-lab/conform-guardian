@@ -9,112 +9,42 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AlertasRouteImport } from './routes/alertas'
-import { Route as AssistenteRouteImport } from './routes/assistente'
-import { Route as AuditoriaRouteImport } from './routes/auditoria'
-import { Route as CadastroRouteImport } from './routes/cadastro'
-import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as DefinirSenhaRouteImport } from './routes/definir-senha'
-import { Route as DocumentosRouteImport } from './routes/documentos'
-import { Route as EquipamentosRouteImport } from './routes/equipamentos'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ManutencoesRouteImport } from './routes/manutencoes'
-import { Route as PendenciasRouteImport } from './routes/pendencias'
-import { Route as PlanosRouteImport } from './routes/planos'
-import { Route as RelatoriosRouteImport } from './routes/relatorios'
-import { Route as UsuariosRouteImport } from './routes/usuarios'
 import { Route as VencimentosRouteImport } from './routes/vencimentos'
-import { Route as CheckoutSucessoRouteImport } from './routes/checkout.sucesso'
-import { Route as EquipamentosIdRouteImport } from './routes/equipamentos.$id'
-import { Route as MasterAssinaturasRouteImport } from './routes/master.assinaturas'
-import { Route as MasterEmpresasRouteImport } from './routes/master.empresas'
-import { Route as MasterFinanceiroRouteImport } from './routes/master.financeiro'
-import { Route as MasterHistoricoComercialRouteImport } from './routes/master.historico-comercial'
-import { Route as MasterInadimplentesRouteImport } from './routes/master.inadimplentes'
-import { Route as MasterPlanosRouteImport } from './routes/master.planos'
-import { Route as MasterProximosPagamentosRouteImport } from './routes/master.proximos-pagamentos'
-import { Route as MasterRecursosPlanosRouteImport } from './routes/master.recursos-planos'
-import { Route as MasterSaudeRouteImport } from './routes/master.saude'
-import { Route as MasterUsuariosAtivosRouteImport } from './routes/master.usuarios-ativos'
-import { Route as MasterValoresPlanosRouteImport } from './routes/master.valores-planos'
+import { Route as UsuariosRouteImport } from './routes/usuarios'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as PlanosRouteImport } from './routes/planos'
+import { Route as PendenciasRouteImport } from './routes/pendencias'
+import { Route as ManutencoesRouteImport } from './routes/manutencoes'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as EquipamentosRouteImport } from './routes/equipamentos'
+import { Route as DocumentosRouteImport } from './routes/documentos'
+import { Route as DefinirSenhaRouteImport } from './routes/definir-senha'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as AuditoriaRouteImport } from './routes/auditoria'
+import { Route as AssistenteRouteImport } from './routes/assistente'
+import { Route as AlertasRouteImport } from './routes/alertas'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as SegurancaMfaRouteImport } from './routes/seguranca.mfa'
+import { Route as MasterValoresPlanosRouteImport } from './routes/master.valores-planos'
+import { Route as MasterUsuariosAtivosRouteImport } from './routes/master.usuarios-ativos'
+import { Route as MasterSaudeRouteImport } from './routes/master.saude'
+import { Route as MasterRecursosPlanosRouteImport } from './routes/master.recursos-planos'
+import { Route as MasterProximosPagamentosRouteImport } from './routes/master.proximos-pagamentos'
+import { Route as MasterPlanosRouteImport } from './routes/master.planos'
+import { Route as MasterInadimplentesRouteImport } from './routes/master.inadimplentes'
+import { Route as MasterHistoricoComercialRouteImport } from './routes/master.historico-comercial'
+import { Route as MasterFinanceiroRouteImport } from './routes/master.financeiro'
+import { Route as MasterEmpresasRouteImport } from './routes/master.empresas'
+import { Route as MasterAssinaturasRouteImport } from './routes/master.assinaturas'
+import { Route as EquipamentosIdRouteImport } from './routes/equipamentos.$id'
+import { Route as CheckoutSucessoRouteImport } from './routes/checkout.sucesso'
 import { Route as EquipamentoQrTokenRouteImport } from './routes/equipamento.qr.$token'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AlertasRoute = AlertasRouteImport.update({
-  id: '/alertas',
-  path: '/alertas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AssistenteRoute = AssistenteRouteImport.update({
-  id: '/assistente',
-  path: '/assistente',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuditoriaRoute = AuditoriaRouteImport.update({
-  id: '/auditoria',
-  path: '/auditoria',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CadastroRoute = CadastroRouteImport.update({
-  id: '/cadastro',
-  path: '/cadastro',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DefinirSenhaRoute = DefinirSenhaRouteImport.update({
-  id: '/definir-senha',
-  path: '/definir-senha',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DocumentosRoute = DocumentosRouteImport.update({
-  id: '/documentos',
-  path: '/documentos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EquipamentosRoute = EquipamentosRouteImport.update({
-  id: '/equipamentos',
-  path: '/equipamentos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ManutencoesRoute = ManutencoesRouteImport.update({
-  id: '/manutencoes',
-  path: '/manutencoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PendenciasRoute = PendenciasRouteImport.update({
-  id: '/pendencias',
-  path: '/pendencias',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlanosRoute = PlanosRouteImport.update({
-  id: '/planos',
-  path: '/planos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RelatoriosRoute = RelatoriosRouteImport.update({
-  id: '/relatorios',
-  path: '/relatorios',
+const VencimentosRoute = VencimentosRouteImport.update({
+  id: '/vencimentos',
+  path: '/vencimentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsuariosRoute = UsuariosRouteImport.update({
@@ -122,50 +52,104 @@ const UsuariosRoute = UsuariosRouteImport.update({
   path: '/usuarios',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VencimentosRoute = VencimentosRouteImport.update({
-  id: '/vencimentos',
-  path: '/vencimentos',
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CheckoutSucessoRoute = CheckoutSucessoRouteImport.update({
-  id: '/checkout/sucesso',
-  path: '/checkout/sucesso',
+const PlanosRoute = PlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EquipamentosIdRoute = EquipamentosIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => EquipamentosRoute,
-} as any)
-const MasterAssinaturasRoute = MasterAssinaturasRouteImport.update({
-  id: '/master/assinaturas',
-  path: '/master/assinaturas',
+const PendenciasRoute = PendenciasRouteImport.update({
+  id: '/pendencias',
+  path: '/pendencias',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MasterEmpresasRoute = MasterEmpresasRouteImport.update({
-  id: '/master/empresas',
-  path: '/master/empresas',
+const ManutencoesRoute = ManutencoesRouteImport.update({
+  id: '/manutencoes',
+  path: '/manutencoes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MasterFinanceiroRoute = MasterFinanceiroRouteImport.update({
-  id: '/master/financeiro',
-  path: '/master/financeiro',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MasterHistoricoComercialRoute =
-  MasterHistoricoComercialRouteImport.update({
-    id: '/master/historico-comercial',
-    path: '/master/historico-comercial',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const MasterInadimplentesRoute = MasterInadimplentesRouteImport.update({
-  id: '/master/inadimplentes',
-  path: '/master/inadimplentes',
+const EquipamentosRoute = EquipamentosRouteImport.update({
+  id: '/equipamentos',
+  path: '/equipamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MasterPlanosRoute = MasterPlanosRouteImport.update({
-  id: '/master/planos',
-  path: '/master/planos',
+const DocumentosRoute = DocumentosRouteImport.update({
+  id: '/documentos',
+  path: '/documentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DefinirSenhaRoute = DefinirSenhaRouteImport.update({
+  id: '/definir-senha',
+  path: '/definir-senha',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroRoute = CadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditoriaRoute = AuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistenteRoute = AssistenteRouteImport.update({
+  id: '/assistente',
+  path: '/assistente',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlertasRoute = AlertasRouteImport.update({
+  id: '/alertas',
+  path: '/alertas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SegurancaMfaRoute = SegurancaMfaRouteImport.update({
+  id: '/seguranca/mfa',
+  path: '/seguranca/mfa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterValoresPlanosRoute = MasterValoresPlanosRouteImport.update({
+  id: '/master/valores-planos',
+  path: '/master/valores-planos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterUsuariosAtivosRoute = MasterUsuariosAtivosRouteImport.update({
+  id: '/master/usuarios-ativos',
+  path: '/master/usuarios-ativos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterSaudeRoute = MasterSaudeRouteImport.update({
+  id: '/master/saude',
+  path: '/master/saude',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MasterRecursosPlanosRoute = MasterRecursosPlanosRouteImport.update({
+  id: '/master/recursos-planos',
+  path: '/master/recursos-planos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MasterProximosPagamentosRoute =
@@ -174,29 +158,45 @@ const MasterProximosPagamentosRoute =
     path: '/master/proximos-pagamentos',
     getParentRoute: () => rootRouteImport,
   } as any)
-const MasterRecursosPlanosRoute = MasterRecursosPlanosRouteImport.update({
-  id: '/master/recursos-planos',
-  path: '/master/recursos-planos',
+const MasterPlanosRoute = MasterPlanosRouteImport.update({
+  id: '/master/planos',
+  path: '/master/planos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MasterSaudeRoute = MasterSaudeRouteImport.update({
-  id: '/master/saude',
-  path: '/master/saude',
+const MasterInadimplentesRoute = MasterInadimplentesRouteImport.update({
+  id: '/master/inadimplentes',
+  path: '/master/inadimplentes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MasterUsuariosAtivosRoute = MasterUsuariosAtivosRouteImport.update({
-  id: '/master/usuarios-ativos',
-  path: '/master/usuarios-ativos',
+const MasterHistoricoComercialRoute =
+  MasterHistoricoComercialRouteImport.update({
+    id: '/master/historico-comercial',
+    path: '/master/historico-comercial',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const MasterFinanceiroRoute = MasterFinanceiroRouteImport.update({
+  id: '/master/financeiro',
+  path: '/master/financeiro',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MasterValoresPlanosRoute = MasterValoresPlanosRouteImport.update({
-  id: '/master/valores-planos',
-  path: '/master/valores-planos',
+const MasterEmpresasRoute = MasterEmpresasRouteImport.update({
+  id: '/master/empresas',
+  path: '/master/empresas',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SegurancaMfaRoute = SegurancaMfaRouteImport.update({
-  id: '/seguranca/mfa',
-  path: '/seguranca/mfa',
+const MasterAssinaturasRoute = MasterAssinaturasRouteImport.update({
+  id: '/master/assinaturas',
+  path: '/master/assinaturas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EquipamentosIdRoute = EquipamentosIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => EquipamentosRoute,
+} as any)
+const CheckoutSucessoRoute = CheckoutSucessoRouteImport.update({
+  id: '/checkout/sucesso',
+  path: '/checkout/sucesso',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EquipamentoQrTokenRoute = EquipamentoQrTokenRouteImport.update({
@@ -449,109 +449,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/alertas': {
-      id: '/alertas'
-      path: '/alertas'
-      fullPath: '/alertas'
-      preLoaderRoute: typeof AlertasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/assistente': {
-      id: '/assistente'
-      path: '/assistente'
-      fullPath: '/assistente'
-      preLoaderRoute: typeof AssistenteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auditoria': {
-      id: '/auditoria'
-      path: '/auditoria'
-      fullPath: '/auditoria'
-      preLoaderRoute: typeof AuditoriaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cadastro': {
-      id: '/cadastro'
-      path: '/cadastro'
-      fullPath: '/cadastro'
-      preLoaderRoute: typeof CadastroRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/configuracoes': {
-      id: '/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof ConfiguracoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/definir-senha': {
-      id: '/definir-senha'
-      path: '/definir-senha'
-      fullPath: '/definir-senha'
-      preLoaderRoute: typeof DefinirSenhaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/documentos': {
-      id: '/documentos'
-      path: '/documentos'
-      fullPath: '/documentos'
-      preLoaderRoute: typeof DocumentosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/equipamentos': {
-      id: '/equipamentos'
-      path: '/equipamentos'
-      fullPath: '/equipamentos'
-      preLoaderRoute: typeof EquipamentosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/manutencoes': {
-      id: '/manutencoes'
-      path: '/manutencoes'
-      fullPath: '/manutencoes'
-      preLoaderRoute: typeof ManutencoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pendencias': {
-      id: '/pendencias'
-      path: '/pendencias'
-      fullPath: '/pendencias'
-      preLoaderRoute: typeof PendenciasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/planos': {
-      id: '/planos'
-      path: '/planos'
-      fullPath: '/planos'
-      preLoaderRoute: typeof PlanosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/relatorios': {
-      id: '/relatorios'
-      path: '/relatorios'
-      fullPath: '/relatorios'
-      preLoaderRoute: typeof RelatoriosRouteImport
+    '/vencimentos': {
+      id: '/vencimentos'
+      path: '/vencimentos'
+      fullPath: '/vencimentos'
+      preLoaderRoute: typeof VencimentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/usuarios': {
@@ -561,95 +463,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UsuariosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/vencimentos': {
-      id: '/vencimentos'
-      path: '/vencimentos'
-      fullPath: '/vencimentos'
-      preLoaderRoute: typeof VencimentosRouteImport
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/checkout/sucesso': {
-      id: '/checkout/sucesso'
-      path: '/checkout/sucesso'
-      fullPath: '/checkout/sucesso'
-      preLoaderRoute: typeof CheckoutSucessoRouteImport
+    '/planos': {
+      id: '/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof PlanosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/equipamentos/$id': {
-      id: '/equipamentos/$id'
-      path: '/$id'
-      fullPath: '/equipamentos/$id'
-      preLoaderRoute: typeof EquipamentosIdRouteImport
-      parentRoute: typeof EquipamentosRoute
-    }
-    '/master/assinaturas': {
-      id: '/master/assinaturas'
-      path: '/master/assinaturas'
-      fullPath: '/master/assinaturas'
-      preLoaderRoute: typeof MasterAssinaturasRouteImport
+    '/pendencias': {
+      id: '/pendencias'
+      path: '/pendencias'
+      fullPath: '/pendencias'
+      preLoaderRoute: typeof PendenciasRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/master/empresas': {
-      id: '/master/empresas'
-      path: '/master/empresas'
-      fullPath: '/master/empresas'
-      preLoaderRoute: typeof MasterEmpresasRouteImport
+    '/manutencoes': {
+      id: '/manutencoes'
+      path: '/manutencoes'
+      fullPath: '/manutencoes'
+      preLoaderRoute: typeof ManutencoesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/master/financeiro': {
-      id: '/master/financeiro'
-      path: '/master/financeiro'
-      fullPath: '/master/financeiro'
-      preLoaderRoute: typeof MasterFinanceiroRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/master/historico-comercial': {
-      id: '/master/historico-comercial'
-      path: '/master/historico-comercial'
-      fullPath: '/master/historico-comercial'
-      preLoaderRoute: typeof MasterHistoricoComercialRouteImport
+    '/equipamentos': {
+      id: '/equipamentos'
+      path: '/equipamentos'
+      fullPath: '/equipamentos'
+      preLoaderRoute: typeof EquipamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/master/inadimplentes': {
-      id: '/master/inadimplentes'
-      path: '/master/inadimplentes'
-      fullPath: '/master/inadimplentes'
-      preLoaderRoute: typeof MasterInadimplentesRouteImport
+    '/documentos': {
+      id: '/documentos'
+      path: '/documentos'
+      fullPath: '/documentos'
+      preLoaderRoute: typeof DocumentosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/master/planos': {
-      id: '/master/planos'
-      path: '/master/planos'
-      fullPath: '/master/planos'
-      preLoaderRoute: typeof MasterPlanosRouteImport
+    '/definir-senha': {
+      id: '/definir-senha'
+      path: '/definir-senha'
+      fullPath: '/definir-senha'
+      preLoaderRoute: typeof DefinirSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/master/proximos-pagamentos': {
-      id: '/master/proximos-pagamentos'
-      path: '/master/proximos-pagamentos'
-      fullPath: '/master/proximos-pagamentos'
-      preLoaderRoute: typeof MasterProximosPagamentosRouteImport
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/master/recursos-planos': {
-      id: '/master/recursos-planos'
-      path: '/master/recursos-planos'
-      fullPath: '/master/recursos-planos'
-      preLoaderRoute: typeof MasterRecursosPlanosRouteImport
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/master/saude': {
-      id: '/master/saude'
-      path: '/master/saude'
-      fullPath: '/master/saude'
-      preLoaderRoute: typeof MasterSaudeRouteImport
+    '/cadastro': {
+      id: '/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof CadastroRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/master/usuarios-ativos': {
-      id: '/master/usuarios-ativos'
-      path: '/master/usuarios-ativos'
-      fullPath: '/master/usuarios-ativos'
-      preLoaderRoute: typeof MasterUsuariosAtivosRouteImport
+    '/auditoria': {
+      id: '/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AuditoriaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistente': {
+      id: '/assistente'
+      path: '/assistente'
+      fullPath: '/assistente'
+      preLoaderRoute: typeof AssistenteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alertas': {
+      id: '/alertas'
+      path: '/alertas'
+      fullPath: '/alertas'
+      preLoaderRoute: typeof AlertasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/seguranca/mfa': {
+      id: '/seguranca/mfa'
+      path: '/seguranca/mfa'
+      fullPath: '/seguranca/mfa'
+      preLoaderRoute: typeof SegurancaMfaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/master/valores-planos': {
@@ -659,11 +582,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MasterValoresPlanosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/seguranca/mfa': {
-      id: '/seguranca/mfa'
-      path: '/seguranca/mfa'
-      fullPath: '/seguranca/mfa'
-      preLoaderRoute: typeof SegurancaMfaRouteImport
+    '/master/usuarios-ativos': {
+      id: '/master/usuarios-ativos'
+      path: '/master/usuarios-ativos'
+      fullPath: '/master/usuarios-ativos'
+      preLoaderRoute: typeof MasterUsuariosAtivosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/saude': {
+      id: '/master/saude'
+      path: '/master/saude'
+      fullPath: '/master/saude'
+      preLoaderRoute: typeof MasterSaudeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/recursos-planos': {
+      id: '/master/recursos-planos'
+      path: '/master/recursos-planos'
+      fullPath: '/master/recursos-planos'
+      preLoaderRoute: typeof MasterRecursosPlanosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/proximos-pagamentos': {
+      id: '/master/proximos-pagamentos'
+      path: '/master/proximos-pagamentos'
+      fullPath: '/master/proximos-pagamentos'
+      preLoaderRoute: typeof MasterProximosPagamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/planos': {
+      id: '/master/planos'
+      path: '/master/planos'
+      fullPath: '/master/planos'
+      preLoaderRoute: typeof MasterPlanosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/inadimplentes': {
+      id: '/master/inadimplentes'
+      path: '/master/inadimplentes'
+      fullPath: '/master/inadimplentes'
+      preLoaderRoute: typeof MasterInadimplentesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/historico-comercial': {
+      id: '/master/historico-comercial'
+      path: '/master/historico-comercial'
+      fullPath: '/master/historico-comercial'
+      preLoaderRoute: typeof MasterHistoricoComercialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/financeiro': {
+      id: '/master/financeiro'
+      path: '/master/financeiro'
+      fullPath: '/master/financeiro'
+      preLoaderRoute: typeof MasterFinanceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/empresas': {
+      id: '/master/empresas'
+      path: '/master/empresas'
+      fullPath: '/master/empresas'
+      preLoaderRoute: typeof MasterEmpresasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/master/assinaturas': {
+      id: '/master/assinaturas'
+      path: '/master/assinaturas'
+      fullPath: '/master/assinaturas'
+      preLoaderRoute: typeof MasterAssinaturasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/equipamentos/$id': {
+      id: '/equipamentos/$id'
+      path: '/$id'
+      fullPath: '/equipamentos/$id'
+      preLoaderRoute: typeof EquipamentosIdRouteImport
+      parentRoute: typeof EquipamentosRoute
+    }
+    '/checkout/sucesso': {
+      id: '/checkout/sucesso'
+      path: '/checkout/sucesso'
+      fullPath: '/checkout/sucesso'
+      preLoaderRoute: typeof CheckoutSucessoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/equipamento/qr/$token': {
@@ -724,3 +724,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

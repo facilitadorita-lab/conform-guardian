@@ -165,6 +165,10 @@ export interface Anexo extends EntidadeAuditavel {
   versao: number;
   substitui_anexo_id?: UUID | null;
   status: "ativo" | "substituido" | "excluido";
+  scan_status?: "pending" | "clean" | "rejected" | "error" | "legacy_unverified";
+  scan_engine?: string | null;
+  scan_sha256?: string | null;
+  scan_completed_at?: ISODateTime | null;
 }
 
 export interface LogAuditoria {

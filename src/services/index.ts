@@ -21,3 +21,4 @@ export * from "./governanceService";
 export * from "./relatoriosService";
 export * from "./usuariosService";
 export * from "./vencimentosService";
+export * from "./securityService";
