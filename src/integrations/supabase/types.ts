@@ -515,6 +515,10 @@ export type Database = {
           cancel_at_period_end: boolean
           cancelada_em: string | null
           ciclo: string
+          clientes_ativos: number
+          clientes_extras: number
+          clientes_incluidos: number
+          cobranca_consolidada: boolean
           created_at: string
           created_by: string | null
           current_period_ends_at: string | null
@@ -530,8 +534,11 @@ export type Database = {
           moeda: string
           observacoes_internas: string | null
           plano_id: string
+          preco_cliente_extra_centavos: number
           proximo_vencimento: string | null
           status: string
+          stripe_cliente_extra_price_id: string | null
+          stripe_cliente_extra_subscription_item_id: string | null
           trial_termina_em: string | null
           ultimo_pagamento_em: string | null
           unidades_extras: number
@@ -547,6 +554,10 @@ export type Database = {
           cancel_at_period_end?: boolean
           cancelada_em?: string | null
           ciclo?: string
+          clientes_ativos?: number
+          clientes_extras?: number
+          clientes_incluidos?: number
+          cobranca_consolidada?: boolean
           created_at?: string
           created_by?: string | null
           current_period_ends_at?: string | null
@@ -562,8 +573,11 @@ export type Database = {
           moeda?: string
           observacoes_internas?: string | null
           plano_id: string
+          preco_cliente_extra_centavos?: number
           proximo_vencimento?: string | null
           status?: string
+          stripe_cliente_extra_price_id?: string | null
+          stripe_cliente_extra_subscription_item_id?: string | null
           trial_termina_em?: string | null
           ultimo_pagamento_em?: string | null
           unidades_extras?: number
@@ -579,6 +593,10 @@ export type Database = {
           cancel_at_period_end?: boolean
           cancelada_em?: string | null
           ciclo?: string
+          clientes_ativos?: number
+          clientes_extras?: number
+          clientes_incluidos?: number
+          cobranca_consolidada?: boolean
           created_at?: string
           created_by?: string | null
           current_period_ends_at?: string | null
@@ -594,8 +612,11 @@ export type Database = {
           moeda?: string
           observacoes_internas?: string | null
           plano_id?: string
+          preco_cliente_extra_centavos?: number
           proximo_vencimento?: string | null
           status?: string
+          stripe_cliente_extra_price_id?: string | null
+          stripe_cliente_extra_subscription_item_id?: string | null
           trial_termina_em?: string | null
           ultimo_pagamento_em?: string | null
           unidades_extras?: number
@@ -1498,6 +1519,7 @@ export type Database = {
           nome_fantasia: string
           numero: string | null
           observacoes: string | null
+          parceiro_origem_id: string | null
           plano_id: string | null
           porte_empresa: string | null
           provedor_consulta_cnpj: string | null
@@ -1511,6 +1533,7 @@ export type Database = {
           status_cadastral: string | null
           telefone: string | null
           telefone_oficial: string | null
+          tipo_conta: string
           tipo_estabelecimento: string | null
           ultima_consulta_cnpj_at: string | null
           updated_at: string
@@ -1542,6 +1565,7 @@ export type Database = {
           nome_fantasia: string
           numero?: string | null
           observacoes?: string | null
+          parceiro_origem_id?: string | null
           plano_id?: string | null
           porte_empresa?: string | null
           provedor_consulta_cnpj?: string | null
@@ -1555,6 +1579,7 @@ export type Database = {
           status_cadastral?: string | null
           telefone?: string | null
           telefone_oficial?: string | null
+          tipo_conta?: string
           tipo_estabelecimento?: string | null
           ultima_consulta_cnpj_at?: string | null
           updated_at?: string
@@ -1586,6 +1611,7 @@ export type Database = {
           nome_fantasia?: string
           numero?: string | null
           observacoes?: string | null
+          parceiro_origem_id?: string | null
           plano_id?: string | null
           porte_empresa?: string | null
           provedor_consulta_cnpj?: string | null
@@ -1599,6 +1625,7 @@ export type Database = {
           status_cadastral?: string | null
           telefone?: string | null
           telefone_oficial?: string | null
+          tipo_conta?: string
           tipo_estabelecimento?: string | null
           ultima_consulta_cnpj_at?: string | null
           updated_at?: string
@@ -1608,6 +1635,20 @@ export type Database = {
           verified_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "empresas_parceiro_origem_id_fkey"
+            columns: ["parceiro_origem_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "empresas_parceiro_origem_id_fkey"
+            columns: ["parceiro_origem_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
           {
             foreignKeyName: "empresas_plano_id_fkey"
             columns: ["plano_id"]
@@ -3464,6 +3505,7 @@ export type Database = {
           descricao: string | null
           disponivel_venda: boolean
           id: string
+          limite_clientes: number | null
           limite_documentos: number | null
           limite_equipamentos: number | null
           limite_storage_mb: number
@@ -3473,11 +3515,15 @@ export type Database = {
           nivel_suporte: string
           nome: string
           ordem: number
+          preco_cliente_extra_centavos: number | null
           publico_recomendado: string | null
           recursos: Json
+          stripe_client_extra_monthly_price_id: string | null
+          stripe_client_extra_yearly_price_id: string | null
           stripe_monthly_price_id: string | null
           stripe_product_id: string | null
           stripe_yearly_price_id: string | null
+          tipo_plano: string
           trial_dias: number
           updated_at: string
           valor_anual_centavos: number | null
@@ -3490,6 +3536,7 @@ export type Database = {
           descricao?: string | null
           disponivel_venda?: boolean
           id?: string
+          limite_clientes?: number | null
           limite_documentos?: number | null
           limite_equipamentos?: number | null
           limite_storage_mb?: number
@@ -3499,11 +3546,15 @@ export type Database = {
           nivel_suporte?: string
           nome: string
           ordem?: number
+          preco_cliente_extra_centavos?: number | null
           publico_recomendado?: string | null
           recursos?: Json
+          stripe_client_extra_monthly_price_id?: string | null
+          stripe_client_extra_yearly_price_id?: string | null
           stripe_monthly_price_id?: string | null
           stripe_product_id?: string | null
           stripe_yearly_price_id?: string | null
+          tipo_plano?: string
           trial_dias?: number
           updated_at?: string
           valor_anual_centavos?: number | null
@@ -3516,6 +3567,7 @@ export type Database = {
           descricao?: string | null
           disponivel_venda?: boolean
           id?: string
+          limite_clientes?: number | null
           limite_documentos?: number | null
           limite_equipamentos?: number | null
           limite_storage_mb?: number
@@ -3525,11 +3577,15 @@ export type Database = {
           nivel_suporte?: string
           nome?: string
           ordem?: number
+          preco_cliente_extra_centavos?: number | null
           publico_recomendado?: string | null
           recursos?: Json
+          stripe_client_extra_monthly_price_id?: string | null
+          stripe_client_extra_yearly_price_id?: string | null
           stripe_monthly_price_id?: string | null
           stripe_product_id?: string | null
           stripe_yearly_price_id?: string | null
+          tipo_plano?: string
           trial_dias?: number
           updated_at?: string
           valor_anual_centavos?: number | null
@@ -3893,6 +3949,101 @@ export type Database = {
           severidade?: string
         }
         Relationships: []
+      }
+      relacionamentos_parceiro_clientes: {
+        Row: {
+          cliente_empresa_id: string
+          created_at: string
+          created_by: string | null
+          encerrado_em: string | null
+          id: string
+          inicio_em: string
+          observacoes: string | null
+          parceiro_empresa_id: string
+          plano_servico_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cliente_empresa_id: string
+          created_at?: string
+          created_by?: string | null
+          encerrado_em?: string | null
+          id?: string
+          inicio_em?: string
+          observacoes?: string | null
+          parceiro_empresa_id: string
+          plano_servico_id: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cliente_empresa_id?: string
+          created_at?: string
+          created_by?: string | null
+          encerrado_em?: string | null
+          id?: string
+          inicio_em?: string
+          observacoes?: string | null
+          parceiro_empresa_id?: string
+          plano_servico_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relacionamentos_parceiro_clientes_cliente_empresa_id_fkey"
+            columns: ["cliente_empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relacionamentos_parceiro_clientes_cliente_empresa_id_fkey"
+            columns: ["cliente_empresa_id"]
+            isOneToOne: true
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "relacionamentos_parceiro_clientes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relacionamentos_parceiro_clientes_parceiro_empresa_id_fkey"
+            columns: ["parceiro_empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relacionamentos_parceiro_clientes_parceiro_empresa_id_fkey"
+            columns: ["parceiro_empresa_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "relacionamentos_parceiro_clientes_plano_servico_id_fkey"
+            columns: ["plano_servico_id"]
+            isOneToOne: false
+            referencedRelation: "planos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relacionamentos_parceiro_clientes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       relatorios_agendados: {
         Row: {
@@ -5724,6 +5875,18 @@ export type Database = {
         }
         Returns: Json
       }
+      api_master_configurar_partner_gateway: {
+        Args: {
+          p_plano_id: string
+          p_stripe_client_extra_monthly_price_id: string
+          p_stripe_client_extra_yearly_price_id: string
+          p_stripe_monthly_price_id: string
+          p_stripe_product_id: string
+          p_stripe_yearly_price_id: string
+        }
+        Returns: Json
+      }
+      api_master_criar_parceiro: { Args: { p_payload: Json }; Returns: Json }
       api_master_detalhe_verificacao: {
         Args: { p_solicitacao_id: string }
         Returns: Json
@@ -5749,6 +5912,10 @@ export type Database = {
       }
       api_master_salvar_limites_provisorios: {
         Args: { p_payload: Json }
+        Returns: Json
+      }
+      api_master_salvar_partner_plan: {
+        Args: { p_payload: Json; p_plano_id: string }
         Returns: Json
       }
       api_master_salvar_plano: {
@@ -5782,6 +5949,17 @@ export type Database = {
         Args: { p_empresa_id: string }
         Returns: Json
       }
+      api_partner_listar_clientes: {
+        Args: { p_parceiro_empresa_id: string }
+        Returns: Json
+      }
+      api_partner_listar_planos: { Args: never; Returns: Json }
+      api_partner_resumo: {
+        Args: { p_parceiro_empresa_id: string }
+        Returns: Json
+      }
+      api_partner_vincular_cliente: { Args: { p_payload: Json }; Returns: Json }
+      api_public_catalogo_parceiros: { Args: never; Returns: Json }
       api_public_catalogo_planos: { Args: never; Returns: Json }
       api_qualidade_dados: { Args: { p_empresa_id: string }; Returns: Json }
       api_registrar_tratativa: {
@@ -5957,6 +6135,10 @@ export type Database = {
       }
       is_master: { Args: never; Returns: boolean }
       normalize_cnpj: { Args: { p_cnpj: string }; Returns: string }
+      partner_relation_for_user: {
+        Args: { p_empresa_id: string }
+        Returns: string
+      }
       plan_feature_enabled: {
         Args: { p_empresa_id: string; p_recurso: string }
         Returns: boolean
