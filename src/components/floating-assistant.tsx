@@ -19,7 +19,8 @@ type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   sourcesCount?: number;
-  sources?: AssistantSource[];
+  sources?: Array<AssistantSource | string>;
+  confidence?: string;
 };
 
 const ASSISTANT_NAME = "FlowIA";
@@ -85,6 +86,7 @@ export function FloatingAssistant() {
           content,
           sourcesCount,
           sources: resposta.fontes ?? resposta.sources ?? [],
+          confidence: resposta.confianca,
         },
       ]);
     } catch (error) {
@@ -207,26 +209,31 @@ export function FloatingAssistant() {
                           Ver dados usados ({mensagem.sources.length})
                         </summary>
                         <ul className="mt-2 space-y-1.5 text-muted-foreground">
-                          {mensagem.sources.slice(0, 5).map((source, index) => (
-                            <li key={`${source.registro_id ?? source.titulo ?? "fonte"}-${index}`}>
-                              {sourceHref(source) ? (
-                                <a
-                                  href={sourceHref(source) ?? undefined}
-                                  className="font-medium text-accent hover:underline"
-                                >
-                                  {source.titulo ?? "Registro"}
-                                </a>
-                              ) : (
-                                <span className="font-medium text-foreground">
-                                  {source.titulo ?? "Registro"}
-                                </span>
-                              )}
-                              {source.data_vencimento
-                                ? ` · vence em ${formatDateBR(source.data_vencimento)}`
-                                : ""}
-                              {source.status ? ` · ${source.status}` : ""}
-                            </li>
-                          ))}
+                          {mensagem.sources.slice(0, 5).map((source, index) => {
+                            const normalized = toAssistantSource(source);
+                            return (
+                              <li
+                                key={`${normalized.registro_id ?? normalized.titulo ?? "fonte"}-${index}`}
+                              >
+                                {sourceHref(normalized) ? (
+                                  <a
+                                    href={sourceHref(normalized) ?? undefined}
+                                    className="font-medium text-accent hover:underline"
+                                  >
+                                    {normalized.titulo ?? "Registro"}
+                                  </a>
+                                ) : (
+                                  <span className="font-medium text-foreground">
+                                    {normalized.titulo ?? "Registro"}
+                                  </span>
+                                )}
+                                {normalized.data_vencimento
+                                  ? ` · vence em ${formatDateBR(normalized.data_vencimento)}`
+                                  : ""}
+                                {normalized.status ? ` · ${normalized.status}` : ""}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </details>
                     ) : null}
@@ -282,6 +289,10 @@ export function FloatingAssistant() {
       </button>
     </div>
   );
+}
+
+function toAssistantSource(source: AssistantSource | string): AssistantSource {
+  return typeof source === "string" ? { titulo: source } : source;
 }
 
 function sourceHref(source: AssistantSource): string | null {

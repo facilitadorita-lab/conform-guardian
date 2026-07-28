@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSessionProvider } from "@/hooks/use-app-session";
 import { initializeObservability } from "@/lib/observability";
+import { initializePerformanceTelemetry } from "@/lib/performance";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -126,13 +128,21 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
-  useEffect(() => initializeObservability(), []);
+  useEffect(() => {
+    const stopObservability = initializeObservability();
+    const stopPerformance = initializePerformanceTelemetry();
+    return () => {
+      stopObservability();
+      stopPerformance();
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <AppSessionProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <Toaster position="bottom-right" closeButton richColors />
       </AppSessionProvider>
     </QueryClientProvider>
   );

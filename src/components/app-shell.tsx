@@ -68,6 +68,7 @@ export function AppShell({
   const { data: authContext, error: contextError } = useAuthContext();
   const { data: alertas } = useAlertas();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
   const queryClient = useQueryClient();
   const router = useRouter();
   const navigate = useNavigate();
@@ -85,6 +86,21 @@ export function AppShell({
   );
   const exibirAssistente = hasPlanFeature(activeAuthContext, "assistente_ia");
   const alertasCount = alertas?.length ?? 0;
+  function submitGlobalSearch() {
+    const term = globalSearch.trim().toLowerCase();
+    if (!term) return;
+    const destination = term.includes("equip")
+      ? "/equipamentos"
+      : term.includes("manut")
+        ? "/manutencoes"
+        : term.includes("pend")
+          ? "/pendencias"
+          : term.includes("alert") || term.includes("venc")
+            ? "/vencimentos"
+            : "/documentos";
+    setGlobalSearch("");
+    void navigate({ to: destination as never });
+  }
   useEffect(() => {
     if (runtimeConfig.useMocks || loading || user) return;
     navigate({ to: "/login", search: { msg: undefined } });
@@ -128,6 +144,11 @@ export function AppShell({
             <div className="relative hidden min-w-0 flex-1 sm:block">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
               <input
+                value={globalSearch}
+                onChange={(event) => setGlobalSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") submitGlobalSearch();
+                }}
                 placeholder="Buscar documentos, equipamentos, pendências..."
                 className="cf-focus-ring h-[42px] w-full max-w-[540px] rounded-[11px] border border-border/70 bg-[rgba(248,250,252,0.9)] pl-10 pr-3 text-sm placeholder:text-muted-foreground/70 outline-none cf-transition focus:bg-white"
                 aria-label="Busca global"

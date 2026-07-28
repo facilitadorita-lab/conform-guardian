@@ -14,8 +14,10 @@ export interface AssistantSource {
 export interface AssistantResponse {
   resposta?: string;
   answer?: string;
-  fontes?: AssistantSource[];
-  sources?: AssistantSource[];
+  fontes?: Array<AssistantSource | string>;
+  sources?: Array<AssistantSource | string>;
+  confianca?: "alta" | "media" | "baixa" | string;
+  contexto_empresa?: UUID;
 }
 
 type LegacyItem = {

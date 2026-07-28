@@ -171,7 +171,10 @@ function PlanosPage() {
                     asChild
                     className="mt-7 w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800"
                   >
-                    <Link to="/cadastro">
+                    <Link
+                      to="/cadastro"
+                      search={{ plan: plan.codigo, interval: "monthly", checkout: undefined }}
+                    >
                       Quero ser parceiro <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>

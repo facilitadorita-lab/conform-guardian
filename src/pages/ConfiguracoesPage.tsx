@@ -18,6 +18,7 @@ import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAuthContext, useConfiguracoes, useMatrizDocumental } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
+import { useAppSession } from "@/hooks/use-app-session";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import type { ConfiguracaoCatalogoItem, PlanoRecurso } from "@/types";
@@ -59,6 +60,7 @@ export function ConfiguracoesPage() {
   const { data: matriz } = useMatrizDocumental();
   const { data: authContext } = useAuthContext();
   const { selectedCompanyId } = useSession();
+  const { permissions } = useAppSession();
   const empresaAtual =
     authContext?.empresasPermitidas.find((company) => company.id === selectedCompanyId) ??
     authContext?.empresaAtual;
@@ -78,7 +80,9 @@ export function ConfiguracoesPage() {
       const url = await stripeService.abrirPortal(empresaAtual.id);
       window.location.assign(url);
     } catch (error) {
-      setPortalError(error instanceof Error ? error.message : "Não foi possível abrir o portal financeiro.");
+      setPortalError(
+        error instanceof Error ? error.message : "Não foi possível abrir o portal financeiro.",
+      );
       setPortalLoading(false);
     }
   }
@@ -136,6 +140,8 @@ export function ConfiguracoesPage() {
           {portalLoading ? "Abrindo portal..." : "Gerenciar assinatura"}
         </button>
       </Surface>
+
+      {permissions?.limits ? <UsageMeters limits={permissions.limits} /> : null}
 
       <Surface className="space-y-4">
         <SectionHeader
@@ -282,11 +288,90 @@ export function ConfiguracoesPage() {
       ) : null}
       {empresaAtual?.id && authContext?.usuario.id ? (
         <>
-          <ProfessionalGovernancePanel companyId={empresaAtual.id} canAdmin={canAdmin} currentUserId={authContext.usuario.id} />
-          <GovernanceSettings companyId={empresaAtual.id} canAdmin={canAdmin} userId={authContext.usuario.id} />
+          <ProfessionalGovernancePanel
+            companyId={empresaAtual.id}
+            canAdmin={canAdmin}
+            currentUserId={authContext.usuario.id}
+          />
+          <GovernanceSettings
+            companyId={empresaAtual.id}
+            canAdmin={canAdmin}
+            userId={authContext.usuario.id}
+          />
         </>
       ) : null}
     </AppShell>
+  );
+}
+
+function UsageMeters({
+  limits,
+}: {
+  limits: {
+    max_users: number | null;
+    max_units: number | null;
+    max_documents: number | null;
+    max_equipment: number | null;
+    max_storage_mb: number | null;
+    usage: {
+      users: number;
+      units: number;
+      documents: number;
+      equipment: number;
+      storage_bytes: number;
+    };
+  };
+}) {
+  const meters = [
+    { label: "Usuários", value: limits.usage.users, max: limits.max_users },
+    { label: "Unidades", value: limits.usage.units, max: limits.max_units },
+    { label: "Documentos", value: limits.usage.documents, max: limits.max_documents },
+    { label: "Equipamentos", value: limits.usage.equipment, max: limits.max_equipment },
+    {
+      label: "Armazenamento",
+      value: Math.round(limits.usage.storage_bytes / (1024 * 1024)),
+      max: limits.max_storage_mb,
+      suffix: " MB",
+    },
+  ];
+  return (
+    <Surface className="space-y-4">
+      <SectionHeader
+        title="Uso do plano"
+        description="Acompanhe o consumo antes de atingir os limites contratados. O bloqueio é validado no backend."
+      />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        {meters.map((meter) => {
+          const ratio = meter.max ? Math.min(100, Math.round((meter.value / meter.max) * 100)) : 0;
+          const warning = ratio >= 80;
+          return (
+            <div key={meter.label} className="rounded-2xl border border-border bg-muted/20 p-4">
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <span className="font-semibold text-muted-foreground">{meter.label}</span>
+                <span className={cn("font-semibold", warning ? "text-warning" : "text-foreground")}>
+                  {meter.value}
+                  {meter.suffix ?? ""}
+                  {meter.max ? ` / ${meter.max}${meter.suffix ?? ""}` : ""}
+                </span>
+              </div>
+              {meter.max ? (
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border/70">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      warning ? "bg-warning" : "bg-accent",
+                    )}
+                    style={{ width: `${ratio}%` }}
+                  />
+                </div>
+              ) : (
+                <p className="mt-3 text-[11px] text-muted-foreground">Sem limite definido</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Surface>
   );
 }
 

@@ -113,4 +113,14 @@ export const professionalService = {
       p_fim: null,
     });
   },
+  isolationDiagnostic(companyId: string) {
+    return invokeRpc<{
+      empresa_id: string;
+      isolamento_ok: boolean;
+      registros_sem_empresa: number;
+      anexos_com_empresa_inconsistente: number;
+      checks: Array<{ tabela: string; registros_empresa: number }>;
+      executado_em: string;
+    }>("api_diagnostico_isolamento", { p_empresa_id: companyId });
+  },
 };

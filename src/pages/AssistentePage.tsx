@@ -9,6 +9,8 @@ type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   sourcesCount?: number;
+  sources?: string[];
+  confidence?: string;
 };
 
 const sugestoes = [
@@ -55,7 +57,13 @@ export function AssistentePage() {
         resposta.resposta ||
         resposta.answer ||
         "Não encontrei dados estruturados suficientes para responder essa pergunta.";
-      const sourcesCount = resposta.fontes?.length ?? resposta.sources?.length ?? 0;
+      const rawSources = resposta.fontes ?? resposta.sources ?? [];
+      const sources = rawSources.map((source) =>
+        typeof source === "string"
+          ? source
+          : (source.titulo ?? source.modulo ?? source.tabela ?? "Registro estruturado"),
+      );
+      const sourcesCount = sources.length;
 
       setMensagens((atuais) => [
         ...atuais,
@@ -64,6 +72,8 @@ export function AssistentePage() {
           role: "assistant",
           content,
           sourcesCount,
+          sources,
+          confidence: resposta.confianca,
         },
       ]);
     } catch (error) {
@@ -147,6 +157,29 @@ export function AssistentePage() {
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{mensagem.content}</p>
+                  {mensagem.role === "assistant" && mensagem.sourcesCount ? (
+                    <div className="mt-3 border-t border-border/70 pt-2 text-[11px] text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="font-semibold text-foreground/70">Base consultada</span>
+                        {mensagem.sources?.map((source) => (
+                          <span
+                            key={source}
+                            className="rounded-full border border-border bg-muted/60 px-2 py-0.5"
+                          >
+                            {source}
+                          </span>
+                        ))}
+                        {mensagem.confidence ? (
+                          <span className="text-success">
+                            ConfianÃ§a {mensagem.confidence === "alta" ? "alta" : "moderada"}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1">
+                        A resposta usa apenas registros estruturados desta empresa.
+                      </p>
+                    </div>
+                  ) : null}
                 </article>
               </div>
             ))

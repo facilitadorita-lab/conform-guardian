@@ -50,6 +50,9 @@ async function extractFunctionErrorMessage(error: unknown): Promise<string> {
 function translateFunctionError(message: string): string {
   const normalized = message.toLowerCase();
 
+  if (normalized.includes("invalid_file_signature")) {
+    return "O conteúdo do arquivo não corresponde ao formato informado. Escolha o arquivo original e tente novamente.";
+  }
   if (normalized.includes("invalid_file")) {
     return "Arquivo invalido. Envie PDF, PNG, JPG, Word ou Excel com ate 20 MB.";
   }

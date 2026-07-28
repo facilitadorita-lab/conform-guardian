@@ -76,6 +76,27 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Rate limit por usuÃ¡rio + empresa. Durante o rollout a chamada Ã© fail-open
+  // se a migration ainda nÃ£o estiver aplicada; apÃ³s aplicada, o backend passa
+  // a limitar automaticamente a 60 perguntas por minuto.
+  const { data: rateLimit, error: rateLimitError } = await userClient.rpc("api_check_rate_limit", {
+    p_scope: `assistant:${empresaId}`,
+    p_limit: 60,
+    p_window_seconds: 60,
+  });
+  if (!rateLimitError && rateLimit && rateLimit.allowed === false) {
+    return new Response(
+      JSON.stringify({
+        error: "rate_limit_exceeded",
+        message: "Muitas perguntas em pouco tempo. Aguarde um minuto e tente novamente.",
+      }),
+      {
+        status: 429,
+        headers: { ...cors, "content-type": "application/json", "retry-after": "60" },
+      },
+    );
+  }
+
   const { data: contexto, error: contextoError } = await userClient.rpc("api_assistente_contexto", {
     p_empresa_id: empresaId,
     p_escopo: escopo,
@@ -105,6 +126,8 @@ Deno.serve(async (req: Request) => {
     answer: resposta,
     fontes,
     sources: fontes,
+    confianca: fontes.length > 0 ? "alta" : "media",
+    contexto_empresa: empresaId,
     leu_anexos: false,
     politica_privacidade: contexto?.politica_privacidade ?? {
       le_anexos: false,

@@ -113,6 +113,22 @@ Deno.serve(async (req: Request) => {
     if (listError || !files?.some((file) => file.name === filename))
       return respond({ error: "upload_not_found" }, 404);
 
+    // Validação de assinatura (magic bytes) para impedir que um arquivo com
+    // extensão/MIME forjados entre no acervo. Isso não substitui antivírus,
+    // mas bloqueia o vetor mais comum sem ler o conteúdo confidencial.
+    const { data: uploadedObject, error: downloadError } = await adminClient.storage
+      .from("evidencias")
+      .download(path);
+    if (downloadError || !uploadedObject) return respond({ error: "upload_not_found" }, 404);
+    const validSignature = await validateFileSignature(
+      uploadedObject,
+      String(input.mime_type ?? ""),
+    );
+    if (!validSignature) {
+      await adminClient.storage.from("evidencias").remove([path]);
+      return respond({ error: "invalid_file_signature" }, 400);
+    }
+
     const finalidade = String(input.finalidade ?? "principal");
     let replacementId = input.substitui_anexo_id || null;
     let version = 1;
@@ -188,3 +204,17 @@ Deno.serve(async (req: Request) => {
 
   return respond({ error: "invalid_action" }, 400);
 });
+
+async function validateFileSignature(file: Blob, mimeType: string) {
+  const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const startsWith = (signature: number[]) =>
+    signature.every((value, index) => bytes[index] === value);
+  if (mimeType === "application/pdf")
+    return new TextDecoder().decode(bytes.slice(0, 5)) === "%PDF-";
+  if (mimeType === "image/jpeg") return startsWith([0xff, 0xd8, 0xff]);
+  if (mimeType === "image/png") return startsWith([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (mimeType.includes("wordprocessingml") || mimeType.includes("spreadsheetml")) {
+    return startsWith([0x50, 0x4b, 0x03, 0x04]);
+  }
+  return false;
+}
