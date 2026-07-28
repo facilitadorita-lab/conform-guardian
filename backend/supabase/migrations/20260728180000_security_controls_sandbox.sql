@@ -193,6 +193,45 @@ $$;
 revoke all on function public.api_master_stripe_health() from public, anon;
 grant execute on function public.api_master_stripe_health() to authenticated;
 
+-- A central de saúde também exige AAL2 para evitar leitura de telemetria
+-- operacional por uma sessão Master que ainda não concluiu o segundo fator.
+create or replace function public.api_master_saude_sistema()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if not public.is_master() then raise exception 'FORBIDDEN' using errcode = '42501'; end if;
+  if not public.session_has_aal2() then raise exception 'MFA_AAL2_REQUIRED' using errcode = '42501'; end if;
+  return jsonb_build_object(
+    'components', coalesce((select jsonb_agg(to_jsonb(x) order by x.componente) from (
+      select distinct on (componente) componente, status, latencia_ms, detalhes_json, checked_at
+      from public.verificacoes_saude_sistema order by componente, checked_at desc
+    ) x), '[]'::jsonb),
+    'open_alerts', coalesce((select jsonb_agg(to_jsonb(a) order by a.ultima_ocorrencia_at desc)
+      from public.alertas_operacionais_sistema a where a.status = 'open'), '[]'::jsonb),
+    'webhook_failures_24h', (select count(*) from public.eventos_webhook_pagamento
+      where not processado and recebido_at >= now() - interval '24 hours'),
+    'client_errors_24h', (select coalesce(sum(ocorrencias), 0) from public.eventos_erro_sistema
+      where ultima_ocorrencia_at >= now() - interval '24 hours' and resolvido_at is null),
+    'notification_failures_24h', (select count(*) from public.entregas_notificacao
+      where status = 'failed' and created_at >= now() - interval '24 hours'),
+    'scheduled_report_failures_24h', (select count(*) from public.execucoes_relatorios_agendados
+      where status = 'failed' and created_at >= now() - interval '24 hours'),
+    'data_quality_critical', (select count(*) from public.achados_qualidade_dados
+      where severidade = 'critical' and resolvido_at is null),
+    'last_restore_test', (select to_jsonb(r) from public.ensaios_restauracao_backup r order by initiated_at desc limit 1),
+    'last_deployment', (select to_jsonb(d) from public.implantacoes_sistema d where ambiente = 'production' order by iniciado_at desc limit 1),
+    'pending_dunning', (select count(*) from public.tentativas_cobranca where status in ('queued', 'processing'))
+  );
+end;
+$$;
+
+revoke all on function public.api_master_saude_sistema() from public, anon;
+grant execute on function public.api_master_saude_sistema() to authenticated;
+
 -- 5. Sandbox exclusivo do Admin Master que o criou. O ambiente é um tenant
 -- separado, sem assinatura e sem dados de produção.
 alter table public.empresas
