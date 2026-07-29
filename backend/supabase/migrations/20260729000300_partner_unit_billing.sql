@@ -2,6 +2,8 @@
 -- A empresa parceira pode ser criada sem plano e escolher depois entre uma
 -- carteira fixa ou cobranca unitária por cliente. O cliente continua sendo um
 -- tenant isolado; apenas o parceiro e o titular financeiro.
+-- A primeira fatura usa o marco do primeiro dia do mes seguinte; inclusoes
+-- posteriores usam prorations do Stripe a partir da data de vinculacao.
 
 alter table public.empresas
   alter column plano_id drop not null;
