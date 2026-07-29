@@ -5,12 +5,29 @@ import type {
   PartnerClientPayload,
   PartnerGiftBenefit,
   PartnerPlanCatalogItem,
+  PartnerUnitPlanCatalogItem,
   PartnerSummary,
 } from "@/types";
 
 export const partnerService = {
   listarPlanos(): Promise<PartnerPlanCatalogItem[]> {
     return invokeRpc<PartnerPlanCatalogItem[]>("api_partner_listar_planos");
+  },
+
+  listarPlanosUnitarios(): Promise<PartnerUnitPlanCatalogItem[]> {
+    return invokeRpc<PartnerUnitPlanCatalogItem[]>("api_partner_listar_planos_unitarios");
+  },
+
+  configurarCobranca(payload: {
+    parceiro_empresa_id: string;
+    modo_cobranca: "plano_carteira" | "unitario";
+    plano_codigo?: string | null;
+  }) {
+    return invokeRpc<{
+      parceiro_empresa_id: string;
+      modo_cobranca: "plano_carteira" | "unitario";
+      plano: PartnerPlanCatalogItem | null;
+    }>("api_partner_configurar_cobranca", { p_payload: payload });
   },
 
   listarClientes(parceiroEmpresaId: string): Promise<PartnerClient[]> {

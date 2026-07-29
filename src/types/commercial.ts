@@ -98,6 +98,19 @@ export interface PartnerClient {
   isencao?: PartnerGiftExemption | null;
 }
 
+export interface PartnerUnitPlanCatalogItem {
+  id: UUID;
+  codigo: string;
+  nome: string;
+  descricao?: string | null;
+  valor_mensal_centavos: number;
+  valor_anual_centavos?: number | null;
+  moeda: string;
+  stripe_monthly_price_id?: string | null;
+  stripe_yearly_price_id?: string | null;
+  recursos: Record<string, boolean>;
+}
+
 export interface PartnerGiftExemption {
   id: UUID;
   inicio_em: string;
@@ -122,6 +135,7 @@ export interface PartnerGiftBenefit {
 
 export interface PartnerSummary {
   parceiro_empresa_id: UUID;
+  modo_cobranca?: "plano_carteira" | "unitario";
   plano: PartnerPlanCatalogItem | null;
   assinatura: Record<string, unknown> | null;
   clientes_ativos: number;

@@ -178,9 +178,10 @@ async function handlePartnerCheckoutCompleted(admin: SupabaseClient, checkout: J
   const metadata = isObject(checkout.metadata) ? checkout.metadata : {};
   const partnerId = text(metadata.partner_empresa_id);
   const planId = text(metadata.partner_plan_id);
+  const billingMode = text(metadata.partner_billing_mode) === "unitario" ? "unitario" : "plano_carteira";
   const subscriptionId = stripeId(checkout.subscription);
   const customerId = stripeId(checkout.customer);
-  if (!isUuid(partnerId) || !isUuid(planId) || !subscriptionId || !customerId) {
+  if (!isUuid(partnerId) || !subscriptionId || !customerId || (billingMode === "plano_carteira" && !isUuid(planId))) {
     throw new Error("INVALID_PARTNER_CHECKOUT_REFERENCE");
   }
   if (!['paid', 'no_payment_required'].includes(text(checkout.payment_status))) {
@@ -192,27 +193,27 @@ async function handlePartnerCheckoutCompleted(admin: SupabaseClient, checkout: J
     .eq("id", planId)
     .eq("tipo_plano", "parceiro")
     .maybeSingle();
-  if (planError || !plan) throw new Error("PARTNER_PLAN_NOT_FOUND");
+  if (billingMode === "plano_carteira" && (planError || !plan)) throw new Error("PARTNER_PLAN_NOT_FOUND");
   const interval = text(metadata.partner_billing_interval) === "yearly" ? "anual" : "mensal";
   const { error } = await admin
     .from("assinaturas_empresas")
     .update({
-      plano_id: plan.id,
+      plano_id: billingMode === "unitario" ? null : plan?.id,
       status: "ativa",
       ciclo: interval,
-      valor_mensal_centavos: interval === "mensal" ? plan.valor_mensal_centavos : 0,
-      valor_anual_centavos: interval === "anual" ? plan.valor_anual_centavos : null,
+      valor_mensal_centavos: billingMode === "unitario" ? 0 : interval === "mensal" ? plan?.valor_mensal_centavos : 0,
+      valor_anual_centavos: billingMode === "unitario" ? null : interval === "anual" ? plan?.valor_anual_centavos : null,
       gateway: "stripe",
       gateway_customer_id: customerId,
       gateway_subscription_id: subscriptionId,
-      clientes_incluidos: plan.limite_clientes,
-      preco_cliente_extra_centavos: plan.preco_cliente_extra_centavos,
+      clientes_incluidos: billingMode === "unitario" ? 0 : plan?.limite_clientes,
+      preco_cliente_extra_centavos: billingMode === "unitario" ? 0 : plan?.preco_cliente_extra_centavos,
       cobranca_consolidada: true,
       updated_at: new Date().toISOString(),
     })
     .eq("empresa_id", partnerId);
   if (error) throw new Error("PARTNER_SUBSCRIPTION_UPDATE_FAILED");
-  await admin.from("empresas").update({ access_status: "active", status: "ativa", updated_at: new Date().toISOString() }).eq("id", partnerId);
+  await admin.from("empresas").update({ access_status: "active", status: "ativa", parceiro_cobranca_modo: billingMode, updated_at: new Date().toISOString() }).eq("id", partnerId);
   await syncPartnerClientAccess(admin, partnerId, "ativa");
 }
 
@@ -286,6 +287,24 @@ async function handleInvoiceStatus(
 async function handleSubscriptionUpdated(admin: SupabaseClient, subscription: JsonObject) {
   const subscriptionId = text(subscription.id);
   if (!subscriptionId) return;
+
+  const { data: subscriptionOwner } = await admin
+    .from("assinaturas_empresas")
+    .select("id, empresa_id")
+    .eq("gateway", "stripe")
+    .eq("gateway_subscription_id", subscriptionId)
+    .maybeSingle();
+  if (subscriptionOwner) {
+    const { data: partner } = await admin
+      .from("empresas")
+      .select("id, tipo_conta, parceiro_cobranca_modo")
+      .eq("id", subscriptionOwner.empresa_id)
+      .maybeSingle();
+    if (partner?.tipo_conta === "parceira" && partner.parceiro_cobranca_modo === "unitario") {
+      await updateUnitaryPartnerSubscription(admin, subscriptionOwner.id, subscriptionOwner.empresa_id, subscription, subscriptionId);
+      return;
+    }
+  }
 
   const items = Array.isArray((subscription.items as JsonObject | undefined)?.data)
     ? ((subscription.items as JsonObject).data as unknown[]).filter(isObject)
@@ -383,6 +402,61 @@ async function handleSubscriptionUpdated(admin: SupabaseClient, subscription: Js
   if (isPartnerPlan) await syncPartnerClientAccess(admin, subscriptionId, status, true);
 }
 
+async function updateUnitaryPartnerSubscription(
+  admin: SupabaseClient,
+  subscriptionRecordId: string,
+  partnerId: string,
+  subscription: JsonObject,
+  subscriptionId: string,
+) {
+  const items = Array.isArray((subscription.items as JsonObject | undefined)?.data)
+    ? ((subscription.items as JsonObject).data as unknown[]).filter(isObject)
+    : [];
+  const primaryItem = items[0] ?? {};
+  const primaryPrice = isObject(primaryItem.price) ? primaryItem.price : {};
+  const isYearly = text(isObject(primaryPrice.recurring) ? primaryPrice.recurring.interval : "") === "year";
+  const { data: relations } = await admin
+    .from("relacionamentos_parceiro_clientes")
+    .select("cliente_empresa_id, plano_servico_id")
+    .eq("parceiro_empresa_id", partnerId)
+    .eq("status", "ativo");
+  const clientIds = (relations ?? []).map((row) => text(row.cliente_empresa_id)).filter(Boolean);
+  const { data: exemptions } = clientIds.length
+    ? await admin.from("isencoes_parceiro").select("cliente_empresa_id").eq("parceiro_empresa_id", partnerId).eq("status", "ativa").gte("termina_em", new Date().toISOString().slice(0, 10)).in("cliente_empresa_id", clientIds)
+    : { data: [] as JsonObject[] };
+  const exempt = new Set((exemptions ?? []).map((row) => text(row.cliente_empresa_id)));
+  const billable = (relations ?? []).filter((row) => !exempt.has(text(row.cliente_empresa_id)));
+  const planIds = [...new Set(billable.map((row) => text(row.plano_servico_id)).filter(Boolean))];
+  const { data: plans } = planIds.length
+    ? await admin.from("planos").select("id, valor_mensal_centavos, valor_anual_centavos").eq("tipo_plano", "direto").in("id", planIds)
+    : { data: [] as JsonObject[] };
+  const total = billable.reduce((sum, relation) => {
+    const plan = (plans ?? []).find((candidate) => text(candidate.id) === text(relation.plano_servico_id));
+    return sum + Number(isYearly ? plan?.valor_anual_centavos ?? 0 : plan?.valor_mensal_centavos ?? 0);
+  }, 0);
+  const stripeStatus = text(subscription.status);
+  const status = subscriptionStatus(stripeStatus);
+  const periodEnd = Number(subscription.current_period_end ?? 0);
+  const nextDueDate = Number.isFinite(periodEnd) && periodEnd > 0 ? new Date(periodEnd * 1000).toISOString().slice(0, 10) : null;
+  const { error } = await admin.from("assinaturas_empresas").update({
+    plano_id: null,
+    status,
+    ciclo: isYearly ? "anual" : "mensal",
+    valor_mensal_centavos: isYearly ? 0 : total,
+    valor_anual_centavos: isYearly ? total : null,
+    clientes_incluidos: 0,
+    clientes_ativos: relations?.length ?? 0,
+    clientes_extras: billable.length,
+    preco_cliente_extra_centavos: 0,
+    valor_addons_centavos: 0,
+    cobranca_consolidada: true,
+    proximo_vencimento: nextDueDate,
+    updated_at: new Date().toISOString(),
+  }).eq("id", subscriptionRecordId).eq("gateway_subscription_id", subscriptionId);
+  if (error) throw new Error("UNITARY_SUBSCRIPTION_UPDATE_FAILED");
+  await syncPartnerClientAccess(admin, subscriptionId, status, true);
+}
+
 async function handleSubscriptionCanceled(admin: SupabaseClient, subscription: JsonObject) {
   const subscriptionId = text(subscription.id);
   if (!subscriptionId) return;
@@ -411,19 +485,23 @@ async function syncPartnerClientAccess(
   if (bySubscriptionId) {
     const { data } = await admin
       .from("assinaturas_empresas")
-      .select("empresa_id, plano_id, planos(tipo_plano)")
+      .select("empresa_id, plano_id")
       .eq("gateway", "stripe")
       .eq("gateway_subscription_id", empresaIdOrSubscriptionId)
       .maybeSingle();
-    if (!data || !isObject(data.planos) || data.planos.tipo_plano !== "parceiro") return;
+    if (!data) return;
+    const { data: owner } = await admin.from("empresas").select("tipo_conta, parceiro_cobranca_modo").eq("id", data.empresa_id).maybeSingle();
+    if (!owner || owner.tipo_conta !== "parceira") return;
     partnerId = data.empresa_id;
   } else {
     const { data } = await admin
       .from("assinaturas_empresas")
-      .select("empresa_id, plano_id, planos(tipo_plano)")
+      .select("empresa_id, plano_id")
       .eq("empresa_id", empresaIdOrSubscriptionId)
       .maybeSingle();
-    if (!data || !isObject(data.planos) || data.planos.tipo_plano !== "parceiro") return;
+    if (!data) return;
+    const { data: owner } = await admin.from("empresas").select("tipo_conta, parceiro_cobranca_modo").eq("id", data.empresa_id).maybeSingle();
+    if (!owner || owner.tipo_conta !== "parceira") return;
     partnerId = data.empresa_id;
   }
   const blocked = status !== "ativa";

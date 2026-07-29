@@ -230,7 +230,8 @@ export const adminMasterService = {
     nome_fantasia: string;
     cnpj: string;
     email_principal?: string;
-    plano_codigo: "parceiro_start" | "parceiro_pro" | "parceiro_enterprise";
+    plano_codigo?: "parceiro_start" | "parceiro_pro" | "parceiro_enterprise" | null;
+    modo_cobranca?: "plano_carteira" | "unitario";
   }) {
     return invokeRpc<{ empresa: Record<string, unknown>; plano: Record<string, unknown> }>(
       "api_master_criar_parceiro",

@@ -128,6 +128,13 @@ export function MasterEmpresasPage() {
     staleTime: 60_000,
   });
 
+  const parceiroPlanosUnitariosQuery = useQuery({
+    queryKey: ["partner-unit-plans"],
+    queryFn: () => partnerService.listarPlanosUnitarios(),
+    enabled: isParceiro && isAdministradorParceiro,
+    staleTime: 60_000,
+  });
+
   const parceiroBeneficiosId = isParceiro ? empresaParceira?.id : parceiroExpandidoId;
   const parceiroBeneficiosQuery = useQuery({
     queryKey: ["partner-benefits", parceiroBeneficiosId],
@@ -212,6 +219,11 @@ export function MasterEmpresasPage() {
       );
       await queryClient.invalidateQueries({ queryKey: ["partner-clients"] });
       await queryClient.invalidateQueries({ queryKey: ["partner-benefits"] });
+      try {
+        await partnerService.sincronizarCobranca(empresaParceira!.id);
+      } catch {
+        // Sem assinatura Stripe, a cobrança será sincronizada ao ativar o checkout.
+      }
       await refreshContext();
       await router.invalidate();
     },
@@ -231,8 +243,14 @@ export function MasterEmpresasPage() {
         nome_fantasia: required(formData, "nome_fantasia"),
         cnpj: required(formData, "cnpj"),
         email_principal: optional(formData, "email_principal"),
-        plano_codigo: (optional(formData, "plano_codigo") || "parceiro_start") as
-          "parceiro_start" | "parceiro_pro" | "parceiro_enterprise",
+        plano_codigo: (optional(formData, "plano_codigo") || null) as
+          | "parceiro_start"
+          | "parceiro_pro"
+          | "parceiro_enterprise"
+          | null,
+        modo_cobranca: (optional(formData, "modo_cobranca") || "plano_carteira") as
+          | "plano_carteira"
+          | "unitario",
       }),
     onSuccess: async () => {
       setModalParceiroAberto(false);
@@ -249,6 +267,32 @@ export function MasterEmpresasPage() {
         mutationError instanceof Error
           ? mutationError.message
           : "Não foi possível criar o parceiro.",
+      );
+    },
+  });
+
+  const configurarCobrancaMutation = useMutation({
+    mutationFn: (payload: {
+      parceiro_empresa_id: string;
+      modo_cobranca: "plano_carteira" | "unitario";
+      plano_codigo?: string | null;
+    }) => partnerService.configurarCobranca(payload),
+    onSuccess: async (result) => {
+      setErroCadastro(null);
+      setMensagem(
+        result.modo_cobranca === "unitario"
+          ? "Cobrança por CNPJ ativada. Cada novo cliente será incluído na mensalidade com pró-rata no primeiro ciclo."
+          : `Plano ${result.plano?.nome ?? "selecionado"} configurado para a carteira.`,
+      );
+      await queryClient.invalidateQueries();
+      await refreshContext();
+      await router.invalidate();
+    },
+    onError: (mutationError) => {
+      setErroCadastro(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Não foi possível configurar a cobrança do parceiro.",
       );
     },
   });
@@ -692,11 +736,11 @@ export function MasterEmpresasPage() {
               </div>
             ) : null}
             {parceiroPlanosQuery.isLoading ? (
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="mt-5 grid gap-3 md:grid-cols-4">
                 {[0, 1, 2].map((item) => <div key={item} className="h-28 animate-pulse rounded-lg bg-muted" />)}
               </div>
             ) : (
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="mt-5 grid gap-3 md:grid-cols-4">
                 {(parceiroPlanosQuery.data ?? []).map((plano) => {
                   const atual = plano.codigo === empresaParceira?.plano?.codigo;
                   return (
@@ -711,9 +755,60 @@ export function MasterEmpresasPage() {
                       <p className="mt-2 text-xs text-muted-foreground">
                         Até {plano.limite_clientes} clientes · {plano.limite_usuarios ? `${plano.limite_usuarios} usuários` : "usuários sob contrato"}
                       </p>
+                      {isAdministradorParceiro ? (
+                        <button
+                          type="button"
+                          disabled={atual || configurarCobrancaMutation.isPending}
+                          onClick={() =>
+                            configurarCobrancaMutation.mutate({
+                              parceiro_empresa_id: empresaParceira!.id,
+                              modo_cobranca: "plano_carteira",
+                              plano_codigo: plano.codigo,
+                            })
+                          }
+                          className="mt-4 w-full rounded-lg border border-primary/30 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {atual ? "Plano atual" : "Escolher este plano"}
+                        </button>
+                      ) : null}
                     </article>
                   );
                 })}
+                <article className="rounded-xl border border-primary/40 bg-primary/[0.04] p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-semibold">Plano unitário por CNPJ</h3>
+                    {empresaParceira?.plano == null ? <StatusBadge tone="ok">Disponível</StatusBadge> : null}
+                  </div>
+                  <p className="mt-2 text-xl font-semibold text-primary">Por cliente</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Cada CNPJ usa o plano operacional escolhido no cadastro. O valor entra na mensalidade do parceiro e o primeiro mês é calculado proporcionalmente.
+                  </p>
+                  {parceiroPlanosUnitariosQuery.data?.length ? (
+                    <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                      {parceiroPlanosUnitariosQuery.data.map((unitPlan) => (
+                        <div key={unitPlan.id} className="flex items-center justify-between gap-2">
+                          <span>{unitPlan.nome}</span>
+                          <span className="font-medium text-foreground">{formatMoneyBR(unitPlan.valor_mensal_centavos)}/mês</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  {isAdministradorParceiro ? (
+                    <button
+                      type="button"
+                      disabled={configurarCobrancaMutation.isPending}
+                      onClick={() =>
+                        configurarCobrancaMutation.mutate({
+                          parceiro_empresa_id: empresaParceira!.id,
+                          modo_cobranca: "unitario",
+                        })
+                      }
+                      className="mt-4 w-full rounded-lg border border-primary/30 px-3 py-2 text-xs font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
+                    >
+                      {empresaParceira?.plano == null ? "Usar cobrança por CNPJ" : "Mudar para cobrança por CNPJ"}
+                    </button>
+                  ) : null}
+                </article>
               </div>
             )}
           </section>
@@ -1236,9 +1331,10 @@ function NovoParceiroModal({
             </span>
             <select
               name="plano_codigo"
-              defaultValue="parceiro_start"
+              defaultValue=""
               className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
+              <option value="">Sem plano — configurar depois</option>
               <option value="parceiro_start">
                 Parceiro Start · R$ 499,00 · 5 clientes incluídos
               </option>
@@ -1246,6 +1342,19 @@ function NovoParceiroModal({
               <option value="parceiro_enterprise">
                 Parceiro Enterprise · R$ 1.699,00 · 40 clientes incluídos
               </option>
+            </select>
+          </label>
+          <label className="md:col-span-2">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Modelo inicial de cobrança
+            </span>
+            <select
+              name="modo_cobranca"
+              defaultValue="plano_carteira"
+              className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              <option value="plano_carteira">Plano de carteira (pode escolher depois)</option>
+              <option value="unitario">Plano unitário por CNPJ</option>
             </select>
           </label>
           <div className="md:col-span-2 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">

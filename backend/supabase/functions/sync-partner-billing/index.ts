@@ -63,6 +63,11 @@ Deno.serve(async (request: Request) => {
     return respond({ error: "PARTNER_BILLING_NOT_ACTIVE" }, 409, cors);
   }
 
+  const summaryObject = isObject(summary) ? summary : {};
+  if (text(summaryObject.modo_cobranca) === "unitario") {
+    return syncUnitaryBilling({ admin, stripeSecretKey, partnerId, subscription, cors });
+  }
+
   const { data: plan, error: planError } = await admin
     .from("planos")
     .select("stripe_client_extra_monthly_price_id, stripe_client_extra_yearly_price_id, preco_cliente_extra_centavos")
@@ -74,7 +79,6 @@ Deno.serve(async (request: Request) => {
     (subscription.ciclo === "anual" ? text(plan.stripe_client_extra_yearly_price_id) : text(plan.stripe_client_extra_monthly_price_id));
   if (!priceId) return respond({ error: "PARTNER_CLIENT_PRICE_NOT_CONFIGURED" }, 503, cors);
 
-  const summaryObject = isObject(summary) ? summary : {};
   const activeClients = Math.max(0, Number(summaryObject.clientes_ativos ?? subscription.clientes_ativos ?? 0));
   // Cortesias permanecem na carteira, mas não entram na quantidade cobrada.
   const billableClients = Math.max(0, Number(summaryObject.clientes_faturaveis ?? activeClients));
@@ -148,6 +152,101 @@ async function stripeRequest(secret: string, method: "GET" | "POST", path: strin
     headers: { authorization: `Bearer ${secret}`, ...(body ? { "content-type": "application/x-www-form-urlencoded" } : {}) },
     body,
   });
+}
+
+async function syncUnitaryBilling(input: {
+  admin: ReturnType<typeof createClient>;
+  stripeSecretKey: string;
+  partnerId: string;
+  subscription: JsonObject;
+  cors: Record<string, string>;
+}) {
+  const { admin, stripeSecretKey, partnerId, subscription, cors } = input;
+  const { data: relations, error: relationError } = await admin
+    .from("relacionamentos_parceiro_clientes")
+    .select("cliente_empresa_id, plano_servico_id")
+    .eq("parceiro_empresa_id", partnerId)
+    .eq("status", "ativo");
+  if (relationError) return respond({ error: "PARTNER_CLIENTS_LOOKUP_FAILED" }, 503, cors);
+  const clientIds = (relations ?? []).map((row) => text((row as JsonObject).cliente_empresa_id)).filter(Boolean);
+  const { data: exemptions } = clientIds.length
+    ? await admin.from("isencoes_parceiro").select("cliente_empresa_id").eq("parceiro_empresa_id", partnerId).eq("status", "ativa").gte("termina_em", new Date().toISOString().slice(0, 10)).in("cliente_empresa_id", clientIds)
+    : { data: [] as JsonObject[] };
+  const exempt = new Set((exemptions ?? []).map((row) => text((row as JsonObject).cliente_empresa_id)));
+  const billableRelations = (relations ?? []).filter((row) => !exempt.has(text((row as JsonObject).cliente_empresa_id)));
+  const planIds = [...new Set(billableRelations.map((row) => text((row as JsonObject).plano_servico_id)).filter(Boolean))];
+  const { data: plans, error: plansError } = planIds.length
+    ? await admin.from("planos").select("id, valor_mensal_centavos, valor_anual_centavos, stripe_monthly_price_id, stripe_yearly_price_id").eq("tipo_plano", "direto").eq("ativo", true).in("id", planIds)
+    : { data: [] as JsonObject[], error: null };
+  if (plansError) return respond({ error: "PARTNER_UNIT_PLANS_LOOKUP_FAILED" }, 503, cors);
+  const isYearly = subscription.ciclo === "anual";
+  const desired = new Map<string, { quantity: number; cents: number }>();
+  for (const relation of billableRelations) {
+    const plan = (plans ?? []).find((candidate) => text(candidate.id) === text((relation as JsonObject).plano_servico_id));
+    if (!plan) return respond({ error: "PARTNER_UNIT_PLAN_NOT_FOUND" }, 422, cors);
+    const priceId = isYearly ? text(plan.stripe_yearly_price_id) : text(plan.stripe_monthly_price_id);
+    if (!priceId) return respond({ error: "PARTNER_UNIT_STRIPE_PRICE_NOT_CONFIGURED" }, 503, cors);
+    const current = desired.get(priceId);
+    desired.set(priceId, {
+      quantity: (current?.quantity ?? 0) + 1,
+      cents: Number(current?.cents ?? 0) + Number(isYearly ? plan.valor_anual_centavos ?? 0 : plan.valor_mensal_centavos ?? 0),
+    });
+  }
+
+  const stripeSubscription = await stripeRequest(stripeSecretKey, "GET", `/v1/subscriptions/${encodeURIComponent(String(subscription.gateway_subscription_id))}`);
+  if (!stripeSubscription.ok) return respond({ error: "STRIPE_SUBSCRIPTION_LOOKUP_FAILED" }, 503, cors);
+  const stripePayload = await stripeSubscription.json() as JsonObject;
+  const items = isObject(stripePayload.items) && Array.isArray(stripePayload.items.data) ? stripePayload.items.data.filter(isObject) : [];
+  const managedPriceIds = new Set((plans ?? []).flatMap((plan) => [text(plan.stripe_monthly_price_id), text(plan.stripe_yearly_price_id)].filter(Boolean)));
+  const itemByPrice = new Map<string, JsonObject>();
+  for (const item of items) {
+    const price = isObject(item.price) ? item.price : {};
+    const priceId = text(price.id);
+    if (managedPriceIds.has(priceId)) itemByPrice.set(priceId, item);
+  }
+  for (const [priceId, desiredItem] of desired) {
+    const existing = itemByPrice.get(priceId);
+    if (existing?.id) {
+      const updated = await stripeRequest(stripeSecretKey, "POST", `/v1/subscription_items/${encodeURIComponent(String(existing.id))}`, {
+        quantity: desiredItem.quantity,
+        proration_behavior: "create_prorations",
+      });
+      if (!updated.ok) return respond({ error: "STRIPE_UNIT_QUANTITY_UPDATE_FAILED" }, 503, cors);
+    } else {
+      const created = await stripeRequest(stripeSecretKey, "POST", "/v1/subscription_items", {
+        subscription: subscription.gateway_subscription_id,
+        price: priceId,
+        quantity: desiredItem.quantity,
+        proration_behavior: "create_prorations",
+      });
+      if (!created.ok) return respond({ error: "STRIPE_UNIT_PRICE_ATTACH_FAILED" }, 503, cors);
+    }
+  }
+  for (const [priceId, item] of itemByPrice) {
+    if (!desired.has(priceId) && item.id) {
+      const removed = await stripeRequest(stripeSecretKey, "POST", `/v1/subscription_items/${encodeURIComponent(String(item.id))}`, {
+        quantity: 0,
+        proration_behavior: "create_prorations",
+      });
+      if (!removed.ok) return respond({ error: "STRIPE_UNIT_QUANTITY_UPDATE_FAILED" }, 503, cors);
+    }
+  }
+
+  const totalCents = [...desired.values()].reduce((total, item) => total + item.cents, 0);
+  const activeClients = relations?.length ?? 0;
+  const { error: updateError } = await admin.from("assinaturas_empresas").update({
+    plano_id: null,
+    clientes_incluidos: 0,
+    clientes_ativos: activeClients,
+    clientes_extras: billableRelations.length,
+    preco_cliente_extra_centavos: 0,
+    valor_mensal_centavos: isYearly ? 0 : totalCents,
+    valor_anual_centavos: isYearly ? totalCents : null,
+    cobranca_consolidada: true,
+    updated_at: new Date().toISOString(),
+  }).eq("id", subscription.id);
+  if (updateError) return respond({ error: "PARTNER_BILLING_STATE_UPDATE_FAILED" }, 503, cors);
+  return respond({ ok: true, parceiro_empresa_id: partnerId, clientes_ativos: activeClients, clientes_faturaveis: billableRelations.length, clientes_isentos: activeClients - billableRelations.length, clientes_incluidos: 0, clientes_extras: billableRelations.length, cobranca_modo: "unitario", prorata: true }, 200, cors);
 }
 
 function corsHeaders(request: Request) {
