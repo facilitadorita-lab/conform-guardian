@@ -107,7 +107,7 @@ function LoginPage() {
   };
 
   return (
-    <main className="cf-subtle-grid relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.14),transparent_32%),linear-gradient(135deg,#f8fafc_0%,#ffffff_48%,#eef6fb_100%)] px-4 py-6 text-slate-950 sm:px-5 sm:py-8">
+    <main className="cf-subtle-grid relative min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(8,145,178,0.14),transparent_32%),linear-gradient(135deg,#f8fafc_0%,#ffffff_48%,#eef6fb_100%)] px-4 py-6 text-slate-950 sm:px-5 sm:py-8">
       <div className="pointer-events-none absolute -right-32 top-12 h-96 w-96 rounded-full bg-cyan-200/25 blur-3xl" />
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center">
         <section className="relative grid w-full overflow-hidden rounded-[2rem] border border-slate-200/90 bg-white/95 shadow-[var(--cf-shadow)] backdrop-blur lg:grid-cols-[1.05fr_0.95fr]">
