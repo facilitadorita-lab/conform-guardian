@@ -898,16 +898,11 @@ grant execute on function public.api_executar_qualidade_dados(uuid) to authentic
 grant execute on function public.api_qualidade_dados(uuid) to authenticated;
 
 -- 7. QR seguro para equipamentos. O token nao revela o ID interno e exige login.
-alter table public.equipamentos add column if not exists qr_token uuid;
--- Backfill de bootstrap: não deve passar pelos gatilhos de limite/auditoria de
--- uma alteração feita por usuário. FKs, checks e índice continuam válidos.
--- The bootstrap runs as the database owner, but older schema triggers may be
--- marked ALWAYS by a previous hardening migration. Disable every table trigger
--- for this deterministic backfill so no runtime permission/plan gate can block
--- the migration. The update only fills the new opaque token column.
-alter table public.equipamentos disable trigger all;
-update public.equipamentos set qr_token=gen_random_uuid() where qr_token is null;
-alter table public.equipamentos enable trigger all;
+-- Adding the column with a volatile default backfills existing rows without
+-- issuing row updates, so runtime permission/plan triggers cannot block the
+-- migration. Existing installations that already have the column are handled
+-- by the guarded default and the later nullability check.
+alter table public.equipamentos add column if not exists qr_token uuid default gen_random_uuid();
 alter table public.equipamentos alter column qr_token set default gen_random_uuid();
 alter table public.equipamentos alter column qr_token set not null;
 create unique index if not exists uq_equipamentos_qr_token on public.equipamentos(qr_token);
