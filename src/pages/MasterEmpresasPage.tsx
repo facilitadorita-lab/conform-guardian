@@ -709,7 +709,7 @@ export function MasterEmpresasPage() {
                         {formatMoneyBR(plano.valor_mensal_centavos)}<span className="text-xs font-normal text-muted-foreground">/mês</span>
                       </p>
                       <p className="mt-2 text-xs text-muted-foreground">
-                        Até {plano.limite_clientes} clientes · {plano.limite_usuarios} usuários
+                        Até {plano.limite_clientes} clientes · {plano.limite_usuarios ? `${plano.limite_usuarios} usuários` : "usuários sob contrato"}
                       </p>
                     </article>
                   );

@@ -183,7 +183,7 @@ const partnerGroup: { label: string; items: NavItem[] } = {
     {
       to: "/planos",
       label: "Planos",
-      description: "Valores e benefÃ­cios",
+      description: "Valores e recursos",
       icon: WalletCards,
       partnerOnly: true,
     },
