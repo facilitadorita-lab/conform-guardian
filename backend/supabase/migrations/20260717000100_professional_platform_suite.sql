@@ -899,7 +899,11 @@ grant execute on function public.api_qualidade_dados(uuid) to authenticated;
 
 -- 7. QR seguro para equipamentos. O token nao revela o ID interno e exige login.
 alter table public.equipamentos add column if not exists qr_token uuid;
+-- Backfill de bootstrap: não deve passar pelos gatilhos de limite/auditoria de
+-- uma alteração feita por usuário. FKs, checks e índice continuam válidos.
+alter table public.equipamentos disable trigger user;
 update public.equipamentos set qr_token=gen_random_uuid() where qr_token is null;
+alter table public.equipamentos enable trigger user;
 alter table public.equipamentos alter column qr_token set default gen_random_uuid();
 alter table public.equipamentos alter column qr_token set not null;
 create unique index if not exists uq_equipamentos_qr_token on public.equipamentos(qr_token);
