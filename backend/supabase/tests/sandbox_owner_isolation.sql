@@ -1,6 +1,15 @@
 -- O Sandbox de um Admin Master não pode aparecer para outro Admin Master.
 begin;
 
+-- Load isolated fixtures without invoking runtime plan/permission gates.
+do $$
+declare v_table text;
+begin
+  foreach v_table in array array['usuarios','empresas','sandbox_ambientes'] loop
+    execute format('alter table public.%I disable trigger user', v_table);
+  end loop;
+end $$;
+
 insert into auth.users(
   id, instance_id, aud, role, email, encrypted_password,
   email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data
@@ -28,6 +37,14 @@ values (
   'Sandbox A',
   '30000000-0000-4000-8000-000000000003'
 );
+
+do $$
+declare v_table text;
+begin
+  foreach v_table in array array['usuarios','empresas','sandbox_ambientes'] loop
+    execute format('alter table public.%I enable trigger user', v_table);
+  end loop;
+end $$;
 
 set local role authenticated;
 select set_config(
