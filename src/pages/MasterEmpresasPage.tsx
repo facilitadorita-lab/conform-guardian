@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { ArrowRight, Building2, CheckCircle2, Plus, Search, ShieldCheck, X } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Search,
+  ShieldCheck,
+  UsersRound,
+  X,
+} from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
@@ -86,6 +97,7 @@ export function MasterEmpresasPage() {
   const [busca, setBusca] = useState("");
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "ativa" | "bloqueada">("todas");
   const [pagina, setPagina] = useState(1);
+  const [parceiroExpandidoId, setParceiroExpandidoId] = useState<string | null>(null);
   const empresaParceira = authContext?.empresasPermitidas.find(
     (empresa) => empresa.tipoConta === "parceira",
   );
@@ -101,6 +113,26 @@ export function MasterEmpresasPage() {
     queryKey: ["partner-clients", empresaParceira?.id],
     queryFn: () => partnerService.listarClientes(empresaParceira!.id),
     enabled: isParceiro && isAdministradorParceiro,
+    staleTime: 30_000,
+  });
+
+  const parceiros = useMemo(
+    () =>
+      authContext?.empresasPermitidas.filter((empresa) => empresa.tipoConta === "parceira") ?? [],
+    [authContext?.empresasPermitidas],
+  );
+
+  const clientesParceiroMasterQuery = useQuery({
+    queryKey: ["master", "partner-clients", parceiroExpandidoId],
+    queryFn: () => partnerService.listarClientes(parceiroExpandidoId!),
+    enabled: Boolean(authContext?.usuario.isMaster && parceiroExpandidoId),
+    staleTime: 30_000,
+  });
+
+  const resumoParceiroMasterQuery = useQuery({
+    queryKey: ["master", "partner-summary", parceiroExpandidoId],
+    queryFn: () => partnerService.resumo(parceiroExpandidoId!),
+    enabled: Boolean(authContext?.usuario.isMaster && parceiroExpandidoId),
     staleTime: 30_000,
   });
 
@@ -260,10 +292,10 @@ export function MasterEmpresasPage() {
 
   return (
     <AppShell
-      title="Empresas cadastradas"
+      title={authContext.usuario.isMaster ? "Empresas e parceiros" : "Empresas cadastradas"}
       description={
         authContext.usuario.isMaster
-          ? "Admin Master: selecione a empresa que deseja acessar ou cadastre uma nova."
+          ? "Cadastre parceiros, consulte suas carteiras e entre em qualquer ambiente autorizado."
           : "Selecione uma empresa vinculada ao seu usuário."
       }
       actions={
@@ -312,6 +344,175 @@ export function MasterEmpresasPage() {
             </div>
           </div>
         </div>
+
+        {authContext.usuario.isMaster ? (
+          <section className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">
+                  Gestao de parceiros
+                </p>
+                <h2 className="mt-1 text-lg font-semibold">Carteiras por parceiro</h2>
+                <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+                  Consulte os clientes de cada parceiro em uma visao separada. O parceiro paga a
+                  assinatura consolidada, mas cada cliente continua em seu proprio ambiente.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-background px-3 py-1.5 text-xs font-medium text-primary">
+                <UsersRound className="h-3.5 w-3.5" />
+                {parceiros.length} parceiro(s)
+              </div>
+            </div>
+
+            {parceiros.length === 0 ? (
+              <div className="mt-5 rounded-xl border border-dashed border-border bg-background p-6 text-center text-sm text-muted-foreground">
+                Nenhum parceiro cadastrado. Use o botao <strong>Novo parceiro</strong> para criar a
+                primeira carteira.
+              </div>
+            ) : (
+              <>
+                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {parceiros.map((parceiro) => {
+                    const selecionado = parceiro.id === parceiroExpandidoId;
+                    const clientesConhecidos = authContext.empresasPermitidas.filter(
+                      (empresa) =>
+                        empresa.tipoConta === "cliente" && empresa.parceiroEmpresaId === parceiro.id,
+                    ).length;
+                    const clientesAtivos = selecionado
+                      ? (resumoParceiroMasterQuery.data?.clientes_ativos ?? clientesConhecidos)
+                      : clientesConhecidos;
+
+                    return (
+                      <article
+                        key={parceiro.id}
+                        className={`rounded-xl border bg-card p-4 transition ${
+                          selecionado
+                            ? "border-primary/50 ring-2 ring-primary/10"
+                            : "border-border"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-start gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                              <ShieldCheck className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="truncate text-sm font-semibold">{parceiro.nome}</h3>
+                              <p className="mt-1 text-xs text-muted-foreground">CNPJ {parceiro.cnpj}</p>
+                            </div>
+                          </div>
+                          <StatusBadge tone={parceiro.status === "ativa" ? "ok" : "critico"}>
+                            {parceiro.status}
+                          </StatusBadge>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                          <div className="rounded-lg border border-border/70 bg-background p-2.5">
+                            <span className="block text-muted-foreground">Clientes ativos</span>
+                            <strong className="mt-1 block text-sm text-foreground">
+                              {clientesAtivos}
+                            </strong>
+                          </div>
+                          <div className="rounded-lg border border-border/70 bg-background p-2.5">
+                            <span className="block text-muted-foreground">Plano</span>
+                            <strong className="mt-1 block truncate text-sm text-foreground">
+                              {parceiro.plano?.nome ?? "Nao definido"}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setParceiroExpandidoId(selecionado ? null : parceiro.id)
+                          }
+                          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10"
+                          aria-expanded={selecionado}
+                        >
+                          {selecionado ? "Ocultar clientes" : "Ver clientes do parceiro"}
+                          {selecionado ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </button>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {parceiroExpandidoId ? (
+                  <div className="mt-4 rounded-xl border border-border bg-card p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                          Clientes vinculados
+                        </p>
+                        <h3 className="mt-1 text-base font-semibold">
+                          {parceiros.find((parceiro) => parceiro.id === parceiroExpandidoId)?.nome ??
+                            "Parceiro selecionado"}
+                        </h3>
+                      </div>
+                      {resumoParceiroMasterQuery.data ? (
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span className="rounded-full border border-border bg-background px-3 py-1.5">
+                            {resumoParceiroMasterQuery.data.clientes_incluidos} incluidos
+                          </span>
+                          <span className="rounded-full border border-warning/30 bg-warning/5 px-3 py-1.5 text-warning">
+                            {resumoParceiroMasterQuery.data.clientes_extras} extras
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {clientesParceiroMasterQuery.isLoading ? (
+                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                        {[0, 1].map((item) => (
+                          <div key={item} className="h-20 animate-pulse rounded-lg bg-muted" />
+                        ))}
+                      </div>
+                    ) : clientesParceiroMasterQuery.error ? (
+                      <p className="mt-4 rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger">
+                        Nao foi possivel carregar os clientes deste parceiro.
+                      </p>
+                    ) : (
+                      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        {(clientesParceiroMasterQuery.data ?? []).map((cliente) => (
+                          <div key={cliente.id} className="rounded-lg border border-border p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold">{cliente.nome_fantasia}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">CNPJ {cliente.cnpj}</p>
+                              </div>
+                              <StatusBadge tone={cliente.status === "ativa" ? "ok" : "critico"}>
+                                {cliente.status}
+                              </StatusBadge>
+                            </div>
+                            <p className="mt-3 text-xs text-muted-foreground">
+                              {cliente.plano?.nome ?? "Plano nao definido"} · {cliente.segmento ?? "Segmento nao informado"}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => void entrarNaEmpresa(cliente.id)}
+                              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                            >
+                              Entrar no ambiente <ArrowRight className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                        {!clientesParceiroMasterQuery.data?.length ? (
+                          <p className="text-sm text-muted-foreground">
+                            Nenhum cliente ativo vinculado a este parceiro.
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </>
+            )}
+          </section>
+        ) : null}
 
         {isParceiro ? (
           <section className="rounded-xl border border-primary/20 bg-primary/[0.04] p-5">

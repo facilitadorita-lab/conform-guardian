@@ -44,7 +44,7 @@ const mobileNavigationItems: Array<{
   { label: "Auditoria", to: "/auditoria", recurso: "auditoria" },
   { label: "Usuários", to: "/usuarios", recurso: "usuarios", adminOnly: true },
   { label: "Configurações", to: "/configuracoes" },
-  { label: "Empresas", to: "/master/empresas", masterOnly: true },
+  { label: "Empresas e parceiros", to: "/master/empresas", masterOnly: true },
   { label: "Financeiro", to: "/master/financeiro", masterOnly: true },
   { label: "Planos", to: "/master/planos", masterOnly: true },
   { label: "Saúde do sistema", to: "/master/saude", masterOnly: true },

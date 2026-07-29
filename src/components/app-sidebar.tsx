@@ -137,7 +137,12 @@ const groups: { label: string; items: NavItem[] }[] = [
 const masterGroup: { label: string; items: NavItem[] } = {
   label: "Admin Master",
   items: [
-    { to: "/master/empresas", label: "Empresas", description: "Base de clientes", icon: Building2 },
+    {
+      to: "/master/empresas",
+      label: "Empresas e parceiros",
+      description: "Clientes e carteiras",
+      icon: Building2,
+    },
     {
       to: "/master/financeiro",
       label: "Financeiro",
