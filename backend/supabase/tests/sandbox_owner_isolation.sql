@@ -22,10 +22,10 @@ insert into public.usuarios(id, nome, email, is_master) values
   ('40000000-0000-4000-8000-000000000004', 'Master B', 'master-b@test.local', true);
 
 insert into public.empresas(
-  id, razao_social, nome_fantasia, cnpj, status, verification_status,
+  id, razao_social, nome_fantasia, cnpj, cnpj_normalizado, status, verification_status,
   access_status, is_sandbox
 ) values (
-  'c0000000-0000-4000-8000-000000000003', 'Sandbox A', 'Sandbox A', 'SBX-ISOLATION-A',
+  'c0000000-0000-4000-8000-000000000003', 'Sandbox A', 'Sandbox A', '90.000.000/0000-03', '90000000000003',
   'ativa', 'verified', 'provisional', true
 );
 
