@@ -90,15 +90,20 @@ begin
     deleted_at = null,
     updated_at = now();
 
-  insert into public.usuarios_empresas (usuario_id, empresa_id, perfil, ativo)
-  select v_admin_id, e.id, 'administrador', true
-  from public.empresas e
-  where e.cnpj between '90.000.001/0001-01' and '90.000.030/0001-30'
-  on conflict (usuario_id, empresa_id) do update set
-    perfil = excluded.perfil,
-    ativo = true,
-    deleted_at = null,
-    updated_at = now();
+  -- O usuário de teste pode não existir em um banco recém-inicializado.
+  -- Nesse caso, mantemos o seed das empresas idempotente e deixamos o
+  -- vínculo para o fluxo de provisionamento do usuário quando ele existir.
+  if exists (select 1 from public.usuarios where id = v_admin_id) then
+    insert into public.usuarios_empresas (usuario_id, empresa_id, perfil, ativo)
+    select v_admin_id, e.id, 'administrador', true
+    from public.empresas e
+    where e.cnpj between '90.000.001/0001-01' and '90.000.030/0001-30'
+    on conflict (usuario_id, empresa_id) do update set
+      perfil = excluded.perfil,
+      ativo = true,
+      deleted_at = null,
+      updated_at = now();
+  end if;
 
   insert into public.assinaturas_empresas (
     empresa_id,
