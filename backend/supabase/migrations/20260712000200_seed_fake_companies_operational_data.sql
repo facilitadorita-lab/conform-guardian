@@ -33,8 +33,15 @@ declare
   v_tipo_autoclave uuid;
   v_tipo_termometro uuid;
   v_tipo_camara_fria uuid;
+  v_table text;
   v_stage text := 'initialization';
 begin
+  -- Fixtures are system-owned bootstrap data. Keep runtime plan gates, tenant
+  -- write checks and audit triggers out of this deterministic seed only.
+  foreach v_table in array array['documentos','equipamentos','calibracoes','qualificacoes','manutencoes','anexos'] loop
+    execute format('alter table public.%I disable trigger user', v_table);
+  end loop;
+
   select id into v_cat_avcb
   from public.categorias_documentos
   where empresa_id is null and lower(nome) like '%avcb%'
@@ -786,6 +793,10 @@ begin
       v_qual_id := null;
       v_manut_id := null;
     end loop;
+  end loop;
+
+  foreach v_table in array array['documentos','equipamentos','calibracoes','qualificacoes','manutencoes','anexos'] loop
+    execute format('alter table public.%I enable trigger user', v_table);
   end loop;
 exception
   when others then
