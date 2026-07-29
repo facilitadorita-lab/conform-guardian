@@ -135,6 +135,12 @@ async function createUnitaryCheckout(input: {
   form.set("subscription_data[metadata][partner_empresa_id]", partnerId);
   form.set("subscription_data[metadata][partner_billing_mode]", "unitario");
   form.set("subscription_data[metadata][partner_billing_interval]", interval);
+  if (interval === "monthly") {
+    // Fecha o ciclo no primeiro dia do próximo mês e cobra apenas a fração
+    // entre a ativação e esse marco no primeiro invoice.
+    form.set("subscription_data[billing_cycle_anchor]", String(nextMonthAnchorUnix()));
+    form.set("subscription_data[proration_behavior]", "create_prorations");
+  }
   let index = 0;
   for (const { plan, quantity } of groups.values()) {
     const priceId = interval === "yearly" ? text(plan.stripe_yearly_price_id) : text(plan.stripe_monthly_price_id);
@@ -151,6 +157,11 @@ async function createUnitaryCheckout(input: {
   const payload = await response.json() as JsonObject;
   if (!response.ok || !text(payload.url)) return respond({ error: "STRIPE_CHECKOUT_CREATE_FAILED" }, 503, cors);
   return respond({ checkout_url: text(payload.url), checkout_session_id: text(payload.id), status: "checkout_pendente", billing_mode: "unitario" }, 201, cors);
+}
+
+function nextMonthAnchorUnix() {
+  const now = new Date();
+  return Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1) / 1000);
 }
 
 function normalizedAppUrl(value: string | undefined) { try { const url = new URL((value ?? "").split(",")[0].trim()); return ["http:", "https:"].includes(url.protocol) ? url.origin : null; } catch { return null; } }
