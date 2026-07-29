@@ -76,8 +76,10 @@ Deno.serve(async (request: Request) => {
 
   const summaryObject = isObject(summary) ? summary : {};
   const activeClients = Math.max(0, Number(summaryObject.clientes_ativos ?? subscription.clientes_ativos ?? 0));
+  // Cortesias permanecem na carteira, mas não entram na quantidade cobrada.
+  const billableClients = Math.max(0, Number(summaryObject.clientes_faturaveis ?? activeClients));
   const included = Math.max(0, Number(summaryObject.clientes_incluidos ?? subscription.clientes_incluidos ?? 0));
-  const quantity = Math.max(0, Math.min(5000, activeClients - included));
+  const quantity = Math.max(0, Math.min(5000, billableClients - included));
 
   const stripeSubscription = await stripeRequest(stripeSecretKey, "GET", `/v1/subscriptions/${encodeURIComponent(subscription.gateway_subscription_id)}`);
   if (!stripeSubscription.ok) return respond({ error: "STRIPE_SUBSCRIPTION_LOOKUP_FAILED" }, 503, cors);
@@ -131,6 +133,8 @@ Deno.serve(async (request: Request) => {
     ok: true,
     parceiro_empresa_id: partnerId,
     clientes_ativos: activeClients,
+    clientes_faturaveis: billableClients,
+    clientes_isentos: Math.max(0, activeClients - billableClients),
     clientes_incluidos: included,
     clientes_extras: quantity,
     stripe_subscription_item_id: itemId || null,

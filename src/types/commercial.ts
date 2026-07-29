@@ -95,6 +95,16 @@ export interface PartnerClient {
     inicio_em: string;
     encerrado_em?: string | null;
   };
+  isencao?: PartnerGiftExemption | null;
+}
+
+export interface PartnerGiftExemption {
+  id: UUID;
+  inicio_em: string;
+  termina_em: string;
+  meses: number;
+  status: "ativa" | "expirada" | "revogada";
+  motivo: string;
 }
 
 export interface PartnerSummary {
@@ -102,6 +112,8 @@ export interface PartnerSummary {
   plano: PartnerPlanCatalogItem | null;
   assinatura: Record<string, unknown> | null;
   clientes_ativos: number;
+  clientes_faturaveis?: number;
+  clientes_isentos?: number;
   clientes_incluidos: number;
   clientes_extras: number;
 }

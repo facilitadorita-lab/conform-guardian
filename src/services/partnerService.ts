@@ -31,6 +31,32 @@ export const partnerService = {
     );
   },
 
+  concederIsencao(payload: {
+    parceiro_empresa_id: string;
+    cliente_empresa_id: string;
+    meses: number;
+    motivo?: string;
+    observacoes?: string;
+  }) {
+    return invokeRpc<{
+      id: string;
+      parceiro_empresa_id: string;
+      cliente_empresa_id: string;
+      inicio_em: string;
+      termina_em: string;
+      meses: number;
+      status: "ativa";
+      motivo: string;
+    }>("api_partner_conceder_isencao", { p_payload: payload });
+  },
+
+  revogarIsencao(isencaoId: string, motivo?: string) {
+    return invokeRpc<{ id: string; status: "revogada" }>("api_partner_revogar_isencao", {
+      p_isencao_id: isencaoId,
+      p_motivo: motivo ?? null,
+    });
+  },
+
   async sincronizarCobranca(parceiroEmpresaId: string) {
     const { data, error } = await requireSupabase().functions.invoke("sync-partner-billing", {
       body: { parceiro_empresa_id: parceiroEmpresaId },
@@ -39,6 +65,8 @@ export const partnerService = {
     return data as {
       ok: boolean;
       clientes_ativos: number;
+      clientes_faturaveis?: number;
+      clientes_isentos?: number;
       clientes_incluidos: number;
       clientes_extras: number;
     };

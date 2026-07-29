@@ -98,6 +98,10 @@ export function MasterEmpresasPage() {
   const [statusFiltro, setStatusFiltro] = useState<"todas" | "ativa" | "bloqueada">("todas");
   const [pagina, setPagina] = useState(1);
   const [parceiroExpandidoId, setParceiroExpandidoId] = useState<string | null>(null);
+  const [isencaoSelecionada, setIsencaoSelecionada] = useState<{
+    parceiroId: string;
+    cliente: import("@/types").PartnerClient;
+  } | null>(null);
   const empresaParceira = authContext?.empresasPermitidas.find(
     (empresa) => empresa.tipoConta === "parceira",
   );
@@ -231,6 +235,41 @@ export function MasterEmpresasPage() {
     },
   });
 
+  const concederIsencaoMutation = useMutation({
+    mutationFn: (payload: {
+      parceiro_empresa_id: string;
+      cliente_empresa_id: string;
+      meses: number;
+      motivo?: string;
+      observacoes?: string;
+    }) => partnerService.concederIsencao(payload),
+    onSuccess: async (result) => {
+      const parceiroId = result.parceiro_empresa_id;
+      setIsencaoSelecionada(null);
+      setErroCadastro(null);
+      setMensagem(
+        `Cortesia registrada até ${formatDateBR(result.termina_em)}. O cliente não será cobrado durante esse período.`,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["master", "partner-clients", parceiroId] });
+      await queryClient.invalidateQueries({ queryKey: ["master", "partner-summary", parceiroId] });
+      await queryClient.invalidateQueries({ queryKey: ["partner-clients", parceiroId] });
+      // A tabela é a fonte de verdade. Quando houver assinatura Stripe ativa,
+      // a sincronização remove o cliente cortesia da quantidade faturada.
+      try {
+        await partnerService.sincronizarCobranca(parceiroId);
+      } catch {
+        // Parceiros em trial ou sem Stripe configurado sincronizam ao ativar a cobrança.
+      }
+    },
+    onError: (mutationError) => {
+      setErroCadastro(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Não foi possível registrar a cortesia.",
+      );
+    },
+  });
+
   const entrarNaEmpresa = async (empresaId: string) => {
     await selectCompany(empresaId);
     await queryClient.invalidateQueries();
@@ -268,6 +307,19 @@ export function MasterEmpresasPage() {
     event.preventDefault();
     setErroCadastro(null);
     criarClienteMutation.mutate(new FormData(event.currentTarget));
+  }
+
+  function handleConcederIsencao(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!isencaoSelecionada) return;
+    const formData = new FormData(event.currentTarget);
+    concederIsencaoMutation.mutate({
+      parceiro_empresa_id: isencaoSelecionada.parceiroId,
+      cliente_empresa_id: isencaoSelecionada.cliente.id,
+      meses: Number(optional(formData, "meses")),
+      motivo: optional(formData, "motivo") || "Presente do parceiro",
+      observacoes: optional(formData, "observacoes"),
+    });
   }
 
   if (isLoading) {
@@ -461,6 +513,9 @@ export function MasterEmpresasPage() {
                           <span className="rounded-full border border-warning/30 bg-warning/5 px-3 py-1.5 text-warning">
                             {resumoParceiroMasterQuery.data.clientes_extras} extras
                           </span>
+                          <span className="rounded-full border border-success/30 bg-success/5 px-3 py-1.5 text-success">
+                            {resumoParceiroMasterQuery.data.clientes_isentos ?? 0} cortesias
+                          </span>
                         </div>
                       ) : null}
                     </div>
@@ -491,13 +546,30 @@ export function MasterEmpresasPage() {
                             <p className="mt-3 text-xs text-muted-foreground">
                               {cliente.plano?.nome ?? "Plano nao definido"} · {cliente.segmento ?? "Segmento nao informado"}
                             </p>
-                            <button
-                              type="button"
-                              onClick={() => void entrarNaEmpresa(cliente.id)}
-                              className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                            >
-                              Entrar no ambiente <ArrowRight className="h-3.5 w-3.5" />
-                            </button>
+                            {cliente.isencao ? (
+                              <div className="mt-3 rounded-lg border border-success/30 bg-success/5 p-2.5 text-xs text-success">
+                                Cortesia ativa até {formatDateBR(cliente.isencao.termina_em)}
+                              </div>
+                            ) : null}
+                            <div className="mt-3 flex flex-wrap items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => void entrarNaEmpresa(cliente.id)}
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                              >
+                                Entrar no ambiente <ArrowRight className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setErroCadastro(null);
+                                  setIsencaoSelecionada({ parceiroId: parceiroExpandidoId, cliente });
+                                }}
+                                className="text-xs font-semibold text-emerald-700 hover:underline"
+                              >
+                                {cliente.isencao ? "Renovar cortesia" : "Dar cortesia"}
+                              </button>
+                            </div>
                           </div>
                         ))}
                         {!clientesParceiroMasterQuery.data?.length ? (
@@ -591,13 +663,32 @@ export function MasterEmpresasPage() {
                       Plano {cliente.plano?.nome ?? "não definido"} · vínculo{" "}
                       {cliente.relacionamento.status}
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => void entrarNaEmpresa(cliente.id)}
-                      className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                    >
-                      Entrar no ambiente <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
+                    {cliente.isencao ? (
+                      <div className="mt-3 rounded-lg border border-success/30 bg-success/5 p-2.5 text-xs text-success">
+                        Cortesia ativa até {formatDateBR(cliente.isencao.termina_em)}
+                      </div>
+                    ) : null}
+                    <div className="mt-3 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => void entrarNaEmpresa(cliente.id)}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        Entrar no ambiente <ArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                      {isAdministradorParceiro ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setErroCadastro(null);
+                            setIsencaoSelecionada({ parceiroId: empresaParceira!.id, cliente });
+                          }}
+                          className="text-xs font-semibold text-emerald-700 hover:underline"
+                        >
+                          {cliente.isencao ? "Renovar cortesia" : "Dar cortesia"}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
                 {!clientesParceiroQuery.data?.length ? (
@@ -740,7 +831,114 @@ export function MasterEmpresasPage() {
           }}
         />
       ) : null}
+      {isencaoSelecionada ? (
+        <IsencaoParceiroModal
+          cliente={isencaoSelecionada.cliente}
+          erro={erroCadastro}
+          isSaving={concederIsencaoMutation.isPending}
+          onClose={() => {
+            if (!concederIsencaoMutation.isPending) {
+              setIsencaoSelecionada(null);
+              setErroCadastro(null);
+            }
+          }}
+          onSubmit={handleConcederIsencao}
+        />
+      ) : null}
     </AppShell>
+  );
+}
+
+function IsencaoParceiroModal({
+  cliente,
+  erro,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  cliente: import("@/types").PartnerClient;
+  erro: string | null;
+  isSaving: boolean;
+  onClose: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+      <form
+        onSubmit={onSubmit}
+        className="w-full max-w-lg rounded-2xl border border-border bg-background shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-emerald-700">
+              Cortesia comercial
+            </p>
+            <h2 className="mt-1 text-lg font-semibold">Liberar acesso sem cobrança</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              A isenção fica vinculada somente ao CNPJ selecionado e não altera os demais clientes.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid gap-4 p-5">
+          <div className="rounded-xl border border-border bg-muted/30 p-3">
+            <p className="text-sm font-semibold">{cliente.nome_fantasia}</p>
+            <p className="mt-1 text-xs text-muted-foreground">CNPJ {cliente.cnpj}</p>
+          </div>
+          <label>
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Duração da cortesia
+            </span>
+            <select
+              name="meses"
+              defaultValue={cliente.isencao?.meses ? String(cliente.isencao.meses) : "1"}
+              className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              {Array.from({ length: 12 }, (_, index) => index + 1).map((months) => (
+                <option key={months} value={months}>
+                  {months} {months === 1 ? "mês" : "meses"} sem cobrança
+                </option>
+              ))}
+            </select>
+          </label>
+          <Input label="Motivo" name="motivo" defaultValue="Presente do parceiro" />
+          <TextArea label="Observações internas" name="observacoes" />
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+            A data final será calculada pelo backend. O período máximo permitido é de 12 meses.
+            Todas as concessões ficam registradas na auditoria.
+          </div>
+          {erro ? (
+            <div className="rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+              {erro}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border p-5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
+          >
+            {isSaving ? "Salvando cortesia..." : "Liberar cortesia"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -990,12 +1188,14 @@ function Input({
   type = "text",
   required,
   placeholder,
+  defaultValue,
 }: {
   label: string;
   name: string;
   type?: string;
   required?: boolean;
   placeholder?: string;
+  defaultValue?: string;
 }) {
   return (
     <label>
@@ -1007,6 +1207,7 @@ function Input({
         type={type}
         required={required}
         placeholder={placeholder}
+        defaultValue={defaultValue}
         className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
       />
     </label>
@@ -1037,4 +1238,11 @@ function required(formData: FormData, key: string): string {
 function optional(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function formatDateBR(value: string | null | undefined): string {
+  if (!value) return "-";
+  const [year, month, day] = value.slice(0, 10).split("-");
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
 }
