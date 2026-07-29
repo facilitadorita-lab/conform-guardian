@@ -456,7 +456,16 @@ declare
   v_slug text;
   v_tipo text;
   v_segmento text;
+  v_table text;
 begin
+  -- Esta carga cria apenas fixtures determinísticos para os testes. Desative
+  -- somente os gatilhos de usuário durante a transação para que os limites
+  -- comerciais e os logs de runtime não bloqueiem o bootstrap. FKs, checks
+  -- e RLS continuam válidos; em caso de erro a transação restaura o estado.
+  foreach v_table in array array['documentos','equipamentos','calibracoes','qualificacoes','manutencoes','anexos'] loop
+    execute format('alter table public.%I disable trigger user', v_table);
+  end loop;
+
   -- Remove somente documentos/anexos da carga fictícia antiga nas empresas
   -- de teste. Não toca documentos cadastrados manualmente.
   with docs_antigos as (
@@ -709,5 +718,9 @@ begin
 
       v_doc_id := null;
     end loop;
+  end loop;
+
+  foreach v_table in array array['documentos','equipamentos','calibracoes','qualificacoes','manutencoes','anexos'] loop
+    execute format('alter table public.%I enable trigger user', v_table);
   end loop;
 end $$;
