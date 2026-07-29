@@ -1,0 +1,3 @@
+-- Reconciliation marker for a migration already applied by the Lovable project.
+-- The remote migration history contains version 20260724033543; this marker keeps
+-- the backend deploy pipeline aligned without replaying the QR changes.
