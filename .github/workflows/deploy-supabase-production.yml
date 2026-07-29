@@ -79,10 +79,13 @@ jobs:
       - name: Deploy Edge Functions
         run: supabase functions deploy --workdir backend --project-ref "$PROJECT_ID"
       - name: Register successful production release
-        if: success()
+        if: ${{ success() && env.SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: |
           curl --fail-with-body --request POST "$SUPABASE_URL/rest/v1/implantacoes_sistema" \
             --header "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
             --header "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
             --header "Content-Type: application/json" \
             --data "{\"ambiente\":\"production\",\"versao\":\"github-${GITHUB_RUN_NUMBER}\",\"commit_sha\":\"${GITHUB_SHA}\",\"status\":\"succeeded\",\"concluido_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
+      - name: Confirm deployment without optional release audit key
+        if: ${{ success() && (env.SUPABASE_URL == '' || env.SUPABASE_SERVICE_ROLE_KEY == '') }}
+        run: echo "Deployment completed; release registration skipped because optional runtime audit secrets are not configured."
