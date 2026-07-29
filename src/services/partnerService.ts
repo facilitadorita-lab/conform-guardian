@@ -69,8 +69,8 @@ export const partnerService = {
     validade_ate?: string | null;
     motivo?: string;
     observacoes?: string;
-  }) {
-    return invokeRpc<PartnerGiftBenefit>("api_master_conceder_bonus_isencao", {
+  }): Promise<PartnerGiftBenefit & { parceiro_empresa_id: string }> {
+    return invokeRpc<PartnerGiftBenefit & { parceiro_empresa_id: string }>("api_master_conceder_bonus_isencao", {
       p_payload: payload,
     });
   },
