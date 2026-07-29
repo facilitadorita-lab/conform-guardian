@@ -1,5 +1,19 @@
 begin;
 
+-- Disable row triggers while loading fixtures so permission and plan gates do
+-- not change the scope of this isolation test.
+do $$
+declare v_table text;
+begin
+  foreach v_table in array array[
+    'usuarios_empresas','documentos','equipamentos','manutencoes',
+    'documento_revisoes','regras_notificacao_empresa',
+    'achados_qualidade_dados','relatorios_agendados'
+  ] loop
+    execute format('alter table public.%I disable trigger user', v_table);
+  end loop;
+end $$;
+
 -- Este teste roda dentro de uma transação e não deixa dados na base local.
 insert into auth.users(
   id, instance_id, aud, role, email, encrypted_password,
@@ -47,6 +61,18 @@ insert into public.achados_qualidade_dados(id,empresa_id,regra_codigo,modulo,reg
 insert into public.relatorios_agendados(id,empresa_id,nome,frequencia,destinatarios,created_by) values
   ('a7000000-0000-4000-8000-000000000001','a0000000-0000-4000-8000-000000000001','Relatorio A','semanal',array['a@test.local'],'10000000-0000-4000-8000-000000000001'),
   ('b7000000-0000-4000-8000-000000000002','b0000000-0000-4000-8000-000000000002','Relatorio B','semanal',array['b@test.local'],'20000000-0000-4000-8000-000000000002');
+
+do $$
+declare v_table text;
+begin
+  foreach v_table in array array[
+    'usuarios_empresas','documentos','equipamentos','manutencoes',
+    'documento_revisoes','regras_notificacao_empresa',
+    'achados_qualidade_dados','relatorios_agendados'
+  ] loop
+    execute format('alter table public.%I enable trigger user', v_table);
+  end loop;
+end $$;
 
 set local role authenticated;
 select set_config(
