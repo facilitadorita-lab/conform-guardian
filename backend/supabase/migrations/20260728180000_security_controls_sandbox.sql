@@ -125,10 +125,11 @@ alter table public.anexos drop constraint if exists anexos_scan_status_check;
 alter table public.anexos add constraint anexos_scan_status_check
   check (scan_status in ('pending', 'clean', 'rejected', 'error', 'legacy_unverified'));
 
-update public.anexos
-set scan_status = 'legacy_unverified',
-    scan_engine = coalesce(scan_engine, 'pre-security-controls')
-where scan_status = 'pending' and scan_completed_at is null;
+-- Existing rows remain `pending` until the local scanner/reconciliation job
+-- reviews them. Avoid rewriting historical attachment rows during migration:
+-- this keeps the migration independent from tenant write policies and lets the
+-- application present an explicit review state instead of silently changing
+-- legacy evidence.
 
 create index if not exists idx_anexos_scan_status
   on public.anexos(empresa_id, scan_status, created_at desc);
