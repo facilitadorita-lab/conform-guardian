@@ -180,6 +180,13 @@ const partnerGroup: { label: string; items: NavItem[] } = {
       icon: Building2,
       partnerOnly: true,
     },
+    {
+      to: "/planos",
+      label: "Planos",
+      description: "Valores e benefÃ­cios",
+      icon: WalletCards,
+      partnerOnly: true,
+    },
   ],
 };
 

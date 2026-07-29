@@ -107,6 +107,19 @@ export interface PartnerGiftExemption {
   motivo: string;
 }
 
+export interface PartnerGiftBenefit {
+  id: UUID;
+  quantidade_total: number;
+  quantidade_utilizada: number;
+  quantidade_disponivel: number;
+  meses_por_bonus: number;
+  validade_ate?: string | null;
+  status: "ativo" | "encerrado" | "revogado";
+  motivo: string;
+  observacoes?: string | null;
+  created_at?: string;
+}
+
 export interface PartnerSummary {
   parceiro_empresa_id: UUID;
   plano: PartnerPlanCatalogItem | null;
@@ -127,6 +140,7 @@ export interface PartnerClientPayload {
   segmento?: string;
   email_principal?: string;
   plano_servico_codigo: "essencial" | "profissional" | "rede";
+  usar_bonus_isencao?: boolean;
 }
 
 export interface PrepareSignupInput {

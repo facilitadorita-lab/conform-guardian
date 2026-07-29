@@ -102,6 +102,7 @@ export function MasterEmpresasPage() {
     parceiroId: string;
     cliente: import("@/types").PartnerClient;
   } | null>(null);
+  const [bonusParceiroSelecionado, setBonusParceiroSelecionado] = useState<string | null>(null);
   const empresaParceira = authContext?.empresasPermitidas.find(
     (empresa) => empresa.tipoConta === "parceira",
   );
@@ -117,6 +118,21 @@ export function MasterEmpresasPage() {
     queryKey: ["partner-clients", empresaParceira?.id],
     queryFn: () => partnerService.listarClientes(empresaParceira!.id),
     enabled: isParceiro && isAdministradorParceiro,
+    staleTime: 30_000,
+  });
+
+  const parceiroPlanosQuery = useQuery({
+    queryKey: ["partner-plans"],
+    queryFn: () => partnerService.listarPlanos(),
+    enabled: isParceiro && isAdministradorParceiro,
+    staleTime: 60_000,
+  });
+
+  const parceiroBeneficiosId = isParceiro ? empresaParceira?.id : parceiroExpandidoId;
+  const parceiroBeneficiosQuery = useQuery({
+    queryKey: ["partner-benefits", parceiroBeneficiosId],
+    queryFn: () => partnerService.listarBeneficios(parceiroBeneficiosId!),
+    enabled: Boolean(parceiroBeneficiosId && (isAdministradorParceiro || authContext?.usuario.isMaster)),
     staleTime: 30_000,
   });
 
@@ -186,14 +202,16 @@ export function MasterEmpresasPage() {
         email_principal: optional(formData, "email_principal"),
         plano_servico_codigo: (optional(formData, "plano_servico_codigo") || "profissional") as
           "essencial" | "profissional" | "rede",
+        usar_bonus_isencao: formData.get("usar_bonus_isencao") === "true",
       }),
     onSuccess: async (result) => {
       setModalAberto(false);
       setErroCadastro(null);
       setMensagem(
-        `${result.cliente.nome_fantasia} vinculada com sucesso. O cliente ficará em um ambiente isolado e a cobrança permanecerá no parceiro.`,
+        `${result.cliente.nome_fantasia} vinculada com sucesso.${result.bonus_consumido ? " O bônus de isenção foi aplicado ao CNPJ." : " A cobrança permanecerá no parceiro."}`,
       );
       await queryClient.invalidateQueries({ queryKey: ["partner-clients"] });
+      await queryClient.invalidateQueries({ queryKey: ["partner-benefits"] });
       await refreshContext();
       await router.invalidate();
     },
@@ -270,6 +288,33 @@ export function MasterEmpresasPage() {
     },
   });
 
+  const concederBonusMutation = useMutation({
+    mutationFn: (payload: {
+      parceiro_empresa_id: string;
+      quantidade: number;
+      meses_por_bonus: number;
+      validade_ate?: string | null;
+      motivo?: string;
+      observacoes?: string;
+    }) => partnerService.concederBonus(payload),
+    onSuccess: async (result) => {
+      const parceiroId = result.parceiro_empresa_id;
+      setBonusParceiroSelecionado(null);
+      setErroCadastro(null);
+      setMensagem(
+        `${result.quantidade_total} bÃ´nus de ${result.meses_por_bonus} ${result.meses_por_bonus === 1 ? "mÃªs" : "meses"} concedidos ao parceiro.`,
+      );
+      await queryClient.invalidateQueries({ queryKey: ["partner-benefits", parceiroId] });
+    },
+    onError: (mutationError) => {
+      setErroCadastro(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "NÃ£o foi possÃ­vel conceder o bÃ´nus de isenÃ§Ã£o.",
+      );
+    },
+  });
+
   const entrarNaEmpresa = async (empresaId: string) => {
     await selectCompany(empresaId);
     await queryClient.invalidateQueries();
@@ -318,6 +363,20 @@ export function MasterEmpresasPage() {
       cliente_empresa_id: isencaoSelecionada.cliente.id,
       meses: Number(optional(formData, "meses")),
       motivo: optional(formData, "motivo") || "Presente do parceiro",
+      observacoes: optional(formData, "observacoes"),
+    });
+  }
+
+  function handleConcederBonus(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!bonusParceiroSelecionado) return;
+    const formData = new FormData(event.currentTarget);
+    concederBonusMutation.mutate({
+      parceiro_empresa_id: bonusParceiroSelecionado,
+      quantidade: Number(optional(formData, "quantidade")) || 1,
+      meses_por_bonus: Number(optional(formData, "meses_por_bonus")) || 1,
+      validade_ate: optional(formData, "validade_ate") || null,
+      motivo: optional(formData, "motivo") || "BÃ´nus comercial",
       observacoes: optional(formData, "observacoes"),
     });
   }
@@ -473,21 +532,33 @@ export function MasterEmpresasPage() {
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setParceiroExpandidoId(selecionado ? null : parceiro.id)
-                          }
-                          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10"
-                          aria-expanded={selecionado}
-                        >
-                          {selecionado ? "Ocultar clientes" : "Ver clientes do parceiro"}
-                          {selecionado ? (
-                            <ChevronUp className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </button>
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setParceiroExpandidoId(selecionado ? null : parceiro.id)
+                            }
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10"
+                            aria-expanded={selecionado}
+                          >
+                            {selecionado ? "Ocultar clientes" : "Ver clientes do parceiro"}
+                            {selecionado ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setErroCadastro(null);
+                              setBonusParceiroSelecionado(parceiro.id);
+                            }}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                          >
+                            Conceder bÃ´nus
+                          </button>
+                        </div>
                       </article>
                     );
                   })}
@@ -519,6 +590,17 @@ export function MasterEmpresasPage() {
                         </div>
                       ) : null}
                     </div>
+
+                    {parceiroBeneficiosQuery.isLoading ? (
+                      <div className="mt-3 h-9 animate-pulse rounded-lg bg-muted" />
+                    ) : parceiroBeneficiosQuery.data?.length ? (
+                      <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+                        {parceiroBeneficiosQuery.data.reduce(
+                          (total, item) => total + item.quantidade_disponivel,
+                          0,
+                        )} {parceiroBeneficiosQuery.data.reduce((total, item) => total + item.quantidade_disponivel, 0) === 1 ? "bÃ´nus" : "bÃ´nus"} disponÃ­vel(is) para novos clientes.
+                      </div>
+                    ) : null}
 
                     {clientesParceiroMasterQuery.isLoading ? (
                       <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -582,6 +664,57 @@ export function MasterEmpresasPage() {
                   </div>
                 ) : null}
               </>
+            )}
+          </section>
+        ) : null}
+
+        {isParceiro ? (
+          <section className="rounded-xl border border-border bg-card p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">
+                  Planos do parceiro
+                </p>
+                <h2 className="mt-1 text-lg font-semibold">Escolha o nível da sua carteira</h2>
+                <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                  Compare limites, recursos e clientes incluídos. A assinatura e os extras são
+                  cobrados somente do parceiro.
+                </p>
+              </div>
+              <div className="rounded-full border border-success/30 bg-success/5 px-3 py-1.5 text-xs font-semibold text-success">
+                Plano atual: {empresaParceira?.plano?.nome ?? "Em validação"}
+              </div>
+            </div>
+            {parceiroBeneficiosQuery.data?.length ? (
+              <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+                Você possui {parceiroBeneficiosQuery.data.reduce((total, item) => total + item.quantidade_disponivel, 0)} bônus de isenção disponíveis.
+                Eles poderão ser usados ao cadastrar novos clientes.
+              </div>
+            ) : null}
+            {parceiroPlanosQuery.isLoading ? (
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {[0, 1, 2].map((item) => <div key={item} className="h-28 animate-pulse rounded-lg bg-muted" />)}
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {(parceiroPlanosQuery.data ?? []).map((plano) => {
+                  const atual = plano.codigo === empresaParceira?.plano?.codigo;
+                  return (
+                    <article key={plano.id} className={`rounded-xl border p-4 ${atual ? "border-primary/50 bg-primary/5" : "border-border"}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-sm font-semibold">{plano.nome}</h3>
+                        {atual ? <StatusBadge tone="ok">Atual</StatusBadge> : null}
+                      </div>
+                      <p className="mt-2 text-xl font-semibold text-primary">
+                        {formatMoneyBR(plano.valor_mensal_centavos)}<span className="text-xs font-normal text-muted-foreground">/mês</span>
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Até {plano.limite_clientes} clientes · {plano.limite_usuarios} usuários
+                      </p>
+                    </article>
+                  );
+                })}
+              </div>
             )}
           </section>
         ) : null}
@@ -803,6 +936,13 @@ export function MasterEmpresasPage() {
       {modalAberto ? (
         <NovaEmpresaModal
           modo={isParceiro ? "cliente" : "empresa"}
+          beneficioIsencao={
+            isParceiro
+              ? (parceiroBeneficiosQuery.data ?? []).find(
+                  (beneficio) => beneficio.status === "ativo" && beneficio.quantidade_disponivel > 0,
+                ) ?? null
+              : null
+          }
           erro={erroCadastro}
           isSaving={isParceiro ? criarClienteMutation.isPending : criarEmpresaMutation.isPending}
           onClose={() => {
@@ -845,7 +985,116 @@ export function MasterEmpresasPage() {
           onSubmit={handleConcederIsencao}
         />
       ) : null}
+      {bonusParceiroSelecionado ? (
+        <BonusIsencaoModal
+          parceiroNome={
+            parceiros.find((parceiro) => parceiro.id === bonusParceiroSelecionado)?.nome ??
+            "Parceiro selecionado"
+          }
+          erro={erroCadastro}
+          isSaving={concederBonusMutation.isPending}
+          onClose={() => {
+            if (!concederBonusMutation.isPending) {
+              setBonusParceiroSelecionado(null);
+              setErroCadastro(null);
+            }
+          }}
+          onSubmit={handleConcederBonus}
+        />
+      ) : null}
     </AppShell>
+  );
+}
+
+function BonusIsencaoModal({
+  parceiroNome,
+  erro,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  parceiroNome: string;
+  erro: string | null;
+  isSaving: boolean;
+  onClose: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+      <form
+        onSubmit={onSubmit}
+        className="w-full max-w-xl rounded-2xl border border-border bg-background shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-emerald-700">
+              BÃ´nus comercial
+            </p>
+            <h2 className="mt-1 text-lg font-semibold">Liberar isenÃ§Ãµes para parceiro</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              O parceiro <strong>{parceiroNome}</strong> poderÃ¡ usar cada bÃ´nus uma Ãºnica vez ao
+              cadastrar um novo CNPJ. A cobranÃ§a continua sendo do parceiro.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid gap-4 p-5 md:grid-cols-2">
+          <Input label="Quantidade de bÃ´nus" name="quantidade" type="number" defaultValue="1" required />
+          <label>
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Meses por bÃ´nus
+            </span>
+            <select
+              name="meses_por_bonus"
+              defaultValue="1"
+              className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              {Array.from({ length: 12 }, (_, index) => index + 1).map((months) => (
+                <option key={months} value={months}>
+                  {months} {months === 1 ? "mÃªs" : "meses"} sem cobranÃ§a
+                </option>
+              ))}
+            </select>
+          </label>
+          <Input label="Validade do lote (opcional)" name="validade_ate" type="date" />
+          <Input label="Motivo" name="motivo" defaultValue="BÃ´nus comercial" />
+          <TextArea label="ObservaÃ§Ãµes internas" name="observacoes" />
+          <div className="md:col-span-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            O backend valida Admin Master + MFA, limita o lote a 1.000 bÃ´nus e registra a concessÃ£o
+            na auditoria. O bÃ´nus nÃ£o Ã© transferÃ­vel entre parceiros.
+          </div>
+          {erro ? (
+            <div className="md:col-span-2 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+              {erro}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border p-5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
+          >
+            {isSaving ? "Concedendo bÃ´nus..." : "Conceder bÃ´nus"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -1033,12 +1282,14 @@ function NovoParceiroModal({
 
 function NovaEmpresaModal({
   modo,
+  beneficioIsencao,
   erro,
   isSaving,
   onClose,
   onSubmit,
 }: {
   modo: "empresa" | "cliente";
+  beneficioIsencao: import("@/types").PartnerGiftBenefit | null;
   erro: string | null;
   isSaving: boolean;
   onClose: () => void;
@@ -1106,20 +1357,38 @@ function NovaEmpresaModal({
           <Input label="Estado" name="estado" placeholder="SP" />
           <Input label="E-mail principal" name="email_principal" type="email" />
           {modo === "cliente" ? (
-            <label>
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Plano operacional do cliente
-              </span>
-              <select
-                name="plano_servico_codigo"
-                defaultValue="profissional"
-                className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="essencial">Essencial</option>
-                <option value="profissional">Profissional</option>
-                <option value="rede">Plano Rede</option>
-              </select>
-            </label>
+            <>
+              <label>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Plano operacional do cliente
+                </span>
+                <select
+                  name="plano_servico_codigo"
+                  defaultValue="profissional"
+                  className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="essencial">Essencial</option>
+                  <option value="profissional">Profissional</option>
+                  <option value="rede">Plano Rede</option>
+                </select>
+              </label>
+              {beneficioIsencao ? (
+                <label className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                  <input
+                    type="checkbox"
+                    name="usar_bonus_isencao"
+                    value="true"
+                    className="mt-0.5 h-4 w-4 accent-emerald-700"
+                  />
+                  <span>
+                    <strong>Aplicar bônus de isenção</strong>
+                    <span className="mt-1 block text-xs text-emerald-800">
+                      Você tem {beneficioIsencao.quantidade_disponivel} bônus disponível(is), com {beneficioIsencao.meses_por_bonus} {beneficioIsencao.meses_por_bonus === 1 ? "mês" : "meses"} de acesso sem cobrança.
+                    </span>
+                  </span>
+                </label>
+              ) : null}
+            </>
           ) : null}
           <Input label="Responsável legal" name="responsavel_legal" />
           <Input label="Responsável técnico" name="responsavel_tecnico" />
@@ -1245,4 +1514,11 @@ function formatDateBR(value: string | null | undefined): string {
   const [year, month, day] = value.slice(0, 10).split("-");
   if (!year || !month || !day) return value;
   return `${day}/${month}/${year}`;
+}
+
+function formatMoneyBR(centavos: number): string {
+  return (centavos / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
 }

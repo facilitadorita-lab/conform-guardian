@@ -3,6 +3,7 @@ import { invokeRpc } from "./service-utils";
 import type {
   PartnerClient,
   PartnerClientPayload,
+  PartnerGiftBenefit,
   PartnerPlanCatalogItem,
   PartnerSummary,
 } from "@/types";
@@ -25,10 +26,21 @@ export const partnerService = {
   },
 
   vincularCliente(payload: PartnerClientPayload) {
-    return invokeRpc<{ cliente: PartnerClient; plano_servico: unknown }>(
+    return invokeRpc<{
+      cliente: PartnerClient;
+      plano_servico: unknown;
+      bonus_consumido?: boolean;
+      isencao?: { id: string; inicio_em: string; termina_em: string; meses: number; status: string } | null;
+    }>(
       "api_partner_vincular_cliente",
       { p_payload: payload },
     );
+  },
+
+  listarBeneficios(parceiroEmpresaId: string): Promise<PartnerGiftBenefit[]> {
+    return invokeRpc<PartnerGiftBenefit[]>("api_partner_listar_beneficios", {
+      p_parceiro_empresa_id: parceiroEmpresaId,
+    });
   },
 
   concederIsencao(payload: {
@@ -48,6 +60,19 @@ export const partnerService = {
       status: "ativa";
       motivo: string;
     }>("api_partner_conceder_isencao", { p_payload: payload });
+  },
+
+  concederBonus(payload: {
+    parceiro_empresa_id: string;
+    quantidade: number;
+    meses_por_bonus: number;
+    validade_ate?: string | null;
+    motivo?: string;
+    observacoes?: string;
+  }) {
+    return invokeRpc<PartnerGiftBenefit>("api_master_conceder_bonus_isencao", {
+      p_payload: payload,
+    });
   },
 
   revogarIsencao(isencaoId: string, motivo?: string) {
