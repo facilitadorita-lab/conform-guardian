@@ -33,6 +33,7 @@ declare
   v_tipo_autoclave uuid;
   v_tipo_termometro uuid;
   v_tipo_camara_fria uuid;
+  v_stage text := 'initialization';
 begin
   select id into v_cat_avcb
   from public.categorias_documentos
@@ -226,6 +227,7 @@ begin
         tamanho_bytes
       )
     loop
+      v_stage := 'documento ' || v_doc.numero_documento || ' da empresa ' || v_empresa.cnpj;
       insert into public.documentos (
         empresa_id,
         nome,
@@ -378,6 +380,7 @@ begin
         status
       )
     loop
+      v_stage := 'equipamento ' || v_eq.codigo_interno || ' da empresa ' || v_empresa.cnpj;
       insert into public.equipamentos (
         empresa_id,
         nome,
@@ -784,4 +787,7 @@ begin
       v_manut_id := null;
     end loop;
   end loop;
+exception
+  when others then
+    raise exception 'Falha no seed operacional em %: %', v_stage, sqlerrm;
 end $$;
