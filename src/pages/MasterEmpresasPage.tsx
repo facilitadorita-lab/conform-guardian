@@ -18,6 +18,7 @@ import { useAuthContext } from "@/hooks/use-conform-data";
 import { useAppSession } from "@/hooks/use-app-session";
 import { adminMasterService } from "@/services/adminMasterService";
 import { partnerService } from "@/services/partnerService";
+import { edgeFunctionsService } from "@/services/edgeFunctionsService";
 
 const checklistDocumentalPorTipo: Record<string, string[]> = {
   Clínica: [
@@ -252,7 +253,19 @@ export function MasterEmpresasPage() {
           | "plano_carteira"
           | "unitario",
       }),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      void edgeFunctionsService
+        .invitePartnerAdmin(String(result.empresa.id))
+        .then((invite) => {
+          setMensagem(
+            `Parceiro criado. Convite enviado para ${invite.email ?? "o e-mail principal"} para definição segura da senha.`,
+          );
+        })
+        .catch((inviteError) => {
+          setMensagem(
+            `Parceiro criado, mas o convite ficou pendente. ${inviteError instanceof Error ? inviteError.message : "Use o botão de primeiro acesso no cartão do parceiro."}`,
+          );
+        });
       setModalParceiroAberto(false);
       setErroCadastro(null);
       setMensagem(
@@ -267,6 +280,24 @@ export function MasterEmpresasPage() {
         mutationError instanceof Error
           ? mutationError.message
           : "Não foi possível criar o parceiro.",
+      );
+    },
+  });
+
+  const convidarParceiroMutation = useMutation({
+    mutationFn: (parceiroEmpresaId: string) =>
+      edgeFunctionsService.invitePartnerAdmin(parceiroEmpresaId),
+    onSuccess: (result) => {
+      setErroCadastro(null);
+      setMensagem(
+        `Convite enviado para ${result.email ?? "o e-mail principal do parceiro"}. O destinatário poderá definir a senha pelo link seguro.`,
+      );
+    },
+    onError: (mutationError) => {
+      setErroCadastro(
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Não foi possível enviar o primeiro acesso.",
       );
     },
   });
@@ -577,6 +608,17 @@ export function MasterEmpresasPage() {
                         </div>
 
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                          <button
+                            type="button"
+                            disabled={convidarParceiroMutation.isPending}
+                            onClick={() => convidarParceiroMutation.mutate(parceiro.id)}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-2 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {convidarParceiroMutation.isPending &&
+                            convidarParceiroMutation.variables === parceiro.id
+                              ? "Enviando..."
+                              : "Enviar primeiro acesso"}
+                          </button>
                           <button
                             type="button"
                             onClick={() =>
@@ -1324,7 +1366,12 @@ function NovoParceiroModal({
           <Input label="Razão social" name="razao_social" required />
           <Input label="Nome fantasia" name="nome_fantasia" required />
           <Input label="CNPJ" name="cnpj" required />
-          <Input label="E-mail principal" name="email_principal" type="email" />
+          <div>
+            <Input label="E-mail principal" name="email_principal" type="email" required />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Enviaremos para este endereço o convite de primeiro acesso e o link para definir a senha.
+            </p>
+          </div>
           <label className="md:col-span-2">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Plano de parceria

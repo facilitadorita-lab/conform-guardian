@@ -40,6 +40,9 @@ policy = "oneshot"
 [functions.invite-company-user]
 verify_jwt = true
 
+[functions.invite-partner-admin]
+verify_jwt = true
+
 [functions.create-evidence-upload]
 verify_jwt = true
 

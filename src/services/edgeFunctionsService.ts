@@ -89,6 +89,15 @@ function translateFunctionError(message: string): string {
   if (normalized.includes("rate_limit_exceeded")) {
     return "Muitas consultas em pouco tempo. Aguarde alguns minutos e tente novamente.";
   }
+  if (normalized.includes("partner_email_missing")) {
+    return "Cadastre um e-mail principal para o parceiro antes de enviar o primeiro acesso.";
+  }
+  if (normalized.includes("partner_user_already_registered")) {
+    return "Esse e-mail já possui uma conta. Use 'Esqueci minha senha' na tela de acesso para criar ou redefinir a senha.";
+  }
+  if (normalized.includes("partner_not_found")) {
+    return "O parceiro não foi encontrado ou não está mais ativo.";
+  }
   if (
     normalized.includes("provider_unavailable") ||
     normalized.includes("provider_rate_limited") ||
@@ -128,6 +137,21 @@ export function inviteCompanyUser(input: InviteCompanyUserInput) {
     nome: input.nome,
     perfil: input.perfil,
     cargo: input.setor,
+  });
+}
+
+// ---- invite-partner-admin ----
+export interface InvitePartnerAdminResult {
+  ok: boolean;
+  invite_sent: boolean;
+  user_id?: string;
+  email?: string;
+  redirect_to?: string;
+}
+
+export function invitePartnerAdmin(parceiroEmpresaId: string) {
+  return invoke<InvitePartnerAdminResult>("invite-partner-admin", {
+    parceiro_empresa_id: parceiroEmpresaId,
   });
 }
 
@@ -329,6 +353,7 @@ export function createAsaasSubscription(input: CreateAsaasSubscriptionInput) {
 export const edgeFunctionsService = {
   lookupCompanyRegistration,
   inviteCompanyUser,
+  invitePartnerAdmin,
   createEvidenceUpload,
   uploadAnexoSeguro,
   validateAttachmentFile,
