@@ -140,6 +140,7 @@ Deno.serve(async (req: Request) => {
     email,
     status: "ativo",
     is_master: false,
+    deleted_at: null,
   });
   if (profileError) return respond({ error: "partner_profile_failed" }, 500);
 
