@@ -254,23 +254,18 @@ export function MasterEmpresasPage() {
           | "unitario",
       }),
     onSuccess: async (result) => {
-      void edgeFunctionsService
-        .invitePartnerAdmin(String(result.empresa.id))
-        .then((invite) => {
-          setMensagem(
-            `Parceiro criado. Convite enviado para ${invite.email ?? "o e-mail principal"} para definição segura da senha.`,
-          );
-        })
-        .catch((inviteError) => {
-          setMensagem(
-            `Parceiro criado, mas o convite ficou pendente. ${inviteError instanceof Error ? inviteError.message : "Use o botão de primeiro acesso no cartão do parceiro."}`,
-          );
-        });
       setModalParceiroAberto(false);
       setErroCadastro(null);
-      setMensagem(
-        "Parceiro criado com trial. Configure o Price ID do Stripe antes de iniciar a cobrança.",
-      );
+      let inviteMessage = "Parceiro criado. O acesso inicial está sendo preparado.";
+      try {
+        const invite = await edgeFunctionsService.invitePartnerAdmin(String(result.empresa.id));
+        inviteMessage = invite.existing_user
+          ? `Parceiro criado e acesso vinculado a ${invite.email ?? "o e-mail principal"}. Se necessário, use “Esqueci minha senha” para definir uma nova senha.`
+          : `Parceiro criado. Convite enviado para ${invite.email ?? "o e-mail principal"} para definição segura da senha.`;
+      } catch (inviteError) {
+        inviteMessage = `Parceiro criado, mas o convite ficou pendente. ${inviteError instanceof Error ? inviteError.message : "Reenvie o primeiro acesso pelo cartão do parceiro."}`;
+      }
+      setMensagem(inviteMessage);
       await queryClient.invalidateQueries();
       await refreshContext();
       await router.invalidate();

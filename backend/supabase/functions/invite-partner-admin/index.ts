@@ -87,18 +87,55 @@ Deno.serve(async (req: Request) => {
     },
   );
 
-  if (inviteError || !invited.user) {
+  let partnerUser = invited?.user ?? null;
+  let inviteSent = Boolean(partnerUser);
+  let existingUser = false;
+
+  if (inviteError || !partnerUser) {
     const message = inviteError?.message?.toLowerCase() ?? "";
-    return respond(
-      {
-        error: message.includes("already") ? "partner_user_already_registered" : "invite_failed",
-      },
-      message.includes("already") ? 409 : 400,
-    );
+    if (!message.includes("already") && !message.includes("registered")) {
+      return respond({ error: "invite_failed" }, 400);
+    }
+
+    // Convites são idempotentes: se a conta já existe, reutilizamos o usuário
+    // somente para reparar o perfil e o vínculo do parceiro.
+    const { data: usersPage, error: usersError } = await adminClient.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    if (usersError) return respond({ error: "partner_user_lookup_failed" }, 500);
+    partnerUser =
+      usersPage.users.find((candidate) => candidate.email?.toLowerCase() === email) ?? null;
+    if (!partnerUser) return respond({ error: "partner_user_lookup_failed" }, 404);
+
+    const { data: existingProfile, error: profileLookupError } = await adminClient
+      .from("usuarios")
+      .select("is_master, status, deleted_at")
+      .eq("id", partnerUser.id)
+      .maybeSingle();
+    if (profileLookupError) return respond({ error: "partner_profile_lookup_failed" }, 500);
+    if (existingProfile?.is_master) return respond({ error: "partner_user_conflict" }, 409);
+
+    const { data: otherMemberships, error: membershipLookupError } = await adminClient
+      .from("usuarios_empresas")
+      .select("empresa_id")
+      .eq("usuario_id", partnerUser.id)
+      .eq("ativo", true)
+      .is("deleted_at", null)
+      .neq("empresa_id", partnerId);
+    if (membershipLookupError) return respond({ error: "partner_membership_lookup_failed" }, 500);
+    if ((otherMemberships?.length ?? 0) > 0) {
+      return respond({ error: "partner_user_conflict" }, 409);
+    }
+
+    inviteSent = false;
+    existingUser = true;
   }
 
+  if (!partnerUser) return respond({ error: "partner_user_lookup_failed" }, 500);
+
   const { error: profileError } = await adminClient.from("usuarios").upsert({
-    id: invited.user.id,
+    id: partnerUser.id,
     nome: `Administrador de ${partnerName}`,
     email,
     status: "ativo",
@@ -108,7 +145,7 @@ Deno.serve(async (req: Request) => {
 
   const { error: membershipError } = await adminClient.from("usuarios_empresas").upsert(
     {
-      usuario_id: invited.user.id,
+      usuario_id: partnerUser.id,
       empresa_id: partnerId,
       perfil: "administrador",
       ativo: true,
@@ -122,13 +159,26 @@ Deno.serve(async (req: Request) => {
     empresa_id: partnerId,
     usuario_id: authData.user.id,
     modulo: "parceiros",
-    acao: "convite_primeiro_acesso_enviado",
-    registro_id: invited.user.id,
-    novo_valor: { email, redirect_to: redirectTo, tipo_conta: "parceira" },
+    acao: inviteSent ? "convite_primeiro_acesso_enviado" : "acesso_parceiro_vinculado",
+    registro_id: partnerUser.id,
+    novo_valor: {
+      email,
+      redirect_to: redirectTo,
+      tipo_conta: "parceira",
+      convite_enviado: inviteSent,
+      usuario_existente: existingUser,
+    },
   });
 
   return respond(
-    { ok: true, invite_sent: true, user_id: invited.user.id, email, redirect_to: redirectTo },
-    201,
+    {
+      ok: true,
+      invite_sent: inviteSent,
+      existing_user: existingUser,
+      user_id: partnerUser.id,
+      email,
+      redirect_to: redirectTo,
+    },
+    existingUser ? 200 : 201,
   );
 });

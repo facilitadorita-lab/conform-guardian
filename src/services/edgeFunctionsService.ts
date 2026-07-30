@@ -95,6 +95,12 @@ function translateFunctionError(message: string): string {
   if (normalized.includes("partner_user_already_registered")) {
     return "Esse e-mail já possui uma conta. Use 'Esqueci minha senha' na tela de acesso para criar ou redefinir a senha.";
   }
+  if (normalized.includes("partner_user_conflict")) {
+    return "Este e-mail já está vinculado a outra empresa ativa. Use um e-mail exclusivo para o administrador do parceiro.";
+  }
+  if (normalized.includes("partner_user_lookup_failed")) {
+    return "A conta já existe, mas não foi possível localizar o usuário para reparar o acesso. Tente novamente ou use outro e-mail.";
+  }
   if (normalized.includes("partner_not_found")) {
     return "O parceiro não foi encontrado ou não está mais ativo.";
   }
@@ -144,6 +150,7 @@ export function inviteCompanyUser(input: InviteCompanyUserInput) {
 export interface InvitePartnerAdminResult {
   ok: boolean;
   invite_sent: boolean;
+  existing_user?: boolean;
   user_id?: string;
   email?: string;
   redirect_to?: string;
