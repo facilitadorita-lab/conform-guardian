@@ -215,8 +215,27 @@ export function MasterEmpresasPage() {
     onSuccess: async (result) => {
       setModalAberto(false);
       setErroCadastro(null);
+      let conviteMensagem = "";
+      const emailCliente = result.cliente.email_principal?.trim().toLowerCase();
+      if (emailCliente) {
+        try {
+          const convite = await edgeFunctionsService.inviteCompanyUser({
+            empresaId: result.cliente.id,
+            email: emailCliente,
+            nome: result.cliente.nome_fantasia || result.cliente.razao_social,
+            perfil: "administrador",
+          });
+          conviteMensagem = convite.invitation_sent === false
+            ? ` O acesso foi vinculado ao e-mail ${emailCliente}; se necessário, use “Esqueci minha senha”.`
+            : ` O convite de primeiro acesso foi enviado para ${emailCliente}.`;
+        } catch (inviteError) {
+          conviteMensagem = ` O cliente foi criado, mas o convite ficou pendente: ${inviteError instanceof Error ? inviteError.message : "reenvie o primeiro acesso depois."}`;
+        }
+      } else {
+        conviteMensagem = " Nenhum e-mail principal foi informado; cadastre um e-mail para enviar o primeiro acesso.";
+      }
       setMensagem(
-        `${result.cliente.nome_fantasia} vinculada com sucesso.${result.bonus_consumido ? " O bônus de isenção foi aplicado ao CNPJ." : " A cobrança permanecerá no parceiro."}`,
+        `${result.cliente.nome_fantasia} vinculada com sucesso.${result.bonus_consumido ? " O bônus de isenção foi aplicado ao CNPJ." : " A cobrança permanecerá no parceiro."}${conviteMensagem}`,
       );
       await queryClient.invalidateQueries({ queryKey: ["partner-clients"] });
       await queryClient.invalidateQueries({ queryKey: ["partner-benefits"] });

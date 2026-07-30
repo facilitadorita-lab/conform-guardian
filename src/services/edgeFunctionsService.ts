@@ -133,6 +133,8 @@ export interface InviteCompanyUserInput {
 export interface InviteCompanyUserResult {
   ok: boolean;
   userId?: string;
+  invitation_sent?: boolean;
+  email?: string;
   message?: string;
 }
 

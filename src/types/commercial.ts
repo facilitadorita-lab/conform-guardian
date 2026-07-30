@@ -84,6 +84,7 @@ export interface PartnerClient {
   razao_social: string;
   nome_fantasia: string;
   cnpj: string;
+  email_principal?: string | null;
   status: "ativa" | "bloqueada" | "cancelada";
   access_status?: string | null;
   segmento?: string | null;

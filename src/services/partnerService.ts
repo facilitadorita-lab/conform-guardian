@@ -44,7 +44,7 @@ export const partnerService = {
 
   vincularCliente(payload: PartnerClientPayload) {
     return invokeRpc<{
-      cliente: PartnerClient;
+      cliente: PartnerClient & { email_principal?: string | null };
       plano_servico: unknown;
       bonus_consumido?: boolean;
       isencao?: { id: string; inicio_em: string; termina_em: string; meses: number; status: string } | null;
