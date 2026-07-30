@@ -23,6 +23,13 @@ export async function invokeRpc<T>(
 ): Promise<T> {
   const { data, error } = await getSupabaseClient().rpc(functionName, args);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("MFA_AAL2_REQUIRED")) {
+      throw new Error(
+        "Por segurança, confirme a autenticação em duas etapas (MFA) antes de concluir esta ação.",
+      );
+    }
+    throw new Error(error.message);
+  }
   return data as T;
 }

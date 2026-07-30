@@ -451,7 +451,7 @@ export function MasterEmpresasPage() {
       quantidade: Number(optional(formData, "quantidade")) || 1,
       meses_por_bonus: Number(optional(formData, "meses_por_bonus")) || 1,
       validade_ate: optional(formData, "validade_ate") || null,
-      motivo: optional(formData, "motivo") || "BÃ´nus comercial",
+      motivo: optional(formData, "motivo") || "Bônus comercial",
       observacoes: optional(formData, "observacoes"),
     });
   }
@@ -1123,7 +1123,7 @@ export function MasterEmpresasPage() {
         />
       ) : null}
       {bonusParceiroSelecionado ? (
-        <BonusIsencaoModal
+        <BonusIsencaoModalPremium
           parceiroNome={
             parceiros.find((parceiro) => parceiro.id === bonusParceiroSelecionado)?.nome ??
             "Parceiro selecionado"
@@ -1143,7 +1143,109 @@ export function MasterEmpresasPage() {
   );
 }
 
-function BonusIsencaoModal({
+function BonusIsencaoModalPremium({
+  parceiroNome,
+  erro,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  parceiroNome: string;
+  erro: string | null;
+  isSaving: boolean;
+  onClose: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  const requiresMfa = Boolean(erro?.includes("autenticação em duas etapas"));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
+      <form
+        onSubmit={onSubmit}
+        className="w-full max-w-xl rounded-2xl border border-border bg-background shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-emerald-700">
+              Bônus comercial
+            </p>
+            <h2 className="mt-1 text-lg font-semibold">Liberar isenções para parceiro</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              O parceiro <strong>{parceiroNome}</strong> poderá usar cada bônus uma única vez ao
+              cadastrar um novo CNPJ. A cobrança continua sendo do parceiro.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-border p-2 text-muted-foreground hover:bg-muted"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid gap-4 p-5 md:grid-cols-2">
+          <Input label="Quantidade de bônus" name="quantidade" type="number" defaultValue="1" required />
+          <label>
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Meses por bônus
+            </span>
+            <select
+              name="meses_por_bonus"
+              defaultValue="1"
+              className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            >
+              {Array.from({ length: 12 }, (_, index) => index + 1).map((months) => (
+                <option key={months} value={months}>
+                  {months} {months === 1 ? "mês" : "meses"} sem cobrança
+                </option>
+              ))}
+            </select>
+          </label>
+          <Input label="Validade do lote (opcional)" name="validade_ate" type="date" />
+          <Input label="Motivo" name="motivo" defaultValue="Bônus comercial" />
+          <TextArea label="Observações internas" name="observacoes" />
+          <div className="md:col-span-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            O backend valida Admin Master + MFA, limita o lote a 1.000 bônus e registra a concessão
+            na auditoria. O bônus não é transferível entre parceiros.
+          </div>
+          {erro ? (
+            <div className="md:col-span-2 rounded-md border border-danger/30 bg-danger/10 p-3 text-sm text-danger" role="alert">
+              <p>{erro}</p>
+              {requiresMfa ? (
+                <a
+                  href="/seguranca/mfa"
+                  className="mt-2 inline-flex font-semibold underline underline-offset-4"
+                >
+                  Configurar ou confirmar MFA
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border p-5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="rounded-md border border-border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
+          >
+            {isSaving ? "Concedendo bônus..." : "Conceder bônus"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function BonusIsencaoModalLegacy({
   parceiroNome,
   erro,
   isSaving,
