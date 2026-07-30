@@ -88,7 +88,7 @@ jobs:
         run: node scripts/validate-environment.mjs
 
       - name: Start disposable Supabase
-        run: supabase start --workdir backend -x studio,imgproxy,logflare,vector,supavisor
+        run: supabase start --workdir backend -x studio,imgproxy,logflare,vector,supavisor --debug
 
       - name: Rehearse migration from the legacy schema
         shell: bash
