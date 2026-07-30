@@ -280,14 +280,12 @@ alter table public.interacoes_assistente add column if not exists unidade_id uui
 alter table public.relatorios_agendados add column if not exists unidade_id uuid;
 alter table public.execucoes_relatorios_agendados add column if not exists unidade_id uuid;
 
-alter table public.documentos drop constraint if exists documentos_escopo_documento_check;
-alter table public.documentos add constraint documentos_escopo_documento_check
-  check (
-    (escopo_documento = 'corporativo' and unidade_id is null)
-    or (escopo_documento = 'unidade' and unidade_id is not null)
-  ) not valid;
-
 -- Documentos com setor/unidade textual já demonstravam intenção operacional.
+-- O trigger legado revalida vínculos de categoria/tipo em qualquer UPDATE.
+-- A migração altera somente o novo escopo, portanto ele é suspenso estritamente
+-- durante o backfill e reativado na mesma transação.
+alter table public.documentos disable trigger trg_documentos_company;
+
 update public.documentos d
 set
   escopo_documento = case
@@ -313,6 +311,15 @@ where d.escopo_documento is distinct from case
     nullif(btrim(d.setor_unidade), '') is not null
     and d.unidade_id is null
   );
+
+alter table public.documentos enable trigger trg_documentos_company;
+
+alter table public.documentos drop constraint if exists documentos_escopo_documento_check;
+alter table public.documentos add constraint documentos_escopo_documento_check
+  check (
+    (escopo_documento = 'corporativo' and unidade_id is null)
+    or (escopo_documento = 'unidade' and unidade_id is not null)
+  ) not valid;
 
 update public.equipamentos e
 set unidade_id = (
