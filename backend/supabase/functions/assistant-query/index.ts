@@ -46,6 +46,7 @@ Deno.serve(async (req: Request) => {
   const pergunta = String(input.pergunta ?? input.question ?? input.message ?? "").trim();
   const escopo = String(input.escopo ?? "geral");
   const equipamentoId = input.equipamento_id ? String(input.equipamento_id) : null;
+  const unidadeId = input.unidade_id ? String(input.unidade_id) : null;
   const setor = input.setor ? String(input.setor) : null;
 
   if (pergunta.length < 3) {
@@ -97,8 +98,9 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const { data: contexto, error: contextoError } = await userClient.rpc("api_assistente_contexto", {
+  const { data: contexto, error: contextoError } = await userClient.rpc("api_assistente_contexto_unidade", {
     p_empresa_id: empresaId,
+    p_unidade_id: unidadeId,
     p_escopo: escopo,
     p_equipamento_id: equipamentoId,
     p_setor: setor,
@@ -110,6 +112,7 @@ Deno.serve(async (req: Request) => {
 
   await userClient.from("interacoes_assistente").insert({
     empresa_id: empresaId,
+    unidade_id: unidadeId,
     usuario_id: authData.user.id,
     pergunta,
     escopo,
@@ -128,6 +131,7 @@ Deno.serve(async (req: Request) => {
     sources: fontes,
     confianca: fontes.length > 0 ? "alta" : "media",
     contexto_empresa: empresaId,
+    contexto_unidade: unidadeId,
     leu_anexos: false,
     politica_privacidade: contexto?.politica_privacidade ?? {
       le_anexos: false,

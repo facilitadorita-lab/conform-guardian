@@ -9,7 +9,7 @@ Deno.serve(async (request: Request) => {
   const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: schedules, error } = await admin
     .from("relatorios_agendados")
-    .select("id,empresa_id,nome,tipo_relatorio,frequencia,destinatarios,filtros_json")
+    .select("id,empresa_id,unidade_id,nome,tipo_relatorio,frequencia,destinatarios,filtros_json")
     .eq("ativo", true).lte("proxima_execucao_at", new Date().toISOString()).limit(50);
   if (error) return json({ error: "SCHEDULE_QUERY_FAILED" }, 503);
 
@@ -18,13 +18,14 @@ Deno.serve(async (request: Request) => {
   for (const schedule of schedules ?? []) {
     const execution = await admin.from("execucoes_relatorios_agendados").insert({
       empresa_id: schedule.empresa_id,
+      unidade_id: schedule.unidade_id,
       relatorio_agendado_id: schedule.id,
       status: "processing",
       destinatarios: schedule.destinatarios,
     }).select("id").single();
     if (execution.error) { failed++; continue; }
     try {
-      const snapshot = await buildSnapshot(admin, schedule.empresa_id);
+      const snapshot = await buildSnapshot(admin, schedule.empresa_id, schedule.unidade_id);
       const emailWebhook = Deno.env.get("EMAIL_WEBHOOK_URL");
       if (!emailWebhook) throw new Error("EMAIL_PROVIDER_NOT_CONFIGURED");
       const response = await fetch(emailWebhook, {
@@ -62,18 +63,57 @@ Deno.serve(async (request: Request) => {
   return json({ processed: schedules?.length ?? 0, sent, failed });
 });
 
-async function buildSnapshot(admin: ReturnType<typeof createClient>, companyId: string) {
-  const [company, documents, equipment, maintenance, pending] = await Promise.all([
+async function buildSnapshot(
+  admin: ReturnType<typeof createClient>,
+  companyId: string,
+  unitId: string | null,
+) {
+  let documentsQuery = admin
+    .from("documentos")
+    .select("id,data_vencimento")
+    .eq("empresa_id", companyId)
+    .is("deleted_at", null);
+  let equipmentQuery = admin
+    .from("equipamentos")
+    .select("id,status")
+    .eq("empresa_id", companyId)
+    .is("deleted_at", null);
+  let maintenanceQuery = admin
+    .from("manutencoes")
+    .select("id,proxima_manutencao,status_execucao")
+    .eq("empresa_id", companyId)
+    .is("deleted_at", null);
+  let pendingQuery = admin
+    .from("pendencias")
+    .select("id,status,prazo")
+    .eq("empresa_id", companyId)
+    .is("deleted_at", null);
+
+  if (unitId) {
+    documentsQuery = documentsQuery.or(
+      `escopo_documento.eq.corporativo,unidade_id.eq.${unitId}`,
+    );
+    equipmentQuery = equipmentQuery.eq("unidade_id", unitId);
+    maintenanceQuery = maintenanceQuery.eq("unidade_id", unitId);
+    pendingQuery = pendingQuery.or(`unidade_id.is.null,unidade_id.eq.${unitId}`);
+  }
+
+  const [company, unit, documents, equipment, maintenance, pending] = await Promise.all([
     admin.from("empresas").select("nome_fantasia,cnpj").eq("id", companyId).single(),
-    admin.from("documentos").select("id,data_vencimento").eq("empresa_id", companyId).is("deleted_at", null),
-    admin.from("equipamentos").select("id,status").eq("empresa_id", companyId).is("deleted_at", null),
-    admin.from("manutencoes").select("id,proxima_manutencao,status_execucao").eq("empresa_id", companyId).is("deleted_at", null),
-    admin.from("pendencias").select("id,status,prazo").eq("empresa_id", companyId).is("deleted_at", null),
+    unitId
+      ? admin.from("unidades").select("id,nome,codigo").eq("id", unitId).eq("empresa_id", companyId).single()
+      : Promise.resolve({ data: null }),
+    documentsQuery,
+    equipmentQuery,
+    maintenanceQuery,
+    pendingQuery,
   ]);
   const today = new Date().toISOString().slice(0, 10);
   return {
     empresa: company.data?.nome_fantasia ?? "Empresa",
     cnpj: company.data?.cnpj ?? null,
+    unidade: unit.data?.nome ?? "Visão consolidada",
+    unidade_id: unitId,
     gerado_em: new Date().toISOString(),
     documentos: {
       total: documents.data?.length ?? 0,

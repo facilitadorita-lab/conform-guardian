@@ -20,17 +20,38 @@ Deno.serve(async (request: Request) => {
   if (generationError) return json({ error: "ALERT_GENERATION_FAILED" }, 503);
   const { data: alerts, error } = await admin
     .from("alertas")
-    .select("id,empresa_id,usuario_id,titulo,mensagem,data_vencimento,email_status")
+    .select("id,empresa_id,unidade_id,usuario_id,titulo,mensagem,data_vencimento,email_status")
     .in("email_status", ["pendente", "falhou"])
     .is("deleted_at", null)
     .limit(200);
   if (error) return json({ error: "ALERT_QUEUE_UNAVAILABLE" }, 503);
 
+  const companyIds = [...new Set((alerts ?? []).map((item) => item.empresa_id))];
+  const unitIds = [...new Set((alerts ?? []).map((item) => item.unidade_id).filter(Boolean))];
+  const [{ data: companies }, { data: units }] = await Promise.all([
+    companyIds.length
+      ? admin.from("empresas").select("id,nome_fantasia").in("id", companyIds)
+      : Promise.resolve({ data: [] }),
+    unitIds.length
+      ? admin.from("unidades").select("id,nome").in("id", unitIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+  const companyNames = new Map((companies ?? []).map((item) => [item.id, item.nome_fantasia]));
+  const unitNames = new Map((units ?? []).map((item) => [item.id, item.nome]));
+
   let sent = 0;
   let failed = 0;
   let inApp = 0;
   for (const alert of alerts ?? []) {
-    const recipients = await loadRecipients(admin, alert.empresa_id, alert.usuario_id);
+    const recipients = await loadRecipients(
+      admin,
+      alert.empresa_id,
+      alert.unidade_id,
+      alert.usuario_id,
+    );
+    const actionPath = alert.unidade_id
+      ? `/alertas?unidade=${encodeURIComponent(alert.unidade_id)}`
+      : "/alertas";
     for (const recipient of recipients) {
       const preference = recipient.preferencias_notificacao_usuario?.[0];
       const channels: string[] = preference?.canais ?? ["in_app", "email"];
@@ -52,7 +73,7 @@ Deno.serve(async (request: Request) => {
             tipo: "expiration_alert",
             titulo: alert.titulo,
             mensagem: alert.mensagem,
-            action_url: "/alertas",
+            action_url: actionPath,
             dedupe_key: `expiration:${alert.id}:${recipient.usuario_id}`,
           });
           inApp++;
@@ -84,7 +105,9 @@ Deno.serve(async (request: Request) => {
             subject: alert.titulo,
             message: alert.mensagem,
             dueDate: alert.data_vencimento,
-            actionUrl: `${Deno.env.get("APP_URL") ?? "https://conform-guardian.lovable.app"}/alertas`,
+            companyName: companyNames.get(alert.empresa_id) ?? "Empresa",
+            unitName: alert.unidade_id ? unitNames.get(alert.unidade_id) ?? "Unidade" : "Corporativo",
+            actionUrl: `${Deno.env.get("APP_URL") ?? "https://conform-guardian.lovable.app"}${actionPath}`,
           }),
         });
         if (!response.ok) throw new Error(`EMAIL_PROVIDER_${response.status}`);
@@ -114,14 +137,51 @@ Deno.serve(async (request: Request) => {
   return json({ processed: alerts?.length ?? 0, in_app: inApp, email_sent: sent, failed });
 });
 
-async function loadRecipients(admin: ReturnType<typeof createClient>, companyId: string, assignedUserId: string | null) {
+async function loadRecipients(
+  admin: ReturnType<typeof createClient>,
+  companyId: string,
+  unitId: string | null,
+  assignedUserId: string | null,
+) {
   let query = admin.from("usuarios_empresas")
-    .select("usuario_id,perfil,usuarios!inner(nome,email,status)")
+    .select("usuario_id,perfil,acesso_todas_unidades,usuarios!inner(nome,email,status)")
     .eq("empresa_id", companyId).eq("ativo", true).is("deleted_at", null);
   if (assignedUserId) query = query.or(`usuario_id.eq.${assignedUserId},perfil.eq.administrador`);
   else query = query.eq("perfil", "administrador");
   const { data } = await query;
-  const active = (data ?? []).filter((item) => item.usuarios?.status === "ativo" && item.usuarios?.email);
+  let active = (data ?? []).filter(
+    (item) => item.usuarios?.status === "ativo" && item.usuarios?.email,
+  );
+  if (unitId && active.length) {
+    const restrictedIds = active
+      .filter(
+        (item) =>
+          !item.acesso_todas_unidades &&
+          !["administrador", "administrador_provisorio", "parceiro_administrador"].includes(
+            item.perfil,
+          ),
+      )
+      .map((item) => item.usuario_id);
+    const { data: memberships } = restrictedIds.length
+      ? await admin
+          .from("usuarios_unidades")
+          .select("usuario_id")
+          .eq("empresa_id", companyId)
+          .eq("unidade_id", unitId)
+          .eq("ativo", true)
+          .is("deleted_at", null)
+          .in("usuario_id", restrictedIds)
+      : { data: [] };
+    const allowedRestricted = new Set((memberships ?? []).map((item) => item.usuario_id));
+    active = active.filter(
+      (item) =>
+        item.acesso_todas_unidades ||
+        ["administrador", "administrador_provisorio", "parceiro_administrador"].includes(
+          item.perfil,
+        ) ||
+        allowedRestricted.has(item.usuario_id),
+    );
+  }
   const userIds = active.map((item) => item.usuario_id);
   const { data: preferences } = userIds.length
     ? await admin.from("preferencias_notificacao_usuario").select("usuario_id,canais,severidade_minima,resumo_diario").eq("empresa_id", companyId).in("usuario_id", userIds)

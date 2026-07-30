@@ -73,6 +73,26 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   if (!source) return respond({ error: "source_not_found" }, 404);
 
+  const { data: unidadeId, error: unitError } = await userClient.rpc(
+    "resolve_record_unit",
+    {
+      p_empresa_id: empresaId,
+      p_modulo: modulo,
+      p_registro_id: registroId,
+    },
+  );
+  if (unitError) return respond({ error: "unit_context_unavailable" }, 400);
+  if (unidadeId) {
+    const { data: canWriteUnit, error: unitPermissionError } = await userClient.rpc(
+      "can_write_unit",
+      { p_empresa_id: empresaId, p_unidade_id: unidadeId },
+    );
+    if (unitPermissionError || !canWriteUnit) {
+      return respond({ error: "unit_forbidden" }, 403);
+    }
+  }
+  const unitPathSegment = unidadeId || "corporativo";
+
   if (action === "prepare") {
     const originalName = String(input.nome_original ?? "");
     const mime = String(input.mime_type ?? "");
@@ -87,7 +107,8 @@ Deno.serve(async (req: Request) => {
     if (!quota?.permitido)
       return respond({ error: "storage_plan_limit_reached", usage: quota }, 409);
     const uploadId = crypto.randomUUID();
-    const path = `${empresaId}/${modulo}/${registroId}/${uploadId}-${safeName(originalName)}`;
+    const path =
+      `${empresaId}/${unitPathSegment}/${modulo}/${registroId}/${uploadId}-${safeName(originalName)}`;
     const { data, error } = await adminClient.storage
       .from("evidencias")
       .createSignedUploadUrl(path);
@@ -103,7 +124,7 @@ Deno.serve(async (req: Request) => {
 
   if (action === "complete") {
     const path = String(input.path ?? "");
-    const prefix = `${empresaId}/${modulo}/${registroId}/`;
+    const prefix = `${empresaId}/${unitPathSegment}/${modulo}/${registroId}/`;
     if (!path.startsWith(prefix)) return respond({ error: "invalid_path" }, 400);
     const folder = path.slice(0, path.lastIndexOf("/"));
     const filename = path.slice(path.lastIndexOf("/") + 1);
@@ -180,6 +201,7 @@ Deno.serve(async (req: Request) => {
       .from("anexos")
       .insert({
         empresa_id: empresaId,
+        unidade_id: unidadeId || null,
         modulo,
         registro_id: registroId,
         finalidade,
@@ -203,6 +225,7 @@ Deno.serve(async (req: Request) => {
 
     await adminClient.from("logs_auditoria").insert({
       empresa_id: empresaId,
+      unidade_id: unidadeId || null,
       usuario_id: authData.user.id,
       modulo,
       acao: replacementId ? "substituicao_anexo" : "upload_anexo",
@@ -215,6 +238,7 @@ Deno.serve(async (req: Request) => {
         finalidade,
         versao: version,
         substitui_anexo_id: replacementId,
+        unidade_id: unidadeId || null,
       },
     });
 
