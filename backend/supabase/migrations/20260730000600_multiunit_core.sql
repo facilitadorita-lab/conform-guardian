@@ -53,7 +53,8 @@ create index if not exists idx_unidades_responsavel
   on public.unidades (responsavel_id)
   where deleted_at is null;
 
--- Toda empresa pré-existente recebe exatamente uma matriz.
+-- Toda empresa pré-existente recebe exatamente uma matriz, inclusive empresas
+-- arquivadas que ainda possuem registros históricos sujeitos às novas FKs.
 insert into public.unidades (
   empresa_id,
   codigo,
@@ -93,11 +94,10 @@ select
   e.estado,
   e.cep,
   true,
-  'ativa',
+  case when e.deleted_at is null then 'ativa' else 'arquivada' end,
   'Unidade matriz criada automaticamente na implantação da multiunidade.'
 from public.empresas e
-where e.deleted_at is null
-  and not exists (
+where not exists (
     select 1
     from public.unidades u
     where u.empresa_id = e.id
