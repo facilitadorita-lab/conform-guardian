@@ -440,6 +440,7 @@ where a.unidade_id is null;
 -- criar centenas de eventos artificiais na cadeia imutável de auditoria.
 alter table public.anexos disable trigger trg_anexos_audit_fields;
 alter table public.anexos disable trigger trg_anexos_audit_log;
+alter table public.anexos disable trigger trg_anexos_plan_feature;
 
 with anexos_resolvidos as materialized (
   select
@@ -488,6 +489,7 @@ where r.id = a.id
 
 alter table public.anexos enable trigger trg_anexos_audit_fields;
 alter table public.anexos enable trigger trg_anexos_audit_log;
+alter table public.anexos enable trigger trg_anexos_plan_feature;
 
 update public.interacoes_assistente i
 set unidade_id = e.unidade_id
