@@ -128,6 +128,9 @@ export interface InviteCompanyUserInput {
   nome: string;
   perfil: "administrador" | "responsavel_tecnico" | "colaborador" | "somente_leitura";
   setor?: string;
+  acessoTodasUnidades?: boolean;
+  unidadeIds?: string[];
+  unidadePrincipalId?: string | null;
 }
 
 export interface InviteCompanyUserResult {
@@ -145,6 +148,9 @@ export function inviteCompanyUser(input: InviteCompanyUserInput) {
     nome: input.nome,
     perfil: input.perfil,
     cargo: input.setor,
+    acesso_todas_unidades: input.acessoTodasUnidades ?? true,
+    unidade_ids: input.unidadeIds ?? [],
+    unidade_principal_id: input.unidadePrincipalId ?? null,
   });
 }
 
@@ -321,6 +327,7 @@ export function registrarEventoAnexo(
 // PDFs, imagens ou DOCX. O backend controla o contexto acessivel.
 export interface AssistantQueryInput {
   empresa_id: string;
+  unidade_id?: string | null;
   pergunta: string;
   contexto?: "dashboard" | "documentos" | "equipamentos" | "manutencoes" | "pendencias" | "geral";
   historico?: { role: "user" | "assistant"; content: string }[];

@@ -40,16 +40,18 @@ type ApiDashboardResponse = Partial<DashboardData> & {
     status?: string;
     responsavel_id?: string | null;
   }>;
+  por_unidade?: DashboardResumo["porUnidade"];
 };
 
 export const dashboardService = {
-  async obter(empresaId: string): Promise<DashboardData> {
+  async obter(empresaId: string, unidadeId: string | null): Promise<DashboardData> {
     if (runtimeConfig.useMocks) {
       return cloneMock({ ...dashboardMock, pendencias: pendenciasMock });
     }
 
-    const data = await invokeRpc<ApiDashboardResponse>("api_dashboard", {
+    const data = await invokeRpc<ApiDashboardResponse>("api_dashboard_unidade", {
       p_empresa_id: empresaId,
+      p_unidade_id: unidadeId,
     });
     return normalizeDashboard(data);
   },
@@ -79,6 +81,11 @@ function normalizeDashboard(data: ApiDashboardResponse): DashboardData {
       data.semResponsavel ?? (Array.isArray(pendenciasRaw) ? 0 : pendenciasRaw?.sem_responsavel),
     ),
     pendencias,
+    porUnidade: Array.isArray(data.porUnidade)
+      ? data.porUnidade
+      : Array.isArray(data.por_unidade)
+        ? data.por_unidade
+        : undefined,
   };
 }
 

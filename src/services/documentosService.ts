@@ -5,6 +5,7 @@ import type { Documento, DocumentoResumo, StatusConformidade } from "@/types";
 import { cloneMock, extractRpcItems, invokeRpc, type PaginatedRpcResponse } from "./service-utils";
 
 export interface ListarDocumentosParams {
+  unidadeId?: string | null;
   busca?: string;
   status?: string;
   limite?: number;
@@ -31,9 +32,10 @@ export const documentosService = {
     }
 
     const data = await invokeRpc<PaginatedRpcResponse<ApiDocumento> | ApiDocumento[]>(
-      "api_listar_documentos",
+      "api_listar_documentos_unidade",
       {
         p_empresa_id: empresaId,
+        p_unidade_id: params.unidadeId ?? null,
         p_busca: params.busca || null,
         p_status: params.status || null,
         p_limite: params.limite ?? 25,
@@ -70,6 +72,9 @@ export const documentosService = {
 };
 
 type ApiDocumento = Partial<DocumentoResumo> & {
+  unidade_id?: string | null;
+  unidade_nome?: string | null;
+  escopo_documento?: string | null;
   numero_documento?: string | null;
   orgao_emissor?: string | null;
   data_emissao?: string | null;
@@ -106,6 +111,11 @@ function normalizeDocumento(documento: ApiDocumento): DocumentoResumo {
     vencimento: documento.vencimento ?? documento.data_vencimento ?? "-",
     status: normalizeStatus(documento.status ?? documento.status_calculado),
     setor: documento.setor ?? documento.setor_unidade ?? "-",
+    unidadeId: documento.unidadeId ?? documento.unidade_id ?? null,
+    unidade: documento.unidade ?? documento.unidade_nome ?? null,
+    escopoDocumento:
+      documento.escopoDocumento ??
+      (documento.escopo_documento === "unidade" ? "unidade" : "corporativo"),
     anexoUrl: documento.anexoUrl ?? null,
     anexoNome: documento.anexoNome ?? null,
     anexoMimeType: documento.anexoMimeType ?? null,

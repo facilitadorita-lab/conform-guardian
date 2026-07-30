@@ -27,6 +27,13 @@ type UsuarioEmpresaRow = {
     | null;
 };
 
+type UsuarioUnidadeAccess = {
+  usuario_id: string;
+  acesso_todas_unidades: boolean;
+  unidade_principal_id: string | null;
+  unidade_ids: string[];
+};
+
 const perfilLabel: Record<UsuarioEmpresaRow["perfil"], UsuarioResumo["perfil"]> = {
   administrador: "Administrador",
   responsavel_tecnico: "Responsavel tecnico",
@@ -38,26 +45,38 @@ export const usuariosService = {
   async listar(empresaId: string): Promise<UsuarioResumo[]> {
     if (runtimeConfig.useMocks) return cloneMock(usuariosMock);
 
-    const { data, error } = await getSupabaseClient()
-      .from("usuarios_empresas")
-      .select("perfil,usuarios(id,nome,email,cargo,status)")
-      .eq("empresa_id", empresaId)
-      .eq("ativo", true)
-      .is("deleted_at", null);
+    const [memberships, unitAccess] = await Promise.all([
+      getSupabaseClient()
+        .from("usuarios_empresas")
+        .select("perfil,usuarios(id,nome,email,cargo,status)")
+        .eq("empresa_id", empresaId)
+        .eq("ativo", true)
+        .is("deleted_at", null),
+      invokeRpc<UsuarioUnidadeAccess[]>("api_obter_acessos_usuarios_unidades", {
+        p_empresa_id: empresaId,
+      }).catch(() => []),
+    ]);
 
-    if (error) throw new Error(error.message);
+    if (memberships.error) throw new Error(memberships.error.message);
+    const accessByUser = new Map(unitAccess.map((access) => [access.usuario_id, access]));
 
-    return ((data ?? []) as unknown as UsuarioEmpresaRow[])
+    return ((memberships.data ?? []) as unknown as UsuarioEmpresaRow[])
       .map((vinculo) => ({ vinculo, usuario: firstUsuario(vinculo.usuarios) }))
       .filter((item) => Boolean(item.usuario))
-      .map(({ vinculo, usuario }) => ({
-        id: usuario!.id,
-        nome: usuario!.nome,
-        email: usuario!.email,
-        perfil: perfilLabel[vinculo.perfil],
-        setor: usuario!.cargo ?? "-",
-        status: usuario!.status === "ativo" ? "Ativo" : "Inativo",
-      }));
+      .map(({ vinculo, usuario }) => {
+        const access = accessByUser.get(usuario!.id);
+        return {
+          id: usuario!.id,
+          nome: usuario!.nome,
+          email: usuario!.email,
+          perfil: perfilLabel[vinculo.perfil],
+          setor: usuario!.cargo ?? "-",
+          status: usuario!.status === "ativo" ? "Ativo" : "Inativo",
+          acessoTodasUnidades: access?.acesso_todas_unidades ?? true,
+          unidadePrincipalId: access?.unidade_principal_id ?? null,
+          unidadeIds: access?.unidade_ids ?? [],
+        };
+      });
   },
 
   atualizarPerfil(
@@ -74,6 +93,27 @@ export const usuariosService = {
       p_empresa_id: empresaId,
       p_usuario_id: usuarioId,
       p_payload: payload,
+    });
+  },
+
+  atualizarPerfilEAcesso(
+    empresaId: string,
+    usuarioId: string,
+    payload: {
+      perfil: PerfilUsuarioEmpresa;
+      ativo: boolean;
+      acessoTodasUnidades: boolean;
+      unidadeIds: string[];
+      unidadePrincipalId: string | null;
+    },
+  ) {
+    return invokeRpc("api_atualizar_usuario_empresa_multiunit", {
+      p_empresa_id: empresaId,
+      p_usuario_id: usuarioId,
+      p_payload: { perfil: payload.perfil, ativo: payload.ativo },
+      p_acesso_todas_unidades: payload.acessoTodasUnidades,
+      p_unidade_ids: payload.unidadeIds,
+      p_unidade_principal_id: payload.unidadePrincipalId,
     });
   },
 };

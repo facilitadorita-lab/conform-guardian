@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAppSession } from "@/hooks/use-app-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { MOCK_EMPRESA_ID, runtimeConfig } from "@/lib/runtime-config";
 import {
   alertasMock,
@@ -40,6 +41,7 @@ export function useAuthContext() {
 
 function useResolvedCompanyId() {
   const { selectedCompanyId, permissions } = useAppSession();
+  const { unidadeAtualId, carregando: unitLoading, unidadesPermitidas } = useUnitContext();
   const authQuery = useAuthContext();
   const acessoBloqueado = Boolean(
     authQuery.data &&
@@ -56,17 +58,20 @@ function useResolvedCompanyId() {
   return {
     ...authQuery,
     empresaId,
+    unidadeId: unidadeAtualId,
+    unitScope: unidadeAtualId ?? "consolidado",
+    unitReady: runtimeConfig.useMocks || (!unitLoading && unidadesPermitidas.length > 0),
     acessoBloqueado,
   };
 }
 
 export function useDashboardData() {
-  const { empresaId } = useResolvedCompanyId();
+  const { empresaId, unidadeId, unitScope, unitReady } = useResolvedCompanyId();
 
   return useQuery({
-    queryKey: ["dashboard", empresaId],
-    queryFn: () => dashboardService.obter(empresaId!),
-    enabled: Boolean(empresaId),
+    queryKey: ["dashboard", empresaId, unitScope],
+    queryFn: () => dashboardService.obter(empresaId!, unidadeId),
+    enabled: Boolean(empresaId) && unitReady,
     initialData: runtimeConfig.useMocks
       ? { ...dashboardMock, pendencias: pendenciasMock }
       : undefined,
@@ -75,37 +80,37 @@ export function useDashboardData() {
 }
 
 export function useDocumentos() {
-  const { empresaId } = useResolvedCompanyId();
+  const { empresaId, unidadeId, unitScope, unitReady } = useResolvedCompanyId();
 
   return useQuery({
-    queryKey: ["documentos", empresaId],
-    queryFn: () => documentosService.listar(empresaId!),
-    enabled: Boolean(empresaId),
+    queryKey: ["documentos", empresaId, unitScope],
+    queryFn: () => documentosService.listar(empresaId!, { unidadeId }),
+    enabled: Boolean(empresaId) && unitReady,
     initialData: runtimeConfig.useMocks ? documentosMock : undefined,
     staleTime,
   });
 }
 
 export function useEquipamentos() {
-  const { empresaId } = useResolvedCompanyId();
+  const { empresaId, unidadeId, unitScope, unitReady } = useResolvedCompanyId();
 
   return useQuery({
-    queryKey: ["equipamentos", empresaId],
-    queryFn: () => equipamentosService.listar(empresaId!),
-    enabled: Boolean(empresaId),
+    queryKey: ["equipamentos", empresaId, unitScope],
+    queryFn: () => equipamentosService.listar(empresaId!, { unidadeId }),
+    enabled: Boolean(empresaId) && unitReady,
     initialData: runtimeConfig.useMocks ? equipamentosMock : undefined,
     staleTime,
   });
 }
 
 export function useEquipamento(id: string) {
-  const { empresaId } = useResolvedCompanyId();
+  const { empresaId, unitScope, unitReady } = useResolvedCompanyId();
   const equipamentoMock = equipamentosMock.find((equipamento) => equipamento.id === id);
 
   return useQuery({
-    queryKey: ["equipamentos", empresaId, id],
+    queryKey: ["equipamentos", empresaId, unitScope, id],
     queryFn: () => equipamentosService.obterDetalhe(empresaId!, id),
-    enabled: Boolean(empresaId),
+    enabled: Boolean(empresaId) && unitReady,
     initialData: runtimeConfig.useMocks
       ? equipamentoMock
         ? ({
@@ -123,60 +128,61 @@ export function useEquipamento(id: string) {
 }
 
 export function useManutencoes(params: Parameters<typeof manutencoesService.listar>[1] = {}) {
-  const { empresaId } = useResolvedCompanyId();
+  const { empresaId, unidadeId, unitScope, unitReady } = useResolvedCompanyId();
+  const scopedParams = { ...params, unidadeId };
 
   return useQuery({
-    queryKey: ["manutencoes", empresaId, params],
-    queryFn: () => manutencoesService.listar(empresaId!, params),
-    enabled: Boolean(empresaId),
+    queryKey: ["manutencoes", empresaId, unitScope, scopedParams],
+    queryFn: () => manutencoesService.listar(empresaId!, scopedParams),
+    enabled: Boolean(empresaId) && unitReady,
     initialData: runtimeConfig.useMocks ? manutencoesMock : undefined,
     staleTime,
   });
 }
 
 export function usePendencias() {
-  const { empresaId } = useResolvedCompanyId();
+  const { empresaId, unidadeId, unitScope, unitReady } = useResolvedCompanyId();
 
   return useQuery({
-    queryKey: ["pendencias", empresaId],
-    queryFn: () => pendenciasService.listar(empresaId!),
-    enabled: Boolean(empresaId),
+    queryKey: ["pendencias", empresaId, unitScope],
+    queryFn: () => pendenciasService.listar(empresaId!, { unidadeId }),
+    enabled: Boolean(empresaId) && unitReady,
     initialData: runtimeConfig.useMocks ? pendenciasMock : undefined,
     staleTime,
   });
 }
 
 export function useAlertas() {
-  const { empresaId } = useResolvedCompanyId();
+  const { empresaId, unidadeId, unitScope, unitReady } = useResolvedCompanyId();
 
   return useQuery({
-    queryKey: ["alertas", empresaId],
-    queryFn: () => alertasService.listar(empresaId!),
-    enabled: Boolean(empresaId),
+    queryKey: ["alertas", empresaId, unitScope],
+    queryFn: () => alertasService.listar(empresaId!, unidadeId),
+    enabled: Boolean(empresaId) && unitReady,
     initialData: runtimeConfig.useMocks ? alertasMock : undefined,
     staleTime,
   });
 }
 
 export function useAuditoria() {
-  const { empresaId } = useResolvedCompanyId();
+  const { empresaId, unidadeId, unitScope, unitReady } = useResolvedCompanyId();
 
   return useQuery({
-    queryKey: ["auditoria", empresaId],
-    queryFn: () => auditoriaService.listar(empresaId!),
-    enabled: Boolean(empresaId),
+    queryKey: ["auditoria", empresaId, unitScope],
+    queryFn: () => auditoriaService.listar(empresaId!, unidadeId),
+    enabled: Boolean(empresaId) && unitReady,
     initialData: runtimeConfig.useMocks ? logsAuditoriaMock : undefined,
     staleTime,
   });
 }
 
 export function useAuditoriaAvancada() {
-  const { empresaId } = useResolvedCompanyId();
+  const { empresaId, unidadeId, unitScope, unitReady } = useResolvedCompanyId();
 
   return useQuery({
-    queryKey: ["auditoria", "avancada", empresaId],
-    queryFn: () => auditoriaService.avancada(empresaId!),
-    enabled: Boolean(empresaId),
+    queryKey: ["auditoria", "avancada", empresaId, unitScope],
+    queryFn: () => auditoriaService.avancada(empresaId!, unidadeId),
+    enabled: Boolean(empresaId) && unitReady,
     staleTime,
   });
 }

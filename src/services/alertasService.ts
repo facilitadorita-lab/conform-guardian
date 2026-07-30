@@ -4,13 +4,14 @@ import type { AlertaResumo, StatusConformidade } from "@/types";
 import { cloneMock, invokeRpc } from "./service-utils";
 
 export const alertasService = {
-  async listar(empresaId: string): Promise<AlertaResumo[]> {
+  async listar(empresaId: string, unidadeId: string | null): Promise<AlertaResumo[]> {
     if (runtimeConfig.useMocks) {
       return cloneMock(alertasMock);
     }
 
-    const data = await invokeRpc<ApiAlerta[]>("api_listar_alertas", {
+    const data = await invokeRpc<ApiAlerta[]>("api_listar_alertas_unidade", {
       p_empresa_id: empresaId,
+      p_unidade_id: unidadeId,
       p_somente_nao_lidos: false,
       p_limite: 25,
     });
@@ -27,6 +28,8 @@ export const alertasService = {
 };
 
 type ApiAlerta = Partial<AlertaResumo> & {
+  unidade_id?: string | null;
+  unidade_nome?: string | null;
   marco_dias?: number | null;
   titulo?: string | null;
   mensagem?: string | null;
@@ -43,6 +46,8 @@ function normalizeAlerta(alerta: ApiAlerta): AlertaResumo {
     canal: alerta.canal ?? "Central interna",
     data: alerta.data ?? alerta.data_vencimento ?? "-",
     nivel: alerta.nivel ?? normalizeNivel(alerta.status, alerta.data_vencimento),
+    unidadeId: alerta.unidadeId ?? alerta.unidade_id ?? null,
+    unidade: alerta.unidade ?? alerta.unidade_nome ?? null,
   };
 }
 

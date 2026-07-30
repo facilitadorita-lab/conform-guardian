@@ -22,11 +22,14 @@ export const vencimentosService = {
     const { professionalService } = await import("./professionalService");
     return professionalService.calendar(empresaId, start, end);
   },
-  async listar(empresaId: string): Promise<VencimentoConsolidado[]> {
+  async listar(
+    empresaId: string,
+    unidadeId: string | null,
+  ): Promise<VencimentoConsolidado[]> {
     const [documentos, equipamentos, manutencoes] = await Promise.all([
-      documentosService.listar(empresaId, { limite: 250 }),
-      equipamentosService.listar(empresaId),
-      manutencoesService.listar(empresaId, { limite: 250 }),
+      documentosService.listar(empresaId, { limite: 250, unidadeId }),
+      equipamentosService.listar(empresaId, { limite: 250, unidadeId }),
+      manutencoesService.listar(empresaId, { limite: 250, unidadeId }),
     ]);
 
     return [

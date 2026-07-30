@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppSessionProvider } from "@/hooks/use-app-session";
+import { UnitProvider } from "@/hooks/use-unit-context";
 import { initializeObservability } from "@/lib/observability";
 import { initializePerformanceTelemetry } from "@/lib/performance";
 import { Toaster } from "@/components/ui/sonner";
@@ -140,9 +141,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppSessionProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <Toaster position="bottom-right" closeButton richColors />
+        <UnitProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          <Toaster position="bottom-right" closeButton richColors />
+        </UnitProvider>
       </AppSessionProvider>
     </QueryClientProvider>
   );

@@ -4,6 +4,7 @@ import type { PendenciaResumo, StatusConformidade, TratativaPendencia } from "@/
 import { cloneMock, extractRpcItems, invokeRpc, type PaginatedRpcResponse } from "./service-utils";
 
 export interface ListarPendenciasParams {
+  unidadeId?: string | null;
   busca?: string;
   status?: string;
   limite?: number;
@@ -30,9 +31,10 @@ export const pendenciasService = {
     }
 
     const data = await invokeRpc<PaginatedRpcResponse<ApiPendencia> | ApiPendencia[]>(
-      "api_listar_pendencias",
+      "api_listar_pendencias_unidade",
       {
         p_empresa_id: empresaId,
+        p_unidade_id: params.unidadeId ?? null,
         p_status: params.status || null,
         p_responsavel_id: null,
         p_limite: params.limite ?? 25,
@@ -63,6 +65,8 @@ export const pendenciasService = {
 };
 
 type ApiPendencia = Partial<PendenciaResumo> & {
+  unidade_id?: string | null;
+  unidade_nome?: string | null;
   titulo?: string | null;
   modulo?: string | null;
   prazo?: string | null;
@@ -88,6 +92,8 @@ function normalizePendencia(pendencia: ApiPendencia): PendenciaResumo {
         ? pendencia.diasRestantes
         : calcularDiasRestantes(vencimento),
     status: normalizeStatus(pendencia.status, vencimento),
+    unidadeId: pendencia.unidadeId ?? pendencia.unidade_id ?? null,
+    unidade: pendencia.unidade ?? pendencia.unidade_nome ?? null,
   };
 }
 

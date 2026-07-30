@@ -91,14 +91,20 @@ export const professionalService = {
       p_empresa_id: companyId,
     });
   },
-  scheduledReports(companyId: string) {
-    return invokeRpc<ScheduledReportsData>("api_listar_relatorios_agendados", {
+  scheduledReports(companyId: string, unitId: string | null) {
+    return invokeRpc<ScheduledReportsData>("api_listar_relatorios_agendados_unidade", {
       p_empresa_id: companyId,
+      p_unidade_id: unitId,
     });
   },
-  saveScheduledReport(companyId: string, payload: Record<string, unknown>) {
-    return invokeRpc("api_salvar_relatorio_agendado", {
+  saveScheduledReport(
+    companyId: string,
+    unitId: string | null,
+    payload: Record<string, unknown>,
+  ) {
+    return invokeRpc("api_salvar_relatorio_agendado_unidade", {
       p_empresa_id: companyId,
+      p_unidade_id: unitId,
       p_payload: payload,
     });
   },

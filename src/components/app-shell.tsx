@@ -16,6 +16,7 @@ import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-ro
 import { useAuth } from "@/hooks/use-auth";
 import { useAppSession } from "@/hooks/use-app-session";
 import { useAlertas, useAuthContext } from "@/hooks/use-conform-data";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { runtimeConfig } from "@/lib/runtime-config";
 import type { AuthContexto, PlanoRecurso, StatusConformidade } from "@/types";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ import { PageHeader } from "@/components/conform/surface";
 import { AppSidebar } from "./app-sidebar";
 import { CompanySwitcher } from "./company-switcher";
 import { FloatingAssistant } from "./floating-assistant";
+import { UnitSwitcher } from "./unit-switcher";
 import { hasPlanFeature } from "@/utils/plan-features";
 
 const mobileNavigationItems: Array<{
@@ -65,6 +67,7 @@ export function AppShell({
 }) {
   const { user, loading, signOut } = useAuth();
   const { selectCompany, selectedCompanyId, permissions } = useAppSession();
+  const { unidadeAtualId } = useUnitContext();
   const { data: authContext, error: contextError } = useAuthContext();
   const { data: alertas } = useAlertas();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -181,6 +184,12 @@ export function AppShell({
             </div>
 
             <div className="ml-auto flex shrink-0 items-center gap-2">
+              {!isPartnerAccount ? (
+                <div className="hidden lg:block">
+                  <UnitSwitcher />
+                </div>
+              ) : null}
+
               {exibirAssistente ? (
                 <button
                   type="button"
@@ -254,6 +263,11 @@ export function AppShell({
               </button>
             </div>
           </div>
+          {!isPartnerAccount ? (
+            <div className="border-t border-border/40 px-4 py-2 lg:hidden">
+              <UnitSwitcher compact />
+            </div>
+          ) : null}
           {mobileOpen ? (
             <MobileNavigation
               authContext={activeAuthContext ?? authContext}
@@ -274,7 +288,11 @@ export function AppShell({
           </div>
         </main>
       </div>
-      {exibirAssistente ? <FloatingAssistant /> : null}
+      {exibirAssistente ? (
+        <FloatingAssistant
+          key={`${empresaAtual?.id ?? "sem-empresa"}:${unidadeAtualId ?? "consolidado"}`}
+        />
+      ) : null}
     </div>
   );
 }

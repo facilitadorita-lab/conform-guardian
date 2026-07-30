@@ -6,6 +6,7 @@ import { cloneMock, extractRpcItems, invokeRpc, type PaginatedRpcResponse } from
 import { cacheEquipmentDetail, getCachedEquipmentDetail } from "@/lib/offline-cache";
 
 export interface ListarEquipamentosParams {
+  unidadeId?: string | null;
   busca?: string;
   status?: string;
   limite?: number;
@@ -35,9 +36,10 @@ export const equipamentosService = {
     }
 
     const data = await invokeRpc<PaginatedRpcResponse<ApiEquipamento> | ApiEquipamento[]>(
-      "api_listar_equipamentos",
+      "api_listar_equipamentos_unidade",
       {
         p_empresa_id: empresaId,
+        p_unidade_id: params.unidadeId ?? null,
         p_busca: params.busca || null,
         p_status: params.status || null,
         p_limite: params.limite ?? 25,
@@ -202,6 +204,8 @@ export type EquipamentoDetalhe = EquipamentoResumo & {
 };
 
 type ApiEquipamento = Partial<EquipamentoResumo> & {
+  unidade_id?: string | null;
+  unidade_nome?: string | null;
   codigo_interno?: string | null;
   numero_serie?: string | null;
   tipo_nome?: string | null;
@@ -279,6 +283,8 @@ function normalizeEquipamento(equipamento: ApiEquipamento): EquipamentoResumo {
       equipamento.proxima_qualificacao ??
       equipamento.proxima_manutencao ??
       "-",
+    unidadeId: equipamento.unidadeId ?? equipamento.unidade_id ?? null,
+    unidade: equipamento.unidade ?? equipamento.unidade_nome ?? null,
   };
 }
 

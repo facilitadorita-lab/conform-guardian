@@ -14,15 +14,22 @@ type LogAuditoriaRow = {
 };
 
 export const auditoriaService = {
-  async listar(empresaId: string): Promise<LogAuditoriaResumo[]> {
+  async listar(
+    empresaId: string,
+    unidadeId: string | null,
+  ): Promise<LogAuditoriaResumo[]> {
     if (runtimeConfig.useMocks) return cloneMock(logsAuditoriaMock);
 
-    const { data, error } = await getSupabaseClient()
+    let query = getSupabaseClient()
       .from("logs_auditoria")
       .select("id,created_at,acao,modulo,ip,usuarios(nome)")
       .eq("empresa_id", empresaId)
       .order("created_at", { ascending: false })
       .limit(100);
+
+    if (unidadeId) query = query.or(`unidade_id.eq.${unidadeId},unidade_id.is.null`);
+
+    const { data, error } = await query;
 
     if (error) throw new Error(error.message);
 
@@ -36,7 +43,10 @@ export const auditoriaService = {
     }));
   },
 
-  async avancada(empresaId: string): Promise<AuditoriaAvancada> {
+  async avancada(
+    empresaId: string,
+    unidadeId: string | null,
+  ): Promise<AuditoriaAvancada> {
     if (runtimeConfig.useMocks) {
       return {
         resumo: {
@@ -60,8 +70,9 @@ export const auditoriaService = {
       };
     }
 
-    const data = await invokeRpc<ApiAuditoriaAvancada>("api_auditoria_avancada", {
+    const data = await invokeRpc<ApiAuditoriaAvancada>("api_auditoria_avancada_unidade", {
       p_empresa_id: empresaId,
+      p_unidade_id: unidadeId,
       p_limite: 150,
     });
 

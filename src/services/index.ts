@@ -7,6 +7,7 @@ export * from "./authService";
 export * from "./configuracoesService";
 export * from "./companyVerificationService";
 export * from "./dashboardService";
+export * from "./unidadesService";
 export * from "./documentosService";
 export * from "./equipamentosService";
 export * from "./edgeFunctionsService";

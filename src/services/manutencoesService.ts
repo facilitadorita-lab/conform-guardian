@@ -4,6 +4,7 @@ import type { Manutencao, ManutencaoResumo, StatusConformidade } from "@/types";
 import { cloneMock, extractRpcItems, invokeRpc, type PaginatedRpcResponse } from "./service-utils";
 
 export interface ListarManutencoesParams {
+  unidadeId?: string | null;
   busca?: string;
   status?: string;
   natureza?: string;
@@ -35,9 +36,10 @@ export const manutencoesService = {
     }
 
     const data = await invokeRpc<PaginatedRpcResponse<ApiManutencao> | ApiManutencao[]>(
-      "api_listar_manutencoes",
+      "api_listar_manutencoes_unidade",
       {
         p_empresa_id: empresaId,
+        p_unidade_id: params.unidadeId ?? null,
         p_busca: params.busca || null,
         p_status: params.status || null,
         p_natureza: params.natureza || null,
@@ -67,6 +69,8 @@ export const manutencoesService = {
 };
 
 type ApiManutencao = Partial<ManutencaoResumo> & {
+  unidade_id?: string | null;
+  unidade_nome?: string | null;
   equipamento_id?: string | null;
   equipamento_nome?: string | null;
   item_nome?: string | null;
@@ -105,6 +109,8 @@ function normalizeManutencao(manutencao: ApiManutencao): ManutencaoResumo {
     ),
     os: manutencao.os ?? manutencao.numero_ordem_servico ?? "-",
     statusExecucao: manutencao.status_execucao ?? null,
+    unidadeId: manutencao.unidadeId ?? manutencao.unidade_id ?? null,
+    unidade: manutencao.unidade ?? manutencao.unidade_nome ?? null,
   };
 }
 

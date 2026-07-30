@@ -47,7 +47,38 @@ export interface CriarEmpresaResult {
   };
 }
 
+export interface MasterMultiunitSummary {
+  resumo: {
+    empresas_com_multiunidade: number;
+    unidades_ativas: number;
+    unidades_em_implantacao: number;
+    unidades_arquivadas: number;
+    empresas_proximas_limite: number;
+    empresas_em_excesso: number;
+    receita_unidades_extras_centavos: number;
+  };
+  empresas: Array<{
+    empresa_id: string;
+    empresa: string;
+    tipo_conta: string;
+    unidades_utilizadas: number;
+    unidades_ativas: number;
+    unidades_arquivadas: number;
+    limite_base: number;
+    unidades_extras: number;
+    limite_unidades: number;
+    proxima_do_limite: boolean;
+    em_excesso: boolean;
+    parceiro_empresa_id?: string | null;
+    parceiro?: string | null;
+  }>;
+}
+
 export const adminMasterService = {
+  resumoMultiunidade(): Promise<MasterMultiunitSummary> {
+    return invokeRpc<MasterMultiunitSummary>("api_master_resumo_multiunidade");
+  },
+
   listarEnsaiosBackup() {
     return invokeRpc<
       Array<{

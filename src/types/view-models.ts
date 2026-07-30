@@ -1,4 +1,4 @@
-import type { ISODate, StatusConformidade, UUID } from "./domain";
+import type { ISODate, StatusConformidade, StatusUnidade, UUID, Unidade } from "./domain";
 import type {
   CompanyAccessStatus,
   CompanyVerificationStatus,
@@ -17,6 +17,7 @@ export interface DashboardResumo {
   pendenciasCriticas: number;
   semAnexo: number;
   semResponsavel: number;
+  porUnidade?: UnidadeIndicadores[];
 }
 
 export interface PendenciaResumo {
@@ -27,6 +28,8 @@ export interface PendenciaResumo {
   vencimento: ISODate;
   diasRestantes: number;
   status: StatusConformidade;
+  unidadeId?: UUID | null;
+  unidade?: string | null;
 }
 
 export interface DocumentoResumo {
@@ -41,6 +44,9 @@ export interface DocumentoResumo {
   vencimento: ISODate;
   status: StatusConformidade;
   setor: string;
+  unidadeId?: UUID | null;
+  unidade?: string | null;
+  escopoDocumento?: "corporativo" | "unidade";
   anexoId?: UUID | null;
   anexoUrl?: string | null;
   anexoNome?: string | null;
@@ -58,6 +64,8 @@ export interface EquipamentoResumo {
   criticidade: "Baixa" | "Media" | "Alta" | "Critica";
   status: StatusConformidade;
   proximoVenc: ISODate;
+  unidadeId?: UUID | null;
+  unidade?: string | null;
 }
 
 export interface ManutencaoResumo {
@@ -71,6 +79,8 @@ export interface ManutencaoResumo {
   status: StatusConformidade;
   os: string;
   statusExecucao?: string | null;
+  unidadeId?: UUID | null;
+  unidade?: string | null;
 }
 
 export interface AlertaResumo {
@@ -80,6 +90,8 @@ export interface AlertaResumo {
   canal: string;
   data: ISODate;
   nivel: StatusConformidade | "info";
+  unidadeId?: UUID | null;
+  unidade?: string | null;
 }
 
 export interface LogAuditoriaResumo {
@@ -102,6 +114,63 @@ export interface UsuarioResumo {
   perfil: "Administrador" | "Responsavel tecnico" | "Colaborador" | "Somente leitura";
   setor: string;
   status: "Ativo" | "Inativo";
+  acessoTodasUnidades?: boolean;
+  unidadePrincipalId?: UUID | null;
+  unidadeIds?: UUID[];
+}
+
+export interface UnidadeResumo extends Unidade {
+  usuarios: number;
+  documentos: number;
+  equipamentos: number;
+}
+
+export interface UnidadeLimites {
+  utilizadas: number;
+  limite: number;
+  disponiveis: number;
+  em_excesso: boolean;
+  multiunidade_habilitada: boolean;
+}
+
+export interface UnidadeIndicadores {
+  unidade_id: UUID;
+  unidade?: string;
+  documentos_total?: number;
+  documentos_vencidos?: number;
+  equipamentos_atencao?: number;
+  pendencias_abertas?: number;
+  documentos?: number;
+  equipamentos?: number;
+  manutencoes_abertas?: number;
+}
+
+export interface UnidadeListagem {
+  items: UnidadeResumo[];
+  pode_visualizar_consolidado: boolean;
+  pode_administrar: boolean;
+  limites: UnidadeLimites;
+}
+
+export interface UnidadeFormPayload {
+  codigo: string;
+  nome: string;
+  tipo?: string | null;
+  descricao?: string | null;
+  cnpj?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+  responsavel_id?: UUID | null;
+  endereco?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  cep?: string | null;
+  timezone?: string;
+  status?: StatusUnidade;
+  observacoes?: string | null;
 }
 
 export interface EmpresaResumo {
@@ -218,6 +287,11 @@ export interface RelatorioExecutivoIA {
     tipo_estabelecimento?: string | null;
     segmento?: string | null;
   };
+  unidade?: {
+    id: UUID;
+    codigo: string;
+    nome: string;
+  } | null;
   gerado_em: string;
   politica_ia: {
     tipo: string;

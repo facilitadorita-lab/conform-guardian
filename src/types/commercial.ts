@@ -90,6 +90,13 @@ export interface PartnerClient {
   segmento?: string | null;
   tipo_estabelecimento?: string | null;
   plano?: { id: UUID; nome: string; codigo: string } | null;
+  unidades?: {
+    utilizadas: number;
+    ativas: number;
+    arquivadas: number;
+    limite: number;
+    em_excesso: boolean;
+  };
   relacionamento: {
     id: UUID;
     status: "ativo" | "suspenso" | "encerrado";

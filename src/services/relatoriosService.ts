@@ -9,9 +9,13 @@ export const relatoriosService = {
     return invokeRpc<RelatorioCatalogoItem[]>("api_catalogo_relatorios");
   },
 
-  async gerarExecutivoIA(empresaId: string): Promise<RelatorioExecutivoIA> {
-    return invokeRpc<RelatorioExecutivoIA>("api_relatorio_executivo_ia", {
+  async gerarExecutivoIA(
+    empresaId: string,
+    unidadeId: string | null,
+  ): Promise<RelatorioExecutivoIA> {
+    return invokeRpc<RelatorioExecutivoIA>("api_relatorio_executivo_ia_unidade", {
       p_empresa_id: empresaId,
+      p_unidade_id: unidadeId,
     });
   },
 };

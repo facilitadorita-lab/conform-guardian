@@ -53,10 +53,61 @@ export interface UsuarioEmpresa extends EntidadeAuditavel {
   empresa_id: UUID;
   perfil: "administrador" | "responsavel_tecnico" | "colaborador" | "somente_leitura";
   ativo: boolean;
+  acesso_todas_unidades?: boolean;
+  unidade_principal_id?: UUID | null;
+}
+
+export type StatusUnidade = "ativa" | "inativa" | "em_implantacao" | "arquivada";
+export type EscopoDocumento = "corporativo" | "unidade";
+
+export interface Unidade extends EntidadeAuditavel {
+  empresa_id: UUID;
+  codigo: string;
+  nome: string;
+  tipo?: string | null;
+  descricao?: string | null;
+  cnpj?: string | null;
+  telefone?: string | null;
+  email?: string | null;
+  responsavel_id?: UUID | null;
+  endereco?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  cep?: string | null;
+  timezone: string;
+  is_matriz: boolean;
+  status: StatusUnidade;
+  observacoes?: string | null;
+}
+
+export interface UsuarioUnidade extends EntidadeAuditavel {
+  empresa_id: UUID;
+  unidade_id: UUID;
+  usuario_id: UUID;
+  ativo: boolean;
+  perfil_unidade?: UsuarioEmpresa["perfil"] | null;
+  principal: boolean;
+}
+
+export interface UnidadeTransferencia {
+  id: UUID;
+  empresa_id: UUID;
+  equipamento_id: UUID;
+  unidade_origem_id: UUID;
+  unidade_destino_id: UUID;
+  motivo: string;
+  responsavel_id?: UUID | null;
+  data_transferencia: ISODateTime;
+  observacoes?: string | null;
 }
 
 export interface Documento extends EntidadeAuditavel {
   empresa_id: UUID;
+  unidade_id?: UUID | null;
+  escopo_documento: EscopoDocumento;
   nome: string;
   categoria_id?: UUID | null;
   tipo_documento_id?: UUID | null;
@@ -83,6 +134,7 @@ export interface DocumentoVersao extends EntidadeAuditavel {
 
 export interface Equipamento extends EntidadeAuditavel {
   empresa_id: UUID;
+  unidade_id: UUID;
   nome: string;
   tipo_equipamento_id?: UUID | null;
   codigo_interno?: string | null;
@@ -99,6 +151,7 @@ export interface Equipamento extends EntidadeAuditavel {
 
 export interface Manutencao extends EntidadeAuditavel {
   empresa_id: UUID;
+  unidade_id: UUID;
   equipamento_id?: UUID | null;
   nome_servico?: string | null;
   natureza: "preventiva" | "corretiva";
@@ -118,6 +171,7 @@ export interface Manutencao extends EntidadeAuditavel {
 
 export interface Pendencia extends EntidadeAuditavel {
   empresa_id: UUID;
+  unidade_id?: UUID | null;
   modulo: string;
   registro_id: UUID;
   tipo: string;
@@ -130,6 +184,7 @@ export interface Pendencia extends EntidadeAuditavel {
 
 export interface TratativaPendencia extends EntidadeAuditavel {
   empresa_id: UUID;
+  unidade_id?: UUID | null;
   pendencia_id: UUID;
   descricao: string;
   responsavel_id?: UUID | null;
@@ -140,6 +195,7 @@ export interface TratativaPendencia extends EntidadeAuditavel {
 
 export interface Alerta extends EntidadeAuditavel {
   empresa_id: UUID;
+  unidade_id?: UUID | null;
   usuario_id?: UUID | null;
   modulo: string;
   registro_id: UUID;
@@ -154,6 +210,7 @@ export interface Alerta extends EntidadeAuditavel {
 
 export interface Anexo extends EntidadeAuditavel {
   empresa_id: UUID;
+  unidade_id?: UUID | null;
   modulo:
     "documentos" | "equipamentos" | "calibracoes" | "qualificacoes" | "manutencoes" | "pendencias";
   registro_id: UUID;
@@ -174,6 +231,7 @@ export interface Anexo extends EntidadeAuditavel {
 export interface LogAuditoria {
   id: UUID;
   empresa_id?: UUID | null;
+  unidade_id?: UUID | null;
   usuario_id?: UUID | null;
   modulo: string;
   acao: string;

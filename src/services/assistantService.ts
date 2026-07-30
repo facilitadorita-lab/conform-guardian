@@ -29,12 +29,17 @@ type LegacyItem = {
 };
 
 export const assistantService = {
-  async perguntar(empresaId: UUID, pergunta: string): Promise<AssistantResponse> {
+  async perguntar(
+    empresaId: UUID,
+    pergunta: string,
+    unidadeId: UUID | null,
+  ): Promise<AssistantResponse> {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase.functions.invoke<AssistantResponse>("assistant-query", {
       body: {
         empresa_id: empresaId,
         pergunta,
+        unidade_id: unidadeId,
       },
     });
 
