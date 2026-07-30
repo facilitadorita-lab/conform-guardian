@@ -27,7 +27,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const { signIn, user, loading, passwordRecovery } = useAuth();
-  const { authContext, contextLoading } = useAppSession();
+  const { authContext, contextLoading, contextError } = useAppSession();
   const { isMaster, selectedCompanyId, empresasDisponiveis } = useSession();
   const navigate = useNavigate();
   const search = useSearch({ from: "/login" });
@@ -41,14 +41,18 @@ function LoginPage() {
   const [forgotMsg, setForgotMsg] = useState<string | null>(null);
   const [forgotErr, setForgotErr] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const contextErrorMessage =
+    user && contextError && !contextLoading ? formatLoginContextError(contextError) : null;
 
   useEffect(() => {
-    if (loading || contextLoading) return;
+    if (loading) return;
     if (passwordRecovery) {
       navigate({ to: "/definir-senha" });
       return;
     }
     if (!user) return;
+    if (contextError) return;
+    if (contextLoading) return;
     if (!authContext || authContext.usuario.id !== user.id) return;
     if (isMaster && !selectedCompanyId) {
       navigate({ to: "/master/empresas" });
@@ -61,6 +65,7 @@ function LoginPage() {
   }, [
     loading,
     contextLoading,
+    contextError,
     user,
     authContext,
     passwordRecovery,
@@ -77,7 +82,7 @@ function LoginPage() {
     try {
       await signIn(email, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Falha ao entrar.");
+      setError(formatLoginAuthError(err));
     } finally {
       setSubmitting(false);
     }
@@ -194,12 +199,12 @@ function LoginPage() {
                   </div>
                 </label>
 
-                {error ? (
+                {error || contextErrorMessage ? (
                   <div
                     role="alert"
                     className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
                   >
-                    {error}
+                    {error ?? contextErrorMessage}
                   </div>
                 ) : null}
 
@@ -270,6 +275,42 @@ function LoginPage() {
       </div>
     </main>
   );
+}
+
+function formatLoginContextError(error: Error): string {
+  const message = error.message.toLowerCase();
+
+  if (
+    message.includes("nenhuma empresa vinculada") ||
+    (message.includes("perfil") && message.includes("encontrado"))
+  ) {
+    return "Sua senha foi aceita, mas este usuário ainda não está vinculado a uma empresa ativa. Solicite o convite de primeiro acesso ao administrador.";
+  }
+
+  if (message.includes("supabase") && message.includes("configur")) {
+    return "O ambiente de acesso ainda não está configurado. Informe o administrador da plataforma.";
+  }
+
+  return "Não foi possível carregar o ambiente desta empresa. Confirme se o convite foi concluído ou peça um novo convite ao administrador.";
+}
+
+function formatLoginAuthError(error: unknown): string {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+  if (message.includes("email not confirmed")) {
+    return "Confirme o convite enviado para seu e-mail antes de entrar. Se o link expirou, solicite um novo convite ao administrador.";
+  }
+
+  if (message.includes("invalid login credentials")) {
+    return "E-mail ou senha inválidos. Confira os dados ou use “Esqueci minha senha”.";
+  }
+
+  if (message.includes("rate limit") || message.includes("too many")) {
+    return "Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.";
+  }
+
+  // prettier-ignore
+  return error instanceof Error && error.message ? error.message : "Não foi possível entrar na plataforma.";
 }
 
 function BrandPanel() {
