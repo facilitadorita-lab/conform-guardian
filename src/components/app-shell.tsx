@@ -78,6 +78,11 @@ export function AppShell({
     authContext?.empresaAtual;
   const activeAuthContext =
     authContext && empresaAtual ? { ...authContext, empresaAtual } : authContext;
+  const isPartnerAccount = Boolean(
+    authContext &&
+      !authContext.usuario.isMaster &&
+      empresaAtual?.tipoConta === "parceira",
+  );
   const podeTrocarEmpresa = Boolean(authContext && authContext.empresasPermitidas.length > 1);
   const acessoBloqueado = Boolean(
     authContext &&
@@ -106,12 +111,31 @@ export function AppShell({
     navigate({ to: "/login", search: { msg: undefined } });
   }, [loading, navigate, user]);
 
+  useEffect(() => {
+    if (
+      runtimeConfig.useMocks ||
+      loading ||
+      !user ||
+      !authContext ||
+      !empresaAtual ||
+      !isPartnerAccount ||
+      pathname === "/master/empresas"
+    ) {
+      return;
+    }
+    void navigate({ to: "/master/empresas" });
+  }, [authContext, empresaAtual, isPartnerAccount, loading, navigate, pathname, user]);
+
   if (!runtimeConfig.useMocks && (loading || !user)) {
     return <AccessValidationScreen error={contextError} />;
   }
 
   if (!authContext || !empresaAtual) {
     return <AccessValidationScreen error={contextError} />;
+  }
+
+  if (isPartnerAccount && pathname !== "/master/empresas") {
+    return <PartnerRedirectScreen />;
   }
 
   if (acessoBloqueado) {
@@ -232,7 +256,7 @@ export function AppShell({
           </div>
           {mobileOpen ? (
             <MobileNavigation
-              authContext={authContext}
+              authContext={activeAuthContext ?? authContext}
               pathname={pathname}
               canAdminister={
                 authContext.usuario.isMaster || permissions?.can_admin_company === true
@@ -266,14 +290,18 @@ function MobileNavigation({
   canAdminister: boolean;
   onNavigate: () => void;
 }) {
-  const items = mobileNavigationItems.filter(
-    (item) =>
-      (!item.recurso || hasPlanFeature(authContext, item.recurso)) &&
-      (!item.adminOnly || canAdminister) &&
-      (!item.masterOnly || authContext.usuario.isMaster) &&
-      (!item.partnerOnly ||
-        authContext.empresasPermitidas.some((empresa) => empresa.tipoConta === "parceira")),
+  const currentIsPartner =
+    !authContext.usuario.isMaster && authContext.empresaAtual.tipoConta === "parceira";
+  const hasPartnerAccess = authContext.empresasPermitidas.some(
+    (empresa) => empresa.tipoConta === "parceira",
   );
+  const items = mobileNavigationItems.filter((item) => {
+    if (item.masterOnly && !authContext.usuario.isMaster) return false;
+    if (item.partnerOnly) return !authContext.usuario.isMaster && hasPartnerAccess;
+    if (currentIsPartner) return false;
+    if (item.adminOnly && !canAdminister) return false;
+    return !item.recurso || hasPlanFeature(authContext, item.recurso);
+  });
 
   return (
     <nav
@@ -301,6 +329,25 @@ function MobileNavigation({
         })}
       </div>
     </nav>
+  );
+}
+
+function PartnerRedirectScreen() {
+  return (
+    <main className="cf-subtle-grid flex min-h-screen items-center justify-center bg-background p-6">
+      <section className="cf-page-card flex max-w-md flex-col items-center gap-4 p-8 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+          <Building2 className="h-7 w-7" />
+        </div>
+        <div>
+          <h1 className="text-base font-semibold">Abrindo o painel do parceiro</h1>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            O acesso de parceiro é separado do ambiente operacional. Estamos levando você para a
+            carteira de clientes autorizada.
+          </p>
+        </div>
+      </section>
+    </main>
   );
 }
 

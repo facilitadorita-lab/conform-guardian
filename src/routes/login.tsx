@@ -15,7 +15,6 @@ import { LogoSignature } from "@/components/public/marketing";
 import { useAuth } from "@/hooks/use-auth";
 import { useAppSession } from "@/hooks/use-app-session";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import { useSession } from "@/hooks/use-session";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Entrar — Conform Flow" }] }),
@@ -28,7 +27,6 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { signIn, user, loading, passwordRecovery } = useAuth();
   const { authContext, contextLoading, contextError } = useAppSession();
-  const { isMaster, selectedCompanyId, empresasDisponiveis } = useSession();
   const navigate = useNavigate();
   const search = useSearch({ from: "/login" });
   const [email, setEmail] = useState("");
@@ -54,11 +52,15 @@ function LoginPage() {
     if (contextError) return;
     if (contextLoading) return;
     if (!authContext || authContext.usuario.id !== user.id) return;
-    if (isMaster && !selectedCompanyId) {
+    if (authContext.usuario.isMaster) {
       navigate({ to: "/master/empresas" });
       return;
     }
-    if (!isMaster && empresasDisponiveis.length === 0) {
+    if (authContext.empresasPermitidas.length === 0) {
+      return;
+    }
+    if (authContext.empresaAtual.tipoConta === "parceira") {
+      navigate({ to: "/master/empresas" });
       return;
     }
     navigate({ to: "/dashboard" });
@@ -69,9 +71,6 @@ function LoginPage() {
     user,
     authContext,
     passwordRecovery,
-    isMaster,
-    selectedCompanyId,
-    empresasDisponiveis,
     navigate,
   ]);
 

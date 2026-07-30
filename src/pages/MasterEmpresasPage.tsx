@@ -473,11 +473,19 @@ export function MasterEmpresasPage() {
 
   return (
     <AppShell
-      title={authContext.usuario.isMaster ? "Empresas e parceiros" : "Empresas cadastradas"}
+      title={
+        authContext.usuario.isMaster
+          ? "Empresas e parceiros"
+          : isParceiro
+            ? "Painel do parceiro"
+            : "Empresas cadastradas"
+      }
       description={
         authContext.usuario.isMaster
           ? "Cadastre parceiros, consulte suas carteiras e entre em qualquer ambiente autorizado."
-          : "Selecione uma empresa vinculada ao seu usuário."
+          : isParceiro
+            ? "Gerencie sua carteira e acesse somente os ambientes dos clientes vinculados ao parceiro."
+            : "Selecione uma empresa vinculada ao seu usuário."
       }
       actions={
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -964,7 +972,7 @@ export function MasterEmpresasPage() {
           </section>
         ) : null}
 
-        <div className="grid gap-3 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_auto]">
+        {!isParceiro ? <div className="grid gap-3 rounded-xl border border-border bg-card p-4 md:grid-cols-[1fr_auto]">
           <label className="relative">
             <span className="sr-only">Buscar empresa</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -985,9 +993,9 @@ export function MasterEmpresasPage() {
             <option value="ativa">Ativas</option>
             <option value="bloqueada">Bloqueadas ou suspensas</option>
           </select>
-        </div>
+        </div> : null}
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {!isParceiro ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {empresasPaginadas.map((empresa) => {
             const selected = empresa.id === selectedCompanyId;
             return (
@@ -1037,8 +1045,8 @@ export function MasterEmpresasPage() {
               Nenhuma empresa corresponde aos filtros. Revise o nome, CNPJ ou status informado.
             </div>
           ) : null}
-        </div>
-        {empresasFiltradas.length > 0 ? (
+        </div> : null}
+        {!isParceiro && empresasFiltradas.length > 0 ? (
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
             <span>
               Página {pagina} de {totalPaginas} · {empresasFiltradas.length} empresa(s)

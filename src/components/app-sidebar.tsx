@@ -37,6 +37,7 @@ type NavItem = {
   recurso?: PlanoRecurso;
   adminOnly?: boolean;
   partnerOnly?: boolean;
+  masterOnly?: boolean;
 };
 
 const groups: { label: string; items: NavItem[] }[] = [
@@ -180,13 +181,6 @@ const partnerGroup: { label: string; items: NavItem[] } = {
       icon: Building2,
       partnerOnly: true,
     },
-    {
-      to: "/planos",
-      label: "Planos",
-      description: "Valores e recursos",
-      icon: WalletCards,
-      partnerOnly: true,
-    },
   ],
 };
 
@@ -204,23 +198,32 @@ export function AppSidebar() {
     [authContext?.usuario.nome],
   );
 
-  const isParceiro = authContext?.empresasPermitidas.some(
+  const isParceiro = Boolean(
+    authContext &&
+      !authContext.usuario.isMaster &&
+      empresaAtual?.tipoConta === "parceira",
+  );
+  const possuiAcessoParceiro = authContext?.empresasPermitidas.some(
     (company) => company.tipoConta === "parceira",
   );
   const visibleGroups = (
     authContext?.usuario.isMaster
       ? [...groups, masterGroup]
       : isParceiro
-        ? [...groups, partnerGroup]
-        : groups
+        ? [partnerGroup]
+        : possuiAcessoParceiro
+          ? [...groups, partnerGroup]
+          : groups
   )
     .map((group) => ({
       ...group,
       items: group.items.filter(
         (item) =>
-          (!item.recurso || hasPlanFeature(authContext, item.recurso)) &&
+          (item.partnerOnly
+            ? Boolean(possuiAcessoParceiro)
+            : !isParceiro && (!item.recurso || hasPlanFeature(authContext, item.recurso))) &&
           (!item.adminOnly || authContext?.usuario.isMaster || podeAdministrar) &&
-          (!item.partnerOnly || isParceiro),
+          (!item.masterOnly || authContext?.usuario.isMaster),
       ),
     }))
     .filter((group) => group.items.length > 0);
