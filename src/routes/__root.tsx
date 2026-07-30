@@ -11,11 +11,18 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AppSessionProvider } from "@/hooks/use-app-session";
+import { AppSessionProvider, useAppSession } from "@/hooks/use-app-session";
 import { UnitProvider } from "@/hooks/use-unit-context";
 import { initializeObservability } from "@/lib/observability";
 import { initializePerformanceTelemetry } from "@/lib/performance";
 import { Toaster } from "@/components/ui/sonner";
+
+function CompanyUnitProvider({ children }: { children: ReactNode }) {
+  const { selectedCompanyId, authContext } = useAppSession();
+  const companyId = selectedCompanyId ?? authContext?.empresaAtual.id ?? "sem-empresa";
+
+  return <UnitProvider key={companyId}>{children}</UnitProvider>;
+}
 
 function NotFoundComponent() {
   return (
@@ -141,11 +148,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppSessionProvider>
-        <UnitProvider>
+        <CompanyUnitProvider>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster position="bottom-right" closeButton richColors />
-        </UnitProvider>
+        </CompanyUnitProvider>
       </AppSessionProvider>
     </QueryClientProvider>
   );

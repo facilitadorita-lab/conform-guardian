@@ -61,6 +61,11 @@ export function UnitProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    setUnidadesPermitidas([]);
+    setUnidadeAtualId(null);
+    setPodeVisualizarConsolidado(false);
+    setPodeAdministrarUnidades(false);
+    setLimites(null);
     setCarregando(true);
     setErro(null);
     try {
@@ -109,9 +114,13 @@ export function UnitProvider({ children }: { children: ReactNode }) {
   }, [authContext, companyId, user]);
 
   useEffect(() => {
-    setUnidadesPermitidas([]);
-    setUnidadeAtualId(null);
-    void atualizarUnidades();
+    let ativo = true;
+    queueMicrotask(() => {
+      if (ativo) void atualizarUnidades();
+    });
+    return () => {
+      ativo = false;
+    };
   }, [atualizarUnidades]);
 
   const selecionarUnidade = useCallback(
