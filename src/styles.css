@@ -216,7 +216,7 @@
     height: 26rem;
     pointer-events: none;
     opacity: 0.028;
-    background-image: url("/__l5e/assets-v1/5d1ebe6b-10df-4b59-b39a-3099b731ccc0/conform-flow-mark.png");
+    background-image: radial-gradient(circle at 70% 70%, oklch(0.58 0.18 258 / 14%), transparent 68%);
     background-repeat: no-repeat;
     background-position: bottom right;
     background-size: contain;
