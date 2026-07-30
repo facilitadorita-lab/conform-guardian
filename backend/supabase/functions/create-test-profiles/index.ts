@@ -68,16 +68,16 @@ Deno.serve(async (req: Request) => {
   const { data: plano, error: planoError } = await adminClient
     .from("planos")
     .select("id, valor_mensal_centavos, valor_anual_centavos")
-    .eq("codigo", "completo")
+    .eq("codigo", "profissional")
     .single();
-  if (planoError || !plano) return respond({ error: "plano_completo_not_found" }, 500);
+  if (planoError || !plano) return respond({ error: "plano_profissional_not_found" }, 500);
 
   const { data: empresa, error: empresaError } = await adminClient
     .from("empresas")
     .upsert(
       {
-        razao_social: "Conform Flow Base Teste Plano Completo Ltda.",
-        nome_fantasia: "Base Teste Completo",
+        razao_social: "Conform Flow Base Teste Plano Profissional Ltda.",
+        nome_fantasia: "Base Teste Profissional",
         cnpj: "99.999.991/0001-91",
         tipo_estabelecimento: "clinica",
         segmento: "Saúde regulada",
@@ -234,7 +234,7 @@ Deno.serve(async (req: Request) => {
 
   return respond({
     empresa,
-    plano: "Completo",
+    plano: "Profissional",
     usuarios: createdUsers,
     documento,
     anexo: {

@@ -9,6 +9,13 @@ insert into public.empresas(
   ('c1000000-0000-4000-8000-000000000001', 'Cliente Um', 'Cliente Um', '32.111.111/0001-11', 'cliente', 'ativa', 'verified', 'active'),
   ('c2000000-0000-4000-8000-000000000001', 'Cliente Dois', 'Cliente Dois', '33.111.111/0001-11', 'cliente', 'ativa', 'verified', 'active');
 
+insert into auth.users(
+  id, instance_id, aud, role, email, encrypted_password,
+  email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data
+) values
+  ('c3000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'partner@test.local', '', now(), now(), now(), '{}'::jsonb, '{}'::jsonb),
+  ('c4000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'client@test.local', '', now(), now(), now(), '{}'::jsonb, '{}'::jsonb);
+
 insert into public.usuarios(id, nome, email) values
   ('c3000000-0000-4000-8000-000000000001', 'Admin Parceiro', 'partner@test.local'),
   ('c4000000-0000-4000-8000-000000000001', 'Admin Cliente', 'client@test.local');

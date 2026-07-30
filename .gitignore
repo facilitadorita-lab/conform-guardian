@@ -24,6 +24,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Validation artifacts may contain screenshots, traces and local fixtures.
+# They are generated in CI and must never be committed.
+artifacts/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
