@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
   ArrowRight,
+  Building2,
   CalendarClock,
   CheckCircle2,
   ClipboardList,
@@ -214,6 +215,52 @@ export function DashboardPage() {
           href="/pendencias"
         />
       </section>
+
+      {dashboard.porUnidade && dashboard.porUnidade.length > 1 ? (
+        <Surface>
+          <SectionHeader
+            title="Comparativo por unidade"
+            description="Visão consolidada das unidades que o seu perfil está autorizado a consultar."
+          />
+          <div className="mt-5 overflow-x-auto rounded-2xl border border-border">
+            <table className="min-w-[720px] w-full text-sm">
+              <thead className="bg-muted/50 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold">Unidade</th>
+                  <th className="px-4 py-3 text-right font-semibold">Documentos</th>
+                  <th className="px-4 py-3 text-right font-semibold">Vencidos</th>
+                  <th className="px-4 py-3 text-right font-semibold">Equip. em atenção</th>
+                  <th className="px-4 py-3 text-right font-semibold">Pendências</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border bg-card">
+                {dashboard.porUnidade.map((unit) => (
+                  <tr key={unit.unidade_id} className="cf-transition hover:bg-muted/30">
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-2 font-semibold">
+                        <Building2 className="h-4 w-4 text-accent" />
+                        {unit.unidade ?? "Unidade"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {unit.documentos_total ?? 0}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-danger tabular-nums">
+                      {unit.documentos_vencidos ?? 0}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {unit.equipamentos_atencao ?? 0}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums">
+                      {unit.pendencias_abertas ?? 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Surface>
+      ) : null}
 
       <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <Surface>

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import {
   CheckCircle2,
   Download,
@@ -22,6 +23,7 @@ import { EvidenciasTimeline } from "@/components/evidencias-timeline";
 import { DocumentWorkflowPanel } from "@/components/document-workflow-panel";
 import { useDocumentos } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { documentosService, edgeFunctionsService, evidenciasTimelineService } from "@/services";
 import type { DocumentoResumo, StatusConformidade } from "@/types";
@@ -37,9 +39,25 @@ type AnexoFilter = "todos" | "com_anexo" | "sem_anexo";
 type SortKey = "vencimento" | "nome" | "status";
 
 const pageSize = 12;
+const documentFormSchema = z
+  .object({
+    escopo: z.enum(["corporativo", "unidade"]),
+    unidadeId: z.string().optional(),
+    nome: z.string().trim().min(2, "Informe o nome do documento.").max(180),
+  })
+  .superRefine((value, context) => {
+    if (value.escopo === "unidade" && !value.unidadeId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["unidadeId"],
+        message: "Selecione a unidade do documento.",
+      });
+    }
+  });
 
 export function DocumentosPage() {
   const { podeEscrever, selectedCompanyId, selectedCompany } = useSession();
+  const { unidadeAtualId, unidadesPermitidas } = useUnitContext();
   const empresaNome = selectedCompany?.razao_social ?? "empresa não selecionada";
   const { data: documentos = [], isLoading, isError, error, refetch } = useDocumentos();
   const queryClient = useQueryClient();
@@ -127,11 +145,11 @@ export function DocumentosPage() {
   ]);
 
   const totalPages = Math.max(1, Math.ceil(documentosFiltrados.length / pageSize));
-  const documentosPaginados = documentosFiltrados.slice((page - 1) * pageSize, page * pageSize);
-
-  useEffect(() => {
-    setPage(1);
-  }, [anexoFiltro, busca, categoriaFiltro, ordenarPor, responsavelFiltro, statusFiltro]);
+  const currentPage = Math.min(page, totalPages);
+  const documentosPaginados = documentosFiltrados.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -144,6 +162,8 @@ export function DocumentosPage() {
       }
 
       const created = await documentosService.criar(selectedCompanyId, {
+        escopo_documento: required(formData, "escopo_documento"),
+        unidade_id: optional(formData, "unidade_id"),
         nome: required(formData, "nome"),
         numero_documento: optional(formData, "numero_documento"),
         orgao_emissor: optional(formData, "orgao_emissor"),
@@ -192,7 +212,17 @@ export function DocumentosPage() {
     event.preventDefault();
     setErro(null);
     setLastUpload(null);
-    createMutation.mutate(new FormData(event.currentTarget));
+    const formData = new FormData(event.currentTarget);
+    const validation = documentFormSchema.safeParse({
+      escopo: formData.get("escopo_documento"),
+      unidadeId: optional(formData, "unidade_id"),
+      nome: formData.get("nome"),
+    });
+    if (!validation.success) {
+      setErro(validation.error.issues[0]?.message ?? "Revise os campos do documento.");
+      return;
+    }
+    createMutation.mutate(formData);
   }
 
   function handlePreview(documento: DocumentoResumo) {
@@ -437,11 +467,11 @@ export function DocumentosPage() {
             </div>
 
             <PaginationFooter
-              page={page}
+              page={currentPage}
               totalPages={totalPages}
               total={documentosFiltrados.length}
-              onPrevious={() => setPage((current) => Math.max(1, current - 1))}
-              onNext={() => setPage((current) => Math.min(totalPages, current + 1))}
+              onPrevious={() => setPage(Math.max(1, currentPage - 1))}
+              onNext={() => setPage(Math.min(totalPages, currentPage + 1))}
             />
           </>
         ) : (
@@ -492,6 +522,8 @@ export function DocumentosPage() {
 
       {modalAberto && podeEscrever ? (
         <NovoDocumentoModal
+          unidades={unidadesPermitidas}
+          unidadeAtualId={unidadeAtualId}
           erro={erro}
           isSaving={createMutation.isPending}
           uploadProgress={uploadProgress}
@@ -523,7 +555,13 @@ function DocumentoRow({
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span>{documento.tipo}</span>
           <span>•</span>
-          <span>{documento.setor}</span>
+          <span>{documento.unidade ?? "Corporativo"}</span>
+          {documento.setor && documento.setor !== "-" ? (
+            <>
+              <span>•</span>
+              <span>{documento.setor}</span>
+            </>
+          ) : null}
           {documento.anexoId ? (
             <>
               <span>•</span>
@@ -698,18 +736,25 @@ function DocumentPreviewModal({
 }
 
 function NovoDocumentoModal({
+  unidades,
+  unidadeAtualId,
   erro,
   isSaving,
   uploadProgress,
   onSubmit,
   onClose,
 }: {
+  unidades: Array<{ id: string; nome: string; is_matriz: boolean; status: string }>;
+  unidadeAtualId: string | null;
   erro: string | null;
   isSaving: boolean;
   uploadProgress: number | null;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
 }) {
+  const [escopo, setEscopo] = useState<"corporativo" | "unidade">(
+    unidadeAtualId ? "unidade" : "corporativo",
+  );
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4">
       <form
@@ -740,6 +785,44 @@ function NovoDocumentoModal({
           <section className="rounded-2xl border border-border bg-card p-4">
             <h3 className="text-sm font-semibold">Informações principais</h3>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <label>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Escopo
+                </span>
+                <select
+                  name="escopo_documento"
+                  value={escopo}
+                  onChange={(event) =>
+                    setEscopo(event.target.value as "corporativo" | "unidade")
+                  }
+                  className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                >
+                  <option value="corporativo">Corporativo</option>
+                  <option value="unidade">Unidade específica</option>
+                </select>
+              </label>
+              <label>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Unidade
+                </span>
+                <select
+                  name="unidade_id"
+                  defaultValue={unidadeAtualId ?? ""}
+                  required={escopo === "unidade"}
+                  disabled={escopo !== "unidade"}
+                  className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm disabled:bg-muted"
+                >
+                  <option value="">Selecione a unidade</option>
+                  {unidades
+                    .filter((unit) => ["ativa", "em_implantacao"].includes(unit.status))
+                    .map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        {unit.is_matriz ? "Matriz · " : ""}
+                        {unit.nome}
+                      </option>
+                    ))}
+                </select>
+              </label>
               <Input label="Nome do documento" name="nome" required />
               <Input label="Número do documento" name="numero_documento" />
               <Input label="Órgão emissor" name="orgao_emissor" />

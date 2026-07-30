@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import {
   ArrowRight,
   Building2,
@@ -150,6 +150,13 @@ export function MasterEmpresasPage() {
     [authContext?.empresasPermitidas],
   );
 
+  const resumoMultiunidadeQuery = useQuery({
+    queryKey: ["master", "multiunit-summary"],
+    queryFn: () => adminMasterService.resumoMultiunidade(),
+    enabled: Boolean(authContext?.usuario.isMaster),
+    staleTime: 60_000,
+  });
+
   const clientesParceiroMasterQuery = useQuery({
     queryKey: ["master", "partner-clients", parceiroExpandidoId],
     queryFn: () => partnerService.listarClientes(parceiroExpandidoId!),
@@ -215,7 +222,7 @@ export function MasterEmpresasPage() {
     onSuccess: async (result) => {
       setModalAberto(false);
       setErroCadastro(null);
-      let conviteMensagem = "";
+      let conviteMensagem: string;
       const emailCliente = result.cliente.email_principal?.trim().toLowerCase();
       if (emailCliente) {
         try {
@@ -275,7 +282,7 @@ export function MasterEmpresasPage() {
     onSuccess: async (result) => {
       setModalParceiroAberto(false);
       setErroCadastro(null);
-      let inviteMessage = "Parceiro criado. O acesso inicial está sendo preparado.";
+      let inviteMessage: string;
       try {
         const invite = await edgeFunctionsService.invitePartnerAdmin(String(result.empresa.id));
         inviteMessage = invite.existing_user
@@ -453,11 +460,11 @@ export function MasterEmpresasPage() {
     [authContext?.empresasPermitidas, busca, statusFiltro],
   );
   const totalPaginas = Math.max(1, Math.ceil(empresasFiltradas.length / 24));
-  const empresasPaginadas = empresasFiltradas.slice((pagina - 1) * 24, pagina * 24);
-
-  useEffect(() => {
-    setPagina(1);
-  }, [busca, statusFiltro]);
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const empresasPaginadas = empresasFiltradas.slice(
+    (paginaAtual - 1) * 24,
+    paginaAtual * 24,
+  );
 
   function handleCriarEmpresa(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -580,6 +587,116 @@ export function MasterEmpresasPage() {
             </div>
           </div>
         </div>
+
+        {authContext.usuario.isMaster ? (
+          <section className="rounded-xl border border-border bg-card p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.14em] text-primary">
+                  Governança multiunidade
+                </p>
+                <h2 className="mt-1 text-lg font-semibold">Capacidade por empresa</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Acompanhe utilização, implantação e empresas próximas ou acima do limite
+                  contratado.
+                </p>
+              </div>
+              {resumoMultiunidadeQuery.isFetching ? (
+                <span className="text-xs text-muted-foreground">Atualizando indicadores...</span>
+              ) : null}
+            </div>
+
+            {resumoMultiunidadeQuery.isError ? (
+              <div className="mt-4 rounded-lg border border-danger/30 bg-danger/5 p-3 text-sm text-danger">
+                Não foi possível carregar o resumo de unidades.
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <SummaryMetric
+                    label="Empresas multiunidade"
+                    value={resumoMultiunidadeQuery.data?.resumo.empresas_com_multiunidade ?? 0}
+                  />
+                  <SummaryMetric
+                    label="Unidades ativas"
+                    value={resumoMultiunidadeQuery.data?.resumo.unidades_ativas ?? 0}
+                  />
+                  <SummaryMetric
+                    label="Em implantação"
+                    value={resumoMultiunidadeQuery.data?.resumo.unidades_em_implantacao ?? 0}
+                  />
+                  <SummaryMetric
+                    label="Empresas em excesso"
+                    value={resumoMultiunidadeQuery.data?.resumo.empresas_em_excesso ?? 0}
+                  />
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Receita mensal estimada de unidades extras:{" "}
+                  <strong className="text-foreground">
+                    {formatMoneyBR(
+                      resumoMultiunidadeQuery.data?.resumo
+                        .receita_unidades_extras_centavos ?? 0,
+                    )}
+                  </strong>
+                  {" · "}
+                  {resumoMultiunidadeQuery.data?.resumo.empresas_proximas_limite ?? 0} empresa(s)
+                  próxima(s) do limite
+                  {" · "}
+                  {resumoMultiunidadeQuery.data?.resumo.unidades_arquivadas ?? 0} unidade(s)
+                  arquivada(s)
+                </p>
+                <div className="mt-4 overflow-x-auto rounded-xl border border-border">
+                  <table className="w-full min-w-[680px] text-sm">
+                    <thead className="bg-muted/50 text-xs text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium">Empresa</th>
+                        <th className="px-4 py-3 text-left font-medium">Conta</th>
+                        <th className="px-4 py-3 text-right font-medium">Ativas</th>
+                        <th className="px-4 py-3 text-right font-medium">Base + extras</th>
+                        <th className="px-4 py-3 text-right font-medium">Utilização</th>
+                        <th className="px-4 py-3 text-left font-medium">Situação</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {(resumoMultiunidadeQuery.data?.empresas ?? []).slice(0, 10).map((empresa) => (
+                        <tr key={empresa.empresa_id} className="hover:bg-muted/30">
+                          <td className="px-4 py-3 font-medium">{empresa.empresa}</td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {empresa.tipo_conta}
+                          </td>
+                          <td className="px-4 py-3 text-right">{empresa.unidades_ativas}</td>
+                          <td className="px-4 py-3 text-right">
+                            {empresa.limite_base} + {empresa.unidades_extras}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            {empresa.unidades_utilizadas}/{empresa.limite_unidades}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge
+                              tone={
+                                empresa.em_excesso
+                                  ? "critico"
+                                  : empresa.proxima_do_limite
+                                    ? "atencao"
+                                    : "ok"
+                              }
+                            >
+                              {empresa.em_excesso
+                                ? "Acima do limite"
+                                : empresa.proxima_do_limite
+                                  ? "Próxima do limite"
+                                  : "Regular"}
+                            </StatusBadge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </section>
+        ) : null}
 
         {authContext.usuario.isMaster ? (
           <section className="rounded-xl border border-primary/20 bg-primary/[0.03] p-5">
@@ -764,6 +881,20 @@ export function MasterEmpresasPage() {
                             <p className="mt-3 text-xs text-muted-foreground">
                               {cliente.plano?.nome ?? "Plano nao definido"} · {cliente.segmento ?? "Segmento nao informado"}
                             </p>
+                            {cliente.unidades ? (
+                              <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs">
+                                <span className="text-muted-foreground">Unidades</span>
+                                <strong
+                                  className={
+                                    cliente.unidades.em_excesso
+                                      ? "text-danger"
+                                      : "text-foreground"
+                                  }
+                                >
+                                  {cliente.unidades.utilizadas} de {cliente.unidades.limite}
+                                </strong>
+                              </div>
+                            ) : null}
                             {cliente.isencao ? (
                               <div className="mt-3 rounded-lg border border-success/30 bg-success/5 p-2.5 text-xs text-success">
                                 Cortesia ativa até {formatDateBR(cliente.isencao.termina_em)}
@@ -983,6 +1114,16 @@ export function MasterEmpresasPage() {
                       Plano {cliente.plano?.nome ?? "não definido"} · vínculo{" "}
                       {cliente.relacionamento.status}
                     </p>
+                    {cliente.unidades ? (
+                      <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-xs">
+                        <span className="text-muted-foreground">Unidades</span>
+                        <strong
+                          className={cliente.unidades.em_excesso ? "text-danger" : "text-foreground"}
+                        >
+                          {cliente.unidades.utilizadas} de {cliente.unidades.limite}
+                        </strong>
+                      </div>
+                    ) : null}
                     {cliente.isencao ? (
                       <div className="mt-3 rounded-lg border border-success/30 bg-success/5 p-2.5 text-xs text-success">
                         Cortesia ativa até {formatDateBR(cliente.isencao.termina_em)}
@@ -1105,21 +1246,21 @@ export function MasterEmpresasPage() {
         {!isParceiro && empresasFiltradas.length > 0 ? (
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
             <span>
-              Página {pagina} de {totalPaginas} · {empresasFiltradas.length} empresa(s)
+              Página {paginaAtual} de {totalPaginas} · {empresasFiltradas.length} empresa(s)
             </span>
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setPagina((value) => Math.max(1, value - 1))}
-                disabled={pagina === 1}
+                onClick={() => setPagina(Math.max(1, paginaAtual - 1))}
+                disabled={paginaAtual === 1}
                 className="rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
               >
                 Anterior
               </button>
               <button
                 type="button"
-                onClick={() => setPagina((value) => Math.min(totalPaginas, value + 1))}
-                disabled={pagina === totalPaginas}
+                onClick={() => setPagina(Math.min(totalPaginas, paginaAtual + 1))}
+                disabled={paginaAtual === totalPaginas}
                 className="rounded-lg border border-border px-3 py-2 text-xs font-medium hover:bg-muted disabled:opacity-50"
               >
                 Próxima
@@ -1764,6 +1905,19 @@ function NovaEmpresaModal({
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function SummaryMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl border border-border bg-background p-4">
+      <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <strong className="mt-2 block text-2xl font-semibold tabular-nums text-foreground">
+        {value}
+      </strong>
     </div>
   );
 }

@@ -2,9 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import QRCode from "qrcode";
+import { z } from "zod";
 import {
   Archive,
   ArrowLeft,
+  ArrowRightLeft,
   CalendarClock,
   CheckCircle2,
   ClipboardList,
@@ -27,9 +29,15 @@ import { EmptyState, Surface } from "@/components/conform/surface";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
 import { useEquipamento } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
-import { edgeFunctionsService, evidenciasTimelineService, professionalService } from "@/services";
+import {
+  edgeFunctionsService,
+  evidenciasTimelineService,
+  professionalService,
+  unidadesService,
+} from "@/services";
 import {
   equipamentosService,
   type CriarCalibracaoPayload,
@@ -58,8 +66,38 @@ type FormKind = "calibracao" | "qualificacao" | "manutencao";
 const uploadAccept =
   "application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
+const resultSchema = z.enum([
+  "aprovado",
+  "reprovado",
+  "aprovado_restricao",
+  "nao_aplicavel",
+]);
+const operationalSchemas: Record<FormKind, z.ZodTypeAny> = {
+  calibracao: z.object({
+    data: z.string().min(1, "Informe a data da calibração."),
+    resultado: resultSchema,
+  }),
+  qualificacao: z.object({
+    tipo: z.enum(["instalacao", "operacao", "desempenho", "mapeamento_termico"]),
+    data: z.string().min(1, "Informe a data da qualificação."),
+    resultado: resultSchema,
+  }),
+  manutencao: z.object({
+    natureza: z.enum(["preventiva", "corretiva"]),
+    data: z.string().min(1, "Informe a data da manutenção."),
+    status: z.enum(["programada", "em_andamento", "concluida", "cancelada"]),
+  }),
+};
+const equipmentTransferSchema = z.object({
+  unidadeDestinoId: z.string().uuid("Selecione uma unidade de destino válida."),
+  motivo: z.string().trim().min(5, "Informe um motivo com pelo menos 5 caracteres."),
+  dataTransferencia: z.string().optional(),
+  observacoes: z.string().optional(),
+});
+
 export function EquipamentoDetalhePage({ id }: { id: string }) {
   const { podeEscrever, selectedCompanyId } = useSession();
+  const { unidadesPermitidas: unidades, atualizarUnidades } = useUnitContext();
   const { data: equipamento, isLoading, isError, error, refetch } = useEquipamento(id);
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>(() => {
@@ -77,6 +115,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
     anexoId?: string;
   } | null>(null);
   const [qrOpen, setQrOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
   const qrQuery = useQuery({
     queryKey: ["professional", "equipment-qr", id],
     queryFn: () => professionalService.getEquipmentQrToken(id),
@@ -86,6 +125,34 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
     mutationFn: () => professionalService.rotateEquipmentQr(id),
     onSuccess: (data) =>
       queryClient.setQueryData(["professional", "equipment-qr", id], data.qr_token),
+  });
+  const transferMutation = useMutation({
+    mutationFn: (formData: FormData) => {
+      if (!selectedCompanyId) throw new Error("Selecione uma empresa.");
+      const parsed = equipmentTransferSchema.safeParse({
+        unidadeDestinoId: required(formData, "unidade_destino_id"),
+        motivo: required(formData, "motivo"),
+        dataTransferencia: optional(formData, "data_transferencia"),
+        observacoes: optional(formData, "observacoes"),
+      });
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Revise os dados da transferência.");
+      }
+      return unidadesService.transferirEquipamento({
+        empresaId: selectedCompanyId,
+        equipamentoId: id,
+        ...parsed.data,
+      });
+    },
+    onSuccess: async () => {
+      setTransferOpen(false);
+      await Promise.all([
+        refetch(),
+        atualizarUnidades(),
+        queryClient.invalidateQueries({ queryKey: ["equipamentos", selectedCompanyId] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard", selectedCompanyId] }),
+      ]);
+    },
   });
 
   useEffect(() => {
@@ -118,10 +185,10 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         edgeFunctionsService.validateAttachmentFile(file);
       }
 
-      let registroId = "";
+      let registroId: string;
       let modulo: "calibracoes" | "qualificacoes" | "manutencoes";
-      let finalidade = "principal";
-      let descricao = "";
+      let finalidade: string;
+      let descricao: string;
 
       if (kind === "calibracao") {
         const payload: CriarCalibracaoPayload = {
@@ -269,7 +336,30 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
     if (!activeForm) return;
     setFormError(null);
     setLastUpload(null);
-    createMutation.mutate({ kind: activeForm, formData: new FormData(event.currentTarget) });
+    const formData = new FormData(event.currentTarget);
+    const payload =
+      activeForm === "calibracao"
+        ? {
+            data: formData.get("data_calibracao"),
+            resultado: formData.get("resultado"),
+          }
+        : activeForm === "qualificacao"
+          ? {
+              tipo: formData.get("tipo"),
+              data: formData.get("data_qualificacao"),
+              resultado: formData.get("resultado"),
+            }
+          : {
+              natureza: formData.get("natureza"),
+              data: formData.get("data_manutencao"),
+              status: formData.get("status_execucao"),
+            };
+    const validation = operationalSchemas[activeForm].safeParse(payload);
+    if (!validation.success) {
+      setFormError(validation.error.issues[0]?.message ?? "Revise os campos do registro.");
+      return;
+    }
+    createMutation.mutate({ kind: activeForm, formData });
   }
 
   function handlePreviewItem(item: EquipamentoHistoricoItem) {
@@ -293,6 +383,15 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
       description={`${equipamento.fabricante} ${equipamento.modelo} - setor ${equipamento.setor}`}
       actions={
         <div className="flex items-center gap-2">
+          {podeEscrever && unidades.some((unit) => unit.id !== equipamento.unidadeId) ? (
+            <button
+              type="button"
+              onClick={() => setTransferOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-medium shadow-sm hover:border-accent/30 hover:bg-muted/40"
+            >
+              <ArrowRightLeft className="h-4 w-4" /> Transferir
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => setQrOpen(true)}
@@ -344,6 +443,9 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         <StatusBadge tone={equipamento.status}>{statusLabel(equipamento.status)}</StatusBadge>
         <span className="text-xs text-muted-foreground">
           Criticidade <strong className="text-foreground">{equipamento.criticidade}</strong>
+        </span>
+        <span className="text-xs text-muted-foreground">
+          Unidade <strong className="text-foreground">{equipamento.unidade ?? "Não informada"}</strong>
         </span>
         <span className="text-xs text-muted-foreground">
           Próximo vencimento{" "}
@@ -512,6 +614,7 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
         <OperationalModal
           kind={activeForm}
           equipamentoNome={equipamento.nome}
+          unidadeNome={equipamento.unidade}
           isSaving={createMutation.isPending}
           uploadProgress={uploadProgress}
           error={formError}
@@ -543,7 +646,133 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
           onClose={() => setQrOpen(false)}
         />
       ) : null}
+      {transferOpen ? (
+        <EquipmentTransferDialog
+          equipmentName={equipamento.nome}
+          currentUnitId={equipamento.unidadeId}
+          units={unidades}
+          isSaving={transferMutation.isPending}
+          error={transferMutation.error?.message}
+          onSubmit={(formData) => transferMutation.mutate(formData)}
+          onClose={() => {
+            if (!transferMutation.isPending) setTransferOpen(false);
+          }}
+        />
+      ) : null}
     </AppShell>
+  );
+}
+
+function EquipmentTransferDialog({
+  equipmentName,
+  currentUnitId,
+  units,
+  isSaving,
+  error,
+  onSubmit,
+  onClose,
+}: {
+  equipmentName: string;
+  currentUnitId?: string | null;
+  units: ReturnType<typeof useUnitContext>["unidadesPermitidas"];
+  isSaving: boolean;
+  error?: string;
+  onSubmit: (formData: FormData) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit(new FormData(event.currentTarget));
+        }}
+        className="w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-background shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-border p-5">
+          <div>
+            <h2 className="text-lg font-semibold">Transferir equipamento</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{equipmentName}</p>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-xl border border-border p-2">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="grid gap-4 p-5">
+          <label className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Unidade de destino
+            <select
+              name="unidade_destino_id"
+              required
+              defaultValue=""
+              className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+            >
+              <option value="" disabled>
+                Selecione a unidade
+              </option>
+              {units
+                .filter(
+                  (unit) =>
+                    unit.id !== currentUnitId &&
+                    (unit.status === "ativa" || unit.status === "em_implantacao"),
+                )
+                .map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.nome} · {unit.codigo}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Motivo da transferência
+            <input
+              name="motivo"
+              required
+              minLength={5}
+              className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm normal-case text-foreground"
+            />
+          </label>
+          <label className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Data e hora
+            <input
+              name="data_transferencia"
+              type="datetime-local"
+              className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm normal-case text-foreground"
+            />
+          </label>
+          <label className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            Observações
+            <textarea
+              name="observacoes"
+              rows={3}
+              className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm normal-case text-foreground"
+            />
+          </label>
+          <p className="rounded-xl border border-accent/20 bg-accent/5 p-3 text-xs leading-5 text-muted-foreground">
+            O histórico da movimentação será preservado na auditoria. O equipamento passará a ser
+            exibido na unidade de destino após a confirmação.
+          </p>
+          {error ? <p className="text-sm text-danger">{error}</p> : null}
+        </div>
+        <div className="flex justify-end gap-2 border-t border-border p-5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            className="rounded-xl border border-border px-4 py-2 text-sm font-semibold"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+          >
+            {isSaving ? "Transferindo..." : "Confirmar transferência"}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 
@@ -562,23 +791,21 @@ function EquipmentQrDialog({
   onRotate: () => void;
   onClose: () => void;
 }) {
-  const [dataUrl, setDataUrl] = useState("");
   const targetUrl =
     token && typeof window !== "undefined"
       ? `${window.location.origin}/equipamento/qr/${token}`
       : "";
-  useEffect(() => {
-    if (!targetUrl) {
-      setDataUrl("");
-      return;
-    }
-    void QRCode.toDataURL(targetUrl, {
-      width: 360,
-      margin: 2,
-      errorCorrectionLevel: "H",
-      color: { dark: "#0f2947", light: "#ffffff" },
-    }).then(setDataUrl);
-  }, [targetUrl]);
+  const { data: dataUrl = "" } = useQuery({
+    queryKey: ["equipment-qr-image", targetUrl],
+    queryFn: () =>
+      QRCode.toDataURL(targetUrl, {
+        width: 360,
+        margin: 2,
+        errorCorrectionLevel: "H",
+        color: { dark: "#0f2947", light: "#ffffff" },
+      }),
+    enabled: Boolean(targetUrl),
+  });
   function download() {
     if (!dataUrl) return;
     const link = document.createElement("a");
@@ -852,6 +1079,7 @@ function TimelineList({
 function OperationalModal({
   kind,
   equipamentoNome,
+  unidadeNome,
   isSaving,
   uploadProgress,
   error,
@@ -860,6 +1088,7 @@ function OperationalModal({
 }: {
   kind: FormKind;
   equipamentoNome: string;
+  unidadeNome?: string | null;
   isSaving: boolean;
   uploadProgress: number | null;
   error: string | null;
@@ -897,6 +1126,17 @@ function OperationalModal({
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2">
+          <div className="md:col-span-2 rounded-2xl border border-accent/20 bg-accent/5 px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Unidade do registro
+            </p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              {unidadeNome || "Unidade vinculada ao equipamento"}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Calibrações, qualificações e manutenções herdam esta unidade automaticamente.
+            </p>
+          </div>
           {kind === "calibracao" && <CalibracaoFields />}
           {kind === "qualificacao" && <QualificacaoFields />}
           {kind === "manutencao" && <ManutencaoFields />}

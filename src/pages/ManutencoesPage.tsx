@@ -13,10 +13,12 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { z } from "zod";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { Surface } from "@/components/conform/surface";
 import { useEquipamentos, useManutencoes } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import { edgeFunctionsService, manutencoesService } from "@/services";
@@ -28,9 +30,36 @@ const uploadAccept =
   "application/pdf,image/png,image/jpeg,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 type FiltroNatureza = "todas" | "preventiva" | "corretiva";
+const maintenanceFormSchema = z
+  .object({
+    unidadeId: z.string().uuid("Selecione uma unidade válida."),
+    equipamentoId: z.string().optional(),
+    natureza: z.enum(["preventiva", "corretiva"]),
+    tipoServico: z.enum([
+      "inspecao",
+      "limpeza",
+      "validacao",
+      "reparo",
+      "troca_peca",
+      "ajuste",
+      "outro",
+    ]),
+    status: z.enum(["programada", "em_andamento", "concluida", "cancelada"]),
+    data: z.string().min(1, "Informe a data da manutenção."),
+  })
+  .superRefine((value, context) => {
+    if (value.natureza === "corretiva" && !value.equipamentoId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["equipamentoId"],
+        message: "Manutenção corretiva deve estar vinculada a um equipamento.",
+      });
+    }
+  });
 
 export function ManutencoesPage() {
   const { podeEscrever, selectedCompanyId } = useSession();
+  const { unidadeAtualId, unidadesPermitidas } = useUnitContext();
   const [busca, setBusca] = useState("");
   const [natureza, setNatureza] = useState<FiltroNatureza>("todas");
   const [modalAberto, setModalAberto] = useState(false);
@@ -69,6 +98,7 @@ export function ManutencoesPage() {
       const equipamentoId = optional(formData, "equipamento_id");
       const naturezaSelecionada = required(formData, "natureza");
       const payload = {
+        unidade_id: required(formData, "unidade_id"),
         equipamento_id: equipamentoId || undefined,
         nome_servico: optional(formData, "nome_servico") || `Manutenção ${naturezaSelecionada}`,
         natureza: naturezaSelecionada,
@@ -136,7 +166,20 @@ export function ManutencoesPage() {
     event.preventDefault();
     setErro(null);
     setLastUpload(null);
-    createMutation.mutate(new FormData(event.currentTarget));
+    const formData = new FormData(event.currentTarget);
+    const validation = maintenanceFormSchema.safeParse({
+      unidadeId: formData.get("unidade_id"),
+      equipamentoId: optional(formData, "equipamento_id"),
+      natureza: formData.get("natureza"),
+      tipoServico: formData.get("tipo_servico"),
+      status: formData.get("status_execucao"),
+      data: formData.get("data_manutencao"),
+    });
+    if (!validation.success) {
+      setErro(validation.error.issues[0]?.message ?? "Revise os campos da manutenção.");
+      return;
+    }
+    createMutation.mutate(formData);
   }
 
   return (
@@ -297,7 +340,7 @@ export function ManutencoesPage() {
                         </span>
                       )}
                       <div className="mt-0.5 text-[11px] text-muted-foreground">
-                        {manutencao.tipo}
+                        {manutencao.tipo} · {manutencao.unidade ?? "Unidade não identificada"}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{manutencao.tipo}</td>
@@ -335,6 +378,8 @@ export function ManutencoesPage() {
       {modalAberto && podeEscrever && (
         <NovaManutencaoModal
           equipamentos={equipamentos}
+          unidades={unidadesPermitidas}
+          unidadeAtualId={unidadeAtualId}
           erro={erro}
           isSaving={createMutation.isPending}
           uploadProgress={uploadProgress}
@@ -356,6 +401,8 @@ export function ManutencoesPage() {
 
 function NovaManutencaoModal({
   equipamentos,
+  unidades,
+  unidadeAtualId,
   erro,
   isSaving,
   uploadProgress,
@@ -363,6 +410,8 @@ function NovaManutencaoModal({
   onSubmit,
 }: {
   equipamentos: { id: string; nome: string; codigo: string }[];
+  unidades: Array<{ id: string; nome: string; is_matriz: boolean; status: string }>;
+  unidadeAtualId: string | null;
   erro: string | null;
   isSaving: boolean;
   uploadProgress: number | null;
@@ -393,6 +442,22 @@ function NovaManutencaoModal({
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2">
+          <Select
+            label="Unidade operacional"
+            name="unidade_id"
+            required
+            defaultValue={unidadeAtualId ?? ""}
+          >
+            <option value="">Selecione a unidade</option>
+            {unidades
+              .filter((unit) => ["ativa", "em_implantacao"].includes(unit.status))
+              .map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.is_matriz ? "Matriz · " : ""}
+                  {unit.nome}
+                </option>
+              ))}
+          </Select>
           <label className="md:col-span-2">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Equipamento
@@ -686,11 +751,13 @@ function Select({
   label,
   name,
   required,
+  defaultValue,
   children,
 }: {
   label: string;
   name: string;
   required?: boolean;
+  defaultValue?: string;
   children: ReactNode;
 }) {
   return (
@@ -701,6 +768,7 @@ function Select({
       <select
         name={name}
         required={required}
+        defaultValue={defaultValue}
         className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
       >
         {children}

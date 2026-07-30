@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAuthContext, useConfiguracoes, useMatrizDocumental } from "@/hooks/use-conform-data";
@@ -150,6 +151,26 @@ export function ConfiguracoesPage() {
       </Surface>
 
       {permissions?.limits ? <UsageMeters limits={permissions.limits} /> : null}
+
+      <Surface className="flex flex-wrap items-center justify-between gap-4 border-accent/20 bg-accent/[0.04]">
+        <div className="flex items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+            <Building2 className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-sm font-semibold">Unidades operacionais</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Gerencie matriz, filiais, limites contratados e responsáveis por unidade.
+            </p>
+          </div>
+        </div>
+        <Link
+          to={"/configuracoes/unidades" as never}
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        >
+          Gerenciar unidades
+        </Link>
+      </Surface>
 
       {empresaAtual?.id ? (
         <SegmentAssessmentCard

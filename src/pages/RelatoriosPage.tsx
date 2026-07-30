@@ -18,6 +18,7 @@ import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useRelatorios } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { AppShell } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import { ScheduledReportsPanel } from "@/components/scheduled-reports-panel";
@@ -37,6 +38,8 @@ const iconMap: Record<string, LucideIcon> = {
 export function RelatoriosPage() {
   const { data: relatorios = [] } = useRelatorios();
   const { selectedCompanyId } = useSession();
+  const { unidadeAtual, visaoConsolidada } = useUnitContext();
+  const unitId = visaoConsolidada ? null : (unidadeAtual?.id ?? null);
   const [busca, setBusca] = useState("");
   const relatoriosFiltrados = useMemo(() => {
     const termo = normalizar(busca);
@@ -47,7 +50,7 @@ export function RelatoriosPage() {
   }, [busca, relatorios]);
 
   const gerarRelatorio = useMutation({
-    mutationFn: () => relatoriosService.gerarExecutivoIA(selectedCompanyId!),
+    mutationFn: () => relatoriosService.gerarExecutivoIA(selectedCompanyId!, unitId),
     onSuccess: (relatorio) => abrirRelatorioPrint(relatorio),
   });
 
@@ -71,6 +74,15 @@ export function RelatoriosPage() {
         </button>
       }
     >
+      <div className="rounded-2xl border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
+        Escopo atual:{" "}
+        <strong>
+          {visaoConsolidada ? "consolidado autorizado" : unidadeAtual?.nome ?? "unidade"}
+        </strong>
+        .
+        O PDF, os agendamentos e os indicadores respeitam esta seleção.
+      </div>
+
       {gerarRelatorio.error ? (
         <div className="rounded-2xl border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
           {gerarRelatorio.error instanceof Error
@@ -302,6 +314,11 @@ function renderRelatorioHtml(relatorio: RelatorioExecutivoIA) {
     <div>
       <strong>${escapeHtml(relatorio.empresa.razao_social)}</strong><br />
       <span class="muted">CNPJ ${escapeHtml(relatorio.empresa.cnpj)}</span><br />
+      ${
+        relatorio.unidade
+          ? `<span class="muted">Unidade ${escapeHtml(relatorio.unidade.nome)} · ${escapeHtml(relatorio.unidade.codigo)}</span><br />`
+          : `<span class="muted">Visão consolidada autorizada</span><br />`
+      }
       <span class="pill">Risco ${escapeHtml(resumo.risco_operacional)}</span>
     </div>
   </div>

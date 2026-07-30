@@ -4,14 +4,21 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { professionalService } from "@/services";
 import { formatDateTimeBR } from "@/utils/date";
+import { useUnitContext } from "@/hooks/use-unit-context";
 
 export function ScheduledReportsPanel({ companyId }: { companyId: string }) {
   const client = useQueryClient();
+  const { unidadeAtual, visaoConsolidada } = useUnitContext();
+  const unitId = visaoConsolidada ? null : (unidadeAtual?.id ?? null);
   const [open, setOpen] = useState(false);
-  const queryKey = ["professional", "scheduled-reports", companyId];
-  const query = useQuery({ queryKey, queryFn: () => professionalService.scheduledReports(companyId) });
+  const queryKey = ["professional", "scheduled-reports", companyId, unitId ?? "consolidado"];
+  const query = useQuery({
+    queryKey,
+    queryFn: () => professionalService.scheduledReports(companyId, unitId),
+  });
   const save = useMutation({
-    mutationFn: (payload: Record<string, unknown>) => professionalService.saveScheduledReport(companyId, payload),
+    mutationFn: (payload: Record<string, unknown>) =>
+      professionalService.saveScheduledReport(companyId, unitId, payload),
     onSuccess: () => { setOpen(false); void client.invalidateQueries({ queryKey }); },
   });
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -36,7 +43,13 @@ export function ScheduledReportsPanel({ companyId }: { companyId: string }) {
           <CalendarClock className="mt-0.5 h-5 w-5 text-accent" />
           <div>
             <h2 className="text-sm font-semibold">Relatórios agendados</h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">Envio semanal ou mensal com dados estruturados da empresa selecionada.</p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Envio semanal ou mensal com dados de{" "}
+              {visaoConsolidada
+                ? "todas as unidades autorizadas"
+                : unidadeAtual?.nome ?? "sua unidade"}
+              .
+            </p>
           </div>
         </div>
         <Button type="button" size="sm" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Novo agendamento</Button>

@@ -15,11 +15,13 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { z } from "zod";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useEquipamentos } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import { equipamentosService } from "@/services";
@@ -32,9 +34,19 @@ type CriticidadeFiltro = EquipamentoResumo["criticidade"] | "todos";
 type Ordenacao = "vencimento" | "nome" | "criticidade" | "status";
 
 const PAGE_SIZE = 12;
+const equipmentFormSchema = z.object({
+  unidadeId: z.string().uuid("Selecione uma unidade válida."),
+  nome: z.string().trim().min(2, "Informe o nome do equipamento.").max(160),
+  codigo: z.string().trim().min(1, "Informe o código interno.").max(80),
+  fabricante: z.string().trim().min(2, "Informe o fabricante.").max(120),
+  modelo: z.string().trim().min(1, "Informe o modelo.").max(120),
+  setor: z.string().trim().min(1, "Informe o setor.").max(120),
+  criticidade: z.enum(["baixa", "media", "alta", "critica"]),
+});
 
 export function EquipamentosPage() {
   const { podeEscrever, selectedCompanyId, selectedCompany } = useSession();
+  const { unidadeAtualId, unidadesPermitidas } = useUnitContext();
   const empresaNome = selectedCompany?.razao_social ?? "empresa não selecionada";
   const { data: equipamentos = [], isLoading, isError, error, refetch } = useEquipamentos();
   const queryClient = useQueryClient();
@@ -83,9 +95,10 @@ export function EquipamentosPage() {
   }, [busca, criticidadeFiltro, equipamentos, ordenacao, setorFiltro, statusFiltro]);
 
   const totalPaginas = Math.max(1, Math.ceil(equipamentosFiltrados.length / PAGE_SIZE));
+  const paginaAtual = Math.min(pagina, totalPaginas);
   const equipamentosPagina = equipamentosFiltrados.slice(
-    (pagina - 1) * PAGE_SIZE,
-    pagina * PAGE_SIZE,
+    (paginaAtual - 1) * PAGE_SIZE,
+    paginaAtual * PAGE_SIZE,
   );
   const filtrosAtivos =
     busca.trim() ||
@@ -93,16 +106,13 @@ export function EquipamentosPage() {
     criticidadeFiltro !== "todos" ||
     setorFiltro !== "todos";
 
-  useEffect(() => {
-    setPagina(1);
-  }, [busca, statusFiltro, criticidadeFiltro, setorFiltro, ordenacao]);
-
   const createMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       if (!podeEscrever) throw new Error("Seu perfil possui acesso somente para consulta.");
       if (!selectedCompanyId) throw new Error("Selecione uma empresa antes de salvar.");
 
       return equipamentosService.criar(selectedCompanyId, {
+        unidade_id: required(formData, "unidade_id"),
         nome: required(formData, "nome"),
         codigo_interno: optional(formData, "codigo_interno"),
         numero_serie: optional(formData, "numero_serie"),
@@ -128,7 +138,21 @@ export function EquipamentosPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErro(null);
-    createMutation.mutate(new FormData(event.currentTarget));
+    const formData = new FormData(event.currentTarget);
+    const validation = equipmentFormSchema.safeParse({
+      unidadeId: formData.get("unidade_id"),
+      nome: formData.get("nome"),
+      codigo: formData.get("codigo_interno"),
+      fabricante: formData.get("fabricante"),
+      modelo: formData.get("modelo"),
+      setor: formData.get("setor"),
+      criticidade: formData.get("criticidade"),
+    });
+    if (!validation.success) {
+      setErro(validation.error.issues[0]?.message ?? "Revise os campos do equipamento.");
+      return;
+    }
+    createMutation.mutate(formData);
   }
 
   function limparFiltros() {
@@ -365,11 +389,11 @@ export function EquipamentosPage() {
             </div>
 
             <PaginationFooter
-              pagina={pagina}
+              pagina={paginaAtual}
               totalPaginas={totalPaginas}
               totalItens={equipamentosFiltrados.length}
-              onPrevious={() => setPagina((atual) => Math.max(1, atual - 1))}
-              onNext={() => setPagina((atual) => Math.min(totalPaginas, atual + 1))}
+              onPrevious={() => setPagina(Math.max(1, paginaAtual - 1))}
+              onNext={() => setPagina(Math.min(totalPaginas, paginaAtual + 1))}
             />
           </>
         )}
@@ -377,6 +401,8 @@ export function EquipamentosPage() {
 
       {modalAberto && podeEscrever && (
         <NovoEquipamentoModal
+          unidades={unidadesPermitidas}
+          unidadeAtualId={unidadeAtualId}
           erro={erro}
           isSaving={createMutation.isPending}
           onSubmit={handleSubmit}
@@ -439,7 +465,8 @@ function EquipamentoRow({ equipamento }: { equipamento: EquipamentoResumo }) {
       <td className="px-5 py-4">
         <div className="font-semibold text-foreground">{equipamento.nome}</div>
         <div className="mt-1 text-xs text-muted-foreground">
-          {equipamento.tipo || "Equipamento"}
+          {equipamento.tipo || "Equipamento"} ·{" "}
+          {equipamento.unidade ?? "Unidade não identificada"}
         </div>
       </td>
       <td className="px-4 py-4">
@@ -611,11 +638,15 @@ function FiltroSelect({
 }
 
 function NovoEquipamentoModal({
+  unidades,
+  unidadeAtualId,
   erro,
   isSaving,
   onSubmit,
   onClose,
 }: {
+  unidades: Array<{ id: string; nome: string; is_matriz: boolean; status: string }>;
+  unidadeAtualId: string | null;
   erro: string | null;
   isSaving: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -648,6 +679,22 @@ function NovoEquipamentoModal({
         </div>
 
         <div className="grid gap-4 p-5 md:grid-cols-2">
+          <Select
+            label="Unidade"
+            name="unidade_id"
+            required
+            defaultValue={unidadeAtualId ?? ""}
+          >
+            <option value="">Selecione a unidade</option>
+            {unidades
+              .filter((unit) => ["ativa", "em_implantacao"].includes(unit.status))
+              .map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.is_matriz ? "Matriz · " : ""}
+                  {unit.nome}
+                </option>
+              ))}
+          </Select>
           <Input label="Nome" name="nome" required />
           <Input label="Código interno" name="codigo_interno" required />
           <Input label="Número de série" name="numero_serie" />
@@ -730,11 +777,13 @@ function Select({
   label,
   name,
   required,
+  defaultValue,
   children,
 }: {
   label: string;
   name: string;
   required?: boolean;
+  defaultValue?: string;
   children: ReactNode;
 }) {
   return (
@@ -745,6 +794,7 @@ function Select({
       <select
         name={name}
         required={required}
+        defaultValue={defaultValue}
         className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none cf-transition focus:border-accent focus:ring-4 focus:ring-accent/10"
       >
         {children}

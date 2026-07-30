@@ -39,6 +39,7 @@ import { Route as MasterFinanceiroRouteImport } from './routes/master.financeiro
 import { Route as MasterEmpresasRouteImport } from './routes/master.empresas'
 import { Route as MasterAssinaturasRouteImport } from './routes/master.assinaturas'
 import { Route as EquipamentosIdRouteImport } from './routes/equipamentos.$id'
+import { Route as ConfiguracoesUnidadesRouteImport } from './routes/configuracoes.unidades'
 import { Route as CheckoutSucessoRouteImport } from './routes/checkout.sucesso'
 import { Route as EquipamentoQrTokenRouteImport } from './routes/equipamento.qr.$token'
 
@@ -194,6 +195,11 @@ const EquipamentosIdRoute = EquipamentosIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => EquipamentosRoute,
 } as any)
+const ConfiguracoesUnidadesRoute = ConfiguracoesUnidadesRouteImport.update({
+  id: '/unidades',
+  path: '/unidades',
+  getParentRoute: () => ConfiguracoesRoute,
+} as any)
 const CheckoutSucessoRoute = CheckoutSucessoRouteImport.update({
   id: '/checkout/sucesso',
   path: '/checkout/sucesso',
@@ -211,7 +217,7 @@ export interface FileRoutesByFullPath {
   '/assistente': typeof AssistenteRoute
   '/auditoria': typeof AuditoriaRoute
   '/cadastro': typeof CadastroRoute
-  '/configuracoes': typeof ConfiguracoesRoute
+  '/configuracoes': typeof ConfiguracoesRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/usuarios': typeof UsuariosRoute
   '/vencimentos': typeof VencimentosRoute
   '/checkout/sucesso': typeof CheckoutSucessoRoute
+  '/configuracoes/unidades': typeof ConfiguracoesUnidadesRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/empresas': typeof MasterEmpresasRoute
@@ -245,7 +252,7 @@ export interface FileRoutesByTo {
   '/assistente': typeof AssistenteRoute
   '/auditoria': typeof AuditoriaRoute
   '/cadastro': typeof CadastroRoute
-  '/configuracoes': typeof ConfiguracoesRoute
+  '/configuracoes': typeof ConfiguracoesRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
@@ -258,6 +265,7 @@ export interface FileRoutesByTo {
   '/usuarios': typeof UsuariosRoute
   '/vencimentos': typeof VencimentosRoute
   '/checkout/sucesso': typeof CheckoutSucessoRoute
+  '/configuracoes/unidades': typeof ConfiguracoesUnidadesRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/empresas': typeof MasterEmpresasRoute
@@ -280,7 +288,7 @@ export interface FileRoutesById {
   '/assistente': typeof AssistenteRoute
   '/auditoria': typeof AuditoriaRoute
   '/cadastro': typeof CadastroRoute
-  '/configuracoes': typeof ConfiguracoesRoute
+  '/configuracoes': typeof ConfiguracoesRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
@@ -293,6 +301,7 @@ export interface FileRoutesById {
   '/usuarios': typeof UsuariosRoute
   '/vencimentos': typeof VencimentosRoute
   '/checkout/sucesso': typeof CheckoutSucessoRoute
+  '/configuracoes/unidades': typeof ConfiguracoesUnidadesRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/empresas': typeof MasterEmpresasRoute
@@ -329,6 +338,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/vencimentos'
     | '/checkout/sucesso'
+    | '/configuracoes/unidades'
     | '/equipamentos/$id'
     | '/master/assinaturas'
     | '/master/empresas'
@@ -363,6 +373,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/vencimentos'
     | '/checkout/sucesso'
+    | '/configuracoes/unidades'
     | '/equipamentos/$id'
     | '/master/assinaturas'
     | '/master/empresas'
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/vencimentos'
     | '/checkout/sucesso'
+    | '/configuracoes/unidades'
     | '/equipamentos/$id'
     | '/master/assinaturas'
     | '/master/empresas'
@@ -419,7 +431,7 @@ export interface RootRouteChildren {
   AssistenteRoute: typeof AssistenteRoute
   AuditoriaRoute: typeof AuditoriaRoute
   CadastroRoute: typeof CadastroRoute
-  ConfiguracoesRoute: typeof ConfiguracoesRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRouteWithChildren
   DashboardRoute: typeof DashboardRoute
   DefinirSenhaRoute: typeof DefinirSenhaRoute
   DocumentosRoute: typeof DocumentosRoute
@@ -659,6 +671,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EquipamentosIdRouteImport
       parentRoute: typeof EquipamentosRoute
     }
+    '/configuracoes/unidades': {
+      id: '/configuracoes/unidades'
+      path: '/unidades'
+      fullPath: '/configuracoes/unidades'
+      preLoaderRoute: typeof ConfiguracoesUnidadesRouteImport
+      parentRoute: typeof ConfiguracoesRoute
+    }
     '/checkout/sucesso': {
       id: '/checkout/sucesso'
       path: '/checkout/sucesso'
@@ -675,6 +694,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface ConfiguracoesRouteChildren {
+  ConfiguracoesUnidadesRoute: typeof ConfiguracoesUnidadesRoute
+}
+
+const ConfiguracoesRouteChildren: ConfiguracoesRouteChildren = {
+  ConfiguracoesUnidadesRoute: ConfiguracoesUnidadesRoute,
+}
+
+const ConfiguracoesRouteWithChildren = ConfiguracoesRoute._addFileChildren(
+  ConfiguracoesRouteChildren,
+)
 
 interface EquipamentosRouteChildren {
   EquipamentosIdRoute: typeof EquipamentosIdRoute
@@ -694,7 +725,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssistenteRoute: AssistenteRoute,
   AuditoriaRoute: AuditoriaRoute,
   CadastroRoute: CadastroRoute,
-  ConfiguracoesRoute: ConfiguracoesRoute,
+  ConfiguracoesRoute: ConfiguracoesRouteWithChildren,
   DashboardRoute: DashboardRoute,
   DefinirSenhaRoute: DefinirSenhaRoute,
   DocumentosRoute: DocumentosRoute,

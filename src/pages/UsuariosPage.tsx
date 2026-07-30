@@ -1,11 +1,22 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Edit3, LockKeyhole, Plus, Search, ShieldCheck, UserCheck, Users, X } from "lucide-react";
+import {
+  Building2,
+  Edit3,
+  LockKeyhole,
+  Plus,
+  Search,
+  ShieldCheck,
+  UserCheck,
+  Users,
+  X,
+} from "lucide-react";
 import { InviteUserDialog } from "@/components/invite-user-dialog";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useAuthContext, useUsuarios } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { AppShell } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
 import { usuariosService, type PerfilUsuarioEmpresa } from "@/services/usuariosService";
@@ -49,6 +60,7 @@ export function UsuariosPage() {
   const { data: usuarios = [], isLoading } = useUsuarios();
   const { data: authContext } = useAuthContext();
   const { podeAdministrar, selectedCompanyId } = useSession();
+  const { unidadesPermitidas: unidades } = useUnitContext();
   const queryClient = useQueryClient();
   const [busca, setBusca] = useState("");
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -78,9 +90,21 @@ export function UsuariosPage() {
       if (!podeGerenciar) throw new Error("Seu perfil não permite gerenciar usuários.");
       if (!selectedCompanyId || !editingUser) throw new Error("Selecione uma empresa e usuário.");
 
-      return usuariosService.atualizarPerfil(selectedCompanyId, editingUser.id, {
+      const acessoTodasUnidades = formData.get("acesso_todas_unidades") === "on";
+      const unidadeIds = acessoTodasUnidades
+        ? []
+        : formData
+            .getAll("unidade_ids")
+            .filter((value): value is string => typeof value === "string");
+
+      return usuariosService.atualizarPerfilEAcesso(selectedCompanyId, editingUser.id, {
         perfil: required(formData, "perfil") as PerfilUsuarioEmpresa,
         ativo: required(formData, "status") === "ativo",
+        acessoTodasUnidades,
+        unidadeIds,
+        unidadePrincipalId: acessoTodasUnidades
+          ? null
+          : optional(formData, "unidade_principal_id"),
       });
     },
     onSuccess: async () => {
@@ -217,6 +241,7 @@ export function UsuariosPage() {
                   <th className="px-4 py-3 text-left font-semibold">Perfil</th>
                   <th className="px-4 py-3 text-left font-semibold">Setor</th>
                   <th className="px-4 py-3 text-left font-semibold">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold">Unidades</th>
                   <th className="px-5 py-3 text-right font-semibold">Ação</th>
                 </tr>
               </thead>
@@ -265,6 +290,7 @@ export function UsuariosPage() {
       {editingUser ? (
         <EditarPerfilModal
           usuario={editingUser}
+          unidades={unidades}
           erro={erro}
           isSaving={updateMutation.isPending}
           onSubmit={handleSubmit}
@@ -299,6 +325,11 @@ function UsuarioRow({
       <td className="px-4 py-4 text-muted-foreground">{humanize(usuario.setor)}</td>
       <td className="px-4 py-4">
         <StatusBadge status={usuario.status} />
+      </td>
+      <td className="px-4 py-4 text-muted-foreground">
+        {usuario.acessoTodasUnidades
+          ? "Todas"
+          : `${usuario.unidadeIds?.length ?? 0} selecionada(s)`}
       </td>
       <td className="px-5 py-4 text-right">
         <button
@@ -335,6 +366,9 @@ function UsuarioMobileCard({
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <PerfilBadge perfil={usuario.perfil} />
         <span className="text-xs text-muted-foreground">Setor: {humanize(usuario.setor)}</span>
+        <span className="text-xs text-muted-foreground">
+          Unidades: {usuario.acessoTodasUnidades ? "todas" : (usuario.unidadeIds?.length ?? 0)}
+        </span>
       </div>
       <button
         type="button"
@@ -350,22 +384,29 @@ function UsuarioMobileCard({
 
 function EditarPerfilModal({
   usuario,
+  unidades,
   erro,
   isSaving,
   onSubmit,
   onClose,
 }: {
   usuario: UsuarioResumo;
+  unidades: ReturnType<typeof useUnitContext>["unidadesPermitidas"];
   erro: string | null;
   isSaving: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onClose: () => void;
 }) {
+  const [acessoTodasUnidades, setAcessoTodasUnidades] = useState(
+    usuario.acessoTodasUnidades ?? true,
+  );
+  const selectedUnits = new Set(usuario.unidadeIds ?? []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-2xl overflow-hidden rounded-3xl border border-border bg-background shadow-2xl"
+        className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl border border-border bg-background shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4 border-b border-border bg-muted/30 p-5">
           <div>
@@ -427,6 +468,85 @@ function EditarPerfilModal({
               <option value="inativo">Inativo</option>
             </select>
           </label>
+
+          <section className="rounded-2xl border border-border bg-muted/20 p-4">
+            <div className="flex items-start gap-3">
+              <Building2 className="mt-0.5 h-5 w-5 text-accent" />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold">Acesso por unidade</div>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Defina se o usuário pode consultar a visão consolidada ou apenas unidades
+                  específicas. A mesma regra é validada no backend.
+                </p>
+              </div>
+            </div>
+
+            <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-background p-3">
+              <input
+                type="checkbox"
+                name="acesso_todas_unidades"
+                checked={acessoTodasUnidades}
+                onChange={(event) => setAcessoTodasUnidades(event.target.checked)}
+                className="h-4 w-4 rounded border-input accent-[var(--color-accent)]"
+              />
+              <span>
+                <span className="block text-sm font-medium">Acessar todas as unidades</span>
+                <span className="block text-xs text-muted-foreground">
+                  Inclui a visão consolidada da empresa.
+                </span>
+              </span>
+            </label>
+
+            {!acessoTodasUnidades ? (
+              <div className="mt-3 grid gap-3">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {unidades
+                    .filter((unit) => unit.status !== "arquivada")
+                    .map((unit) => (
+                      <label
+                        key={unit.id}
+                        className="flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-background p-3 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          name="unidade_ids"
+                          value={unit.id}
+                          defaultChecked={selectedUnits.has(unit.id)}
+                          className="h-4 w-4 rounded border-input accent-[var(--color-accent)]"
+                        />
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{unit.nome}</span>
+                          <span className="block text-xs text-muted-foreground">
+                            {unit.codigo}
+                            {unit.is_matriz ? " · Matriz" : ""}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                </div>
+
+                <label>
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    Unidade principal
+                  </span>
+                  <select
+                    name="unidade_principal_id"
+                    defaultValue={usuario.unidadePrincipalId ?? usuario.unidadeIds?.[0] ?? ""}
+                    className="mt-1 h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none cf-transition focus:border-accent focus:ring-4 focus:ring-accent/10"
+                  >
+                    <option value="">Selecione</option>
+                    {unidades
+                      .filter((unit) => unit.status !== "arquivada")
+                      .map((unit) => (
+                        <option key={unit.id} value={unit.id}>
+                          {unit.nome} · {unit.codigo}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              </div>
+            ) : null}
+          </section>
 
           <div className="rounded-2xl border border-success/25 bg-success/5 p-3 text-sm text-success">
             Esta alteração será registrada na auditoria e aplicada somente à
@@ -579,4 +699,9 @@ function required(formData: FormData, key: string): string {
   if (typeof value !== "string" || !value.trim())
     throw new Error("Preencha os campos obrigatórios.");
   return value.trim();
+}
+
+function optional(formData: FormData, key: string): string | null {
+  const value = formData.get(key);
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }

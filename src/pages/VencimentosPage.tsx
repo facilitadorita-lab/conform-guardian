@@ -12,6 +12,7 @@ import {
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "@/hooks/use-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
 import { vencimentosService, type VencimentoConsolidado, type VencimentoModulo } from "@/services";
 import { formatDateBR } from "@/utils/date";
@@ -22,6 +23,11 @@ type FiltroModulo = "todos" | VencimentoModulo;
 
 export function VencimentosPage() {
   const { selectedCompanyId: empresaId } = useSession();
+  const {
+    unidadeAtualId,
+    visaoConsolidada,
+    carregando: carregandoUnidades,
+  } = useUnitContext();
   const [periodo, setPeriodo] = useState<FiltroPeriodo>("todos");
   const [modulo, setModulo] = useState<FiltroModulo>("todos");
   const [busca, setBusca] = useState("");
@@ -34,9 +40,9 @@ export function VencimentosPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["vencimentos", empresaId],
-    queryFn: () => vencimentosService.listar(empresaId!),
-    enabled: Boolean(empresaId),
+    queryKey: ["vencimentos", empresaId, unidadeAtualId ?? "consolidado"],
+    queryFn: () => vencimentosService.listar(empresaId!, unidadeAtualId),
+    enabled: Boolean(empresaId) && !carregandoUnidades,
   });
 
   const filtrados = useMemo(
@@ -68,7 +74,11 @@ export function VencimentosPage() {
   return (
     <AppShell
       title="Central de Vencimentos"
-      description="Visão consolidada de documentos, equipamentos e manutenções por prioridade de prazo."
+      description={
+        visaoConsolidada
+          ? "Visão consolidada de documentos, equipamentos e manutenções por prioridade de prazo."
+          : "Vencimentos da unidade selecionada e documentos corporativos aplicáveis."
+      }
     >
       <div className="grid gap-3 md:grid-cols-4">
         <ResumoCard label="Vencidos" value={resumo.vencidos} tone="vencido" icon={AlertTriangle} />

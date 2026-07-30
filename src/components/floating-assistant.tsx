@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Bot,
@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { assistantService } from "@/services";
 import type { AssistantSource } from "@/services/assistantService";
 import { formatDateBR } from "@/utils/date";
@@ -34,24 +35,20 @@ const sugestoes = [
 
 export function FloatingAssistant() {
   const { selectedCompany: empresa } = useSession();
+  const { unidadeAtualId, unidadeAtual, visaoConsolidada } = useUnitContext();
   const [aberto, setAberto] = useState(false);
   const [pergunta, setPergunta] = useState("");
   const [mensagens, setMensagens] = useState<ChatMessage[]>([]);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
-    setMensagens([]);
-    setErro(null);
-    setPergunta("");
-  }, [empresa?.id]);
-
   const podeEnviar = Boolean(empresa?.id && pergunta.trim() && !enviando);
 
   const placeholder = useMemo(() => {
     if (!empresa) return "Selecione uma empresa para conversar com o FlowIA...";
-    return `Pergunte sobre ${empresa.razao_social}`;
-  }, [empresa]);
+    const scope = visaoConsolidada ? "todas as unidades" : (unidadeAtual?.nome ?? "a unidade atual");
+    return `Pergunte sobre ${empresa.razao_social} · ${scope}`;
+  }, [empresa, unidadeAtual?.nome, visaoConsolidada]);
 
   async function enviarPergunta(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
@@ -71,7 +68,7 @@ export function FloatingAssistant() {
     setMensagens((atuais) => [...atuais, userMessage]);
 
     try {
-      const resposta = await assistantService.perguntar(empresa.id, texto);
+      const resposta = await assistantService.perguntar(empresa.id, texto, unidadeAtualId);
       const content =
         resposta.resposta ||
         resposta.answer ||

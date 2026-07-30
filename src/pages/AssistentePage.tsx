@@ -2,6 +2,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { AlertTriangle, Building2, Send, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { useSession } from "@/hooks/use-session";
+import { useUnitContext } from "@/hooks/use-unit-context";
 import { assistantService } from "@/services";
 
 type ChatMessage = {
@@ -22,6 +23,7 @@ const sugestoes = [
 
 export function AssistentePage() {
   const { selectedCompany: empresa } = useSession();
+  const { unidadeAtualId, unidadeAtual, visaoConsolidada } = useUnitContext();
   const [pergunta, setPergunta] = useState("");
   const [mensagens, setMensagens] = useState<ChatMessage[]>([]);
   const [enviando, setEnviando] = useState(false);
@@ -31,8 +33,9 @@ export function AssistentePage() {
 
   const placeholder = useMemo(() => {
     if (!empresa) return "Carregando empresa...";
-    return `Pergunte sobre ${empresa.razao_social}: documentos, equipamentos, manutenções, qualificações...`;
-  }, [empresa]);
+    const scope = visaoConsolidada ? "todas as unidades" : (unidadeAtual?.nome ?? "unidade atual");
+    return `Pergunte sobre ${empresa.razao_social} · ${scope}: documentos, equipamentos e vencimentos...`;
+  }, [empresa, unidadeAtual?.nome, visaoConsolidada]);
 
   async function enviarPergunta(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -52,7 +55,7 @@ export function AssistentePage() {
     setMensagens((atuais) => [...atuais, userMessage]);
 
     try {
-      const resposta = await assistantService.perguntar(empresa.id, texto);
+      const resposta = await assistantService.perguntar(empresa.id, texto, unidadeAtualId);
       const content =
         resposta.resposta ||
         resposta.answer ||
