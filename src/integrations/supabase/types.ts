@@ -340,6 +340,10 @@ export type Database = {
           modulo: string
           nome_original: string
           registro_id: string
+          scan_completed_at: string | null
+          scan_engine: string | null
+          scan_sha256: string | null
+          scan_status: string
           status: string
           storage_path: string
           substitui_anexo_id: string | null
@@ -359,6 +363,10 @@ export type Database = {
           modulo: string
           nome_original: string
           registro_id: string
+          scan_completed_at?: string | null
+          scan_engine?: string | null
+          scan_sha256?: string | null
+          scan_status?: string
           status?: string
           storage_path: string
           substitui_anexo_id?: string | null
@@ -378,6 +386,10 @@ export type Database = {
           modulo?: string
           nome_original?: string
           registro_id?: string
+          scan_completed_at?: string | null
+          scan_engine?: string | null
+          scan_sha256?: string | null
+          scan_status?: string
           status?: string
           storage_path?: string
           substitui_anexo_id?: string | null
@@ -533,7 +545,7 @@ export type Database = {
           id: string
           moeda: string
           observacoes_internas: string | null
-          plano_id: string
+          plano_id: string | null
           preco_cliente_extra_centavos: number
           proximo_vencimento: string | null
           status: string
@@ -572,7 +584,7 @@ export type Database = {
           id?: string
           moeda?: string
           observacoes_internas?: string | null
-          plano_id: string
+          plano_id?: string | null
           preco_cliente_extra_centavos?: number
           proximo_vencimento?: string | null
           status?: string
@@ -611,7 +623,7 @@ export type Database = {
           id?: string
           moeda?: string
           observacoes_internas?: string | null
-          plano_id?: string
+          plano_id?: string | null
           preco_cliente_extra_centavos?: number
           proximo_vencimento?: string | null
           status?: string
@@ -659,6 +671,86 @@ export type Database = {
           {
             foreignKeyName: "assinaturas_empresas_updated_by_fkey"
             columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonus_isencao_parceiros: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          meses_por_bonus: number
+          motivo: string
+          observacoes: string | null
+          parceiro_empresa_id: string
+          quantidade_total: number
+          quantidade_utilizada: number
+          revoked_at: string | null
+          revoked_by: string | null
+          status: string
+          updated_at: string
+          validade_ate: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meses_por_bonus?: number
+          motivo?: string
+          observacoes?: string | null
+          parceiro_empresa_id: string
+          quantidade_total: number
+          quantidade_utilizada?: number
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+          updated_at?: string
+          validade_ate?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          meses_por_bonus?: number
+          motivo?: string
+          observacoes?: string | null
+          parceiro_empresa_id?: string
+          quantidade_total?: number
+          quantidade_utilizada?: number
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+          updated_at?: string
+          validade_ate?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_isencao_parceiros_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bonus_isencao_parceiros_parceiro_empresa_id_fkey"
+            columns: ["parceiro_empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bonus_isencao_parceiros_parceiro_empresa_id_fkey"
+            columns: ["parceiro_empresa_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "bonus_isencao_parceiros_revoked_by_fkey"
+            columns: ["revoked_by"]
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
@@ -1141,6 +1233,38 @@ export type Database = {
           },
         ]
       }
+      configuracoes_plataforma: {
+        Row: {
+          chave: string
+          descricao: string
+          updated_at: string
+          updated_by: string | null
+          valor_json: Json
+        }
+        Insert: {
+          chave: string
+          descricao: string
+          updated_at?: string
+          updated_by?: string | null
+          valor_json?: Json
+        }
+        Update: {
+          chave?: string
+          descricao?: string
+          updated_at?: string
+          updated_by?: string | null
+          valor_json?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracoes_plataforma_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cupons_comerciais: {
         Row: {
           ativo: boolean
@@ -1516,9 +1640,11 @@ export type Database = {
           endereco_oficial_json: Json
           estado: string | null
           id: string
+          is_sandbox: boolean
           nome_fantasia: string
           numero: string | null
           observacoes: string | null
+          parceiro_cobranca_modo: string
           parceiro_origem_id: string | null
           plano_id: string | null
           porte_empresa: string | null
@@ -1562,9 +1688,11 @@ export type Database = {
           endereco_oficial_json?: Json
           estado?: string | null
           id?: string
+          is_sandbox?: boolean
           nome_fantasia: string
           numero?: string | null
           observacoes?: string | null
+          parceiro_cobranca_modo?: string
           parceiro_origem_id?: string | null
           plano_id?: string | null
           porte_empresa?: string | null
@@ -1608,9 +1736,11 @@ export type Database = {
           endereco_oficial_json?: Json
           estado?: string | null
           id?: string
+          is_sandbox?: boolean
           nome_fantasia?: string
           numero?: string | null
           observacoes?: string | null
+          parceiro_cobranca_modo?: string
           parceiro_origem_id?: string | null
           plano_id?: string | null
           porte_empresa?: string | null
@@ -2310,6 +2440,61 @@ export type Database = {
           },
         ]
       }
+      execucoes_teste_isolamento: {
+        Row: {
+          checks: Json
+          empresa_id: string | null
+          executed_at: string
+          executed_by: string | null
+          failed_checks: number
+          id: string
+          status: string
+          total_checks: number
+        }
+        Insert: {
+          checks?: Json
+          empresa_id?: string | null
+          executed_at?: string
+          executed_by?: string | null
+          failed_checks?: number
+          id?: string
+          status: string
+          total_checks?: number
+        }
+        Update: {
+          checks?: Json
+          empresa_id?: string | null
+          executed_at?: string
+          executed_by?: string | null
+          failed_checks?: number
+          id?: string
+          status?: string
+          total_checks?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execucoes_teste_isolamento_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execucoes_teste_isolamento_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "execucoes_teste_isolamento_executed_by_fkey"
+            columns: ["executed_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faturas: {
         Row: {
           assinatura_id: string
@@ -2846,6 +3031,110 @@ export type Database = {
           {
             foreignKeyName: "interacoes_assistente_usuario_id_fkey"
             columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      isencoes_parceiro: {
+        Row: {
+          beneficio_id: string | null
+          cliente_empresa_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          inicio_em: string
+          meses: number
+          motivo: string
+          observacoes: string | null
+          parceiro_empresa_id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          status: string
+          termina_em: string
+          updated_at: string
+        }
+        Insert: {
+          beneficio_id?: string | null
+          cliente_empresa_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inicio_em?: string
+          meses: number
+          motivo?: string
+          observacoes?: string | null
+          parceiro_empresa_id: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+          termina_em: string
+          updated_at?: string
+        }
+        Update: {
+          beneficio_id?: string | null
+          cliente_empresa_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inicio_em?: string
+          meses?: number
+          motivo?: string
+          observacoes?: string | null
+          parceiro_empresa_id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          status?: string
+          termina_em?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "isencoes_parceiro_beneficio_id_fkey"
+            columns: ["beneficio_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_isencao_parceiros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isencoes_parceiro_cliente_empresa_id_fkey"
+            columns: ["cliente_empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isencoes_parceiro_cliente_empresa_id_fkey"
+            columns: ["cliente_empresa_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "isencoes_parceiro_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isencoes_parceiro_parceiro_empresa_id_fkey"
+            columns: ["parceiro_empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isencoes_parceiro_parceiro_empresa_id_fkey"
+            columns: ["parceiro_empresa_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "isencoes_parceiro_revoked_by_fkey"
+            columns: ["revoked_by"]
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
@@ -3846,6 +4135,27 @@ export type Database = {
           },
         ]
       }
+      rate_limit_buckets: {
+        Row: {
+          bucket_key: string
+          request_count: number
+          updated_at: string
+          window_started_at: string
+        }
+        Insert: {
+          bucket_key: string
+          request_count?: number
+          updated_at?: string
+          window_started_at?: string
+        }
+        Update: {
+          bucket_key?: string
+          request_count?: number
+          updated_at?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       regras_notificacao_empresa: {
         Row: {
           antecedencia_dias: number[]
@@ -3953,6 +4263,7 @@ export type Database = {
       relacionamentos_parceiro_clientes: {
         Row: {
           cliente_empresa_id: string
+          cobranca_inicio_em: string
           created_at: string
           created_by: string | null
           encerrado_em: string | null
@@ -3961,12 +4272,14 @@ export type Database = {
           observacoes: string | null
           parceiro_empresa_id: string
           plano_servico_id: string
+          preco_unitario_centavos: number
           status: string
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           cliente_empresa_id: string
+          cobranca_inicio_em?: string
           created_at?: string
           created_by?: string | null
           encerrado_em?: string | null
@@ -3975,12 +4288,14 @@ export type Database = {
           observacoes?: string | null
           parceiro_empresa_id: string
           plano_servico_id: string
+          preco_unitario_centavos?: number
           status?: string
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           cliente_empresa_id?: string
+          cobranca_inicio_em?: string
           created_at?: string
           created_by?: string | null
           encerrado_em?: string | null
@@ -3989,6 +4304,7 @@ export type Database = {
           observacoes?: string | null
           parceiro_empresa_id?: string
           plano_servico_id?: string
+          preco_unitario_centavos?: number
           status?: string
           updated_at?: string
           updated_by?: string | null
@@ -4190,6 +4506,68 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_consumo_empresa"
             referencedColumns: ["empresa_id"]
+          },
+        ]
+      }
+      sandbox_ambientes: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          empresa_id: string
+          id: string
+          nome: string
+          owner_user_id: string
+          status: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id: string
+          id?: string
+          nome: string
+          owner_user_id: string
+          status?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          empresa_id?: string
+          id?: string
+          nome?: string
+          owner_user_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sandbox_ambientes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sandbox_ambientes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sandbox_ambientes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: true
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "sandbox_ambientes_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -5695,10 +6073,19 @@ export type Database = {
         Args: { p_empresa_id: string; p_limite?: number }
         Returns: Json
       }
+      api_avaliar_segmento_ia: { Args: { p_empresa_id: string }; Returns: Json }
+      api_calendario_vencimentos: {
+        Args: { p_empresa_id: string; p_fim?: string; p_inicio?: string }
+        Returns: Json
+      }
       api_catalogo_configuracoes: { Args: never; Returns: Json }
       api_catalogo_relatorios: { Args: never; Returns: Json }
       api_central_notificacoes: {
         Args: { p_empresa_id: string }
+        Returns: Json
+      }
+      api_check_rate_limit: {
+        Args: { p_limit?: number; p_scope: string; p_window_seconds?: number }
         Returns: Json
       }
       api_conceder_acesso_provisorio: {
@@ -5737,6 +6124,10 @@ export type Database = {
       api_dashboard: { Args: { p_empresa_id: string }; Returns: Json }
       api_decidir_acao_critica: {
         Args: { p_approve: boolean; p_notes?: string; p_solicitacao_id: string }
+        Returns: Json
+      }
+      api_diagnostico_isolamento: {
+        Args: { p_empresa_id: string }
         Returns: Json
       }
       api_documento_decidir_aprovacao: {
@@ -5782,6 +6173,10 @@ export type Database = {
       api_exportar_auditoria: {
         Args: { p_empresa_id: string; p_fim?: string; p_inicio?: string }
         Returns: Json
+      }
+      api_limpar_rate_limits: {
+        Args: { p_older_than_hours?: number }
+        Returns: number
       }
       api_listar_alertas: {
         Args: {
@@ -5853,8 +6248,13 @@ export type Database = {
         }
         Returns: Json
       }
+      api_master_api_security_snapshot: { Args: never; Returns: Json }
       api_master_aprovar_empresa: {
         Args: { p_review_notes?: string; p_solicitacao_id: string }
+        Returns: Json
+      }
+      api_master_arquivar_sandbox: {
+        Args: { p_sandbox_id: string }
         Returns: Json
       }
       api_master_assumir_verificacao: {
@@ -5863,6 +6263,10 @@ export type Database = {
       }
       api_master_atualizar_assinatura: {
         Args: { p_empresa_id: string; p_payload: Json }
+        Returns: Json
+      }
+      api_master_conceder_bonus_isencao: {
+        Args: { p_payload: Json }
         Returns: Json
       }
       api_master_configurar_addons: { Args: { p_payload: Json }; Returns: Json }
@@ -5886,11 +6290,18 @@ export type Database = {
         }
         Returns: Json
       }
+      api_master_consumo_empresas: { Args: never; Returns: Json }
       api_master_criar_parceiro: { Args: { p_payload: Json }; Returns: Json }
+      api_master_criar_sandbox: { Args: { p_nome?: string }; Returns: Json }
       api_master_detalhe_verificacao: {
         Args: { p_solicitacao_id: string }
         Returns: Json
       }
+      api_master_enfileirar_cobranca: {
+        Args: { p_tentativa_id: string }
+        Returns: Json
+      }
+      api_master_fila_cobranca: { Args: { p_limite?: number }; Returns: Json }
       api_master_fila_verificacoes: {
         Args: { p_filtros?: Json }
         Returns: Json
@@ -5899,7 +6310,22 @@ export type Database = {
       api_master_financeiro_resumo: { Args: never; Returns: Json }
       api_master_listar_addons: { Args: never; Returns: Json }
       api_master_listar_assinaturas: { Args: never; Returns: Json }
+      api_master_listar_configuracoes_plataforma: { Args: never; Returns: Json }
+      api_master_listar_ensaios_backup: {
+        Args: { p_limite?: number }
+        Returns: Json
+      }
       api_master_listar_planos: { Args: never; Returns: Json }
+      api_master_listar_sandbox: { Args: never; Returns: Json }
+      api_master_listar_testes_isolamento: {
+        Args: { p_limite?: number }
+        Returns: Json
+      }
+      api_master_production_readiness: { Args: never; Returns: Json }
+      api_master_registrar_ensaio_backup: {
+        Args: { p_payload: Json }
+        Returns: Json
+      }
       api_master_rejeitar_empresa: {
         Args: {
           p_block_access?: boolean
@@ -5908,6 +6334,10 @@ export type Database = {
           p_review_notes?: string
           p_solicitacao_id: string
         }
+        Returns: Json
+      }
+      api_master_salvar_configuracoes_plataforma: {
+        Args: { p_payload: Json }
         Returns: Json
       }
       api_master_salvar_limites_provisorios: {
@@ -5932,6 +6362,11 @@ export type Database = {
         }
         Returns: Json
       }
+      api_master_stripe_health: { Args: never; Returns: Json }
+      api_master_testar_isolamento: {
+        Args: { p_empresa_id?: string }
+        Returns: Json
+      }
       api_matriz_documental_empresa: {
         Args: { p_empresa_id: string }
         Returns: Json
@@ -5940,6 +6375,7 @@ export type Database = {
         Args: { p_empresa_id: string }
         Returns: Json
       }
+      api_mfa_policy_status: { Args: never; Returns: Json }
       api_obter_qr_equipamento: {
         Args: { p_equipamento_id: string }
         Returns: Json
@@ -5949,13 +6385,27 @@ export type Database = {
         Args: { p_empresa_id: string }
         Returns: Json
       }
+      api_partner_conceder_isencao: { Args: { p_payload: Json }; Returns: Json }
+      api_partner_configurar_cobranca: {
+        Args: { p_payload: Json }
+        Returns: Json
+      }
+      api_partner_listar_beneficios: {
+        Args: { p_parceiro_empresa_id: string }
+        Returns: Json
+      }
       api_partner_listar_clientes: {
         Args: { p_parceiro_empresa_id: string }
         Returns: Json
       }
       api_partner_listar_planos: { Args: never; Returns: Json }
+      api_partner_listar_planos_unitarios: { Args: never; Returns: Json }
       api_partner_resumo: {
         Args: { p_parceiro_empresa_id: string }
+        Returns: Json
+      }
+      api_partner_revogar_isencao: {
+        Args: { p_isencao_id: string; p_motivo?: string }
         Returns: Json
       }
       api_partner_vincular_cliente: { Args: { p_payload: Json }; Returns: Json }
@@ -6062,6 +6512,10 @@ export type Database = {
         Returns: string
       }
       can_admin_company: { Args: { p_empresa_id: string }; Returns: boolean }
+      can_view_sandbox_company: {
+        Args: { p_empresa_id: string }
+        Returns: boolean
+      }
       can_write_company: { Args: { p_empresa_id: string }; Returns: boolean }
       check_company_permission: {
         Args: { p_acao?: string; p_empresa_id: string; p_recurso: string }
@@ -6094,6 +6548,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      current_user_requires_mfa: { Args: never; Returns: boolean }
       effective_company_limit: {
         Args: { p_empresa_id: string; p_limit_name: string }
         Returns: number
@@ -6135,6 +6590,10 @@ export type Database = {
       }
       is_master: { Args: never; Returns: boolean }
       normalize_cnpj: { Args: { p_cnpj: string }; Returns: string }
+      parceiro_isencao_ativa: {
+        Args: { p_cliente_empresa_id: string }
+        Returns: boolean
+      }
       partner_relation_for_user: {
         Args: { p_empresa_id: string }
         Returns: string
@@ -6150,6 +6609,10 @@ export type Database = {
           p_table_name: string
         }
         Returns: boolean
+      }
+      refresh_partner_client_counters: {
+        Args: { p_parceiro_empresa_id: string }
+        Returns: undefined
       }
       registrar_acesso_master: {
         Args: { p_empresa_id: string; p_modulo: string }
