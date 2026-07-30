@@ -411,6 +411,34 @@ export function MasterEmpresasPage() {
     await router.navigate({ to: "/dashboard" });
   };
 
+  const reenviarPrimeiroAcesso = async (cliente: import("@/types").PartnerClient) => {
+    const email = cliente.email_principal?.trim().toLowerCase();
+    if (!email) {
+      setErroCadastro("Cadastre um e-mail principal para enviar o primeiro acesso.");
+      return;
+    }
+    try {
+      const convite = await edgeFunctionsService.inviteCompanyUser({
+        empresaId: cliente.id,
+        email,
+        nome: cliente.nome_fantasia || cliente.razao_social,
+        perfil: "administrador",
+      });
+      setErroCadastro(null);
+      setMensagem(
+        convite.invitation_sent === false
+          ? `O acesso de ${cliente.nome_fantasia} já está vinculado a ${email}. Use “Esqueci minha senha” se necessário.`
+          : `Convite de primeiro acesso enviado para ${email}.`,
+      );
+    } catch (inviteError) {
+      setErroCadastro(
+        inviteError instanceof Error
+          ? inviteError.message
+          : "Não foi possível enviar o primeiro acesso.",
+      );
+    }
+  };
+
   const empresasFiltradas = useMemo(
     () =>
       authContext?.empresasPermitidas.filter((empresa) => {
@@ -968,6 +996,15 @@ export function MasterEmpresasPage() {
                       >
                         Entrar no ambiente <ArrowRight className="h-3.5 w-3.5" />
                       </button>
+                      {isAdministradorParceiro ? (
+                        <button
+                          type="button"
+                          onClick={() => void reenviarPrimeiroAcesso(cliente)}
+                          className="text-xs font-medium text-muted-foreground hover:text-primary hover:underline"
+                        >
+                          Reenviar primeiro acesso
+                        </button>
+                      ) : null}
                       {isAdministradorParceiro ? (
                         <button
                           type="button"
