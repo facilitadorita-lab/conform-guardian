@@ -321,6 +321,14 @@ alter table public.documentos add constraint documentos_escopo_documento_check
     or (escopo_documento = 'unidade' and unidade_id is not null)
   ) not valid;
 
+-- Os validadores legados consideram somente relacionamentos ativos. Para
+-- preservar e migrar também o histórico arquivado, suspendemos apenas esses
+-- validadores enquanto unidade_id é preenchido; todos são reativados abaixo.
+alter table public.equipamentos disable trigger trg_equipamentos_company;
+alter table public.calibracoes disable trigger trg_calibracoes_company;
+alter table public.qualificacoes disable trigger trg_qualificacoes_company;
+alter table public.manutencoes disable trigger trg_manutencoes_company;
+
 update public.equipamentos e
 set unidade_id = (
   select u.id
@@ -361,6 +369,11 @@ set unidade_id = coalesce(
   )
 )
 where m.unidade_id is null;
+
+alter table public.equipamentos enable trigger trg_equipamentos_company;
+alter table public.calibracoes enable trigger trg_calibracoes_company;
+alter table public.qualificacoes enable trigger trg_qualificacoes_company;
+alter table public.manutencoes enable trigger trg_manutencoes_company;
 
 create or replace function public.resolve_record_unit(
   p_empresa_id uuid,
