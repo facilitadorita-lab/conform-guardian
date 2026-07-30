@@ -436,9 +436,18 @@ update public.alertas a
 set unidade_id = public.resolve_record_unit(a.empresa_id, a.modulo, a.registro_id)
 where a.unidade_id is null;
 
+-- Backfill técnico não representa ação de usuário. Evita alterar updated_at e
+-- criar centenas de eventos artificiais na cadeia imutável de auditoria.
+alter table public.anexos disable trigger trg_anexos_audit_fields;
+alter table public.anexos disable trigger trg_anexos_audit_log;
+
 update public.anexos a
 set unidade_id = public.resolve_record_unit(a.empresa_id, a.modulo, a.registro_id)
-where a.unidade_id is null;
+where a.unidade_id is null
+  and public.resolve_record_unit(a.empresa_id, a.modulo, a.registro_id) is not null;
+
+alter table public.anexos enable trigger trg_anexos_audit_fields;
+alter table public.anexos enable trigger trg_anexos_audit_log;
 
 update public.interacoes_assistente i
 set unidade_id = e.unidade_id
