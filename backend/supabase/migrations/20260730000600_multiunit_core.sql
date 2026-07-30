@@ -1,5 +1,8 @@
 -- Conform Flow — núcleo operacional de multiunidade.
 -- Migration aditiva, idempotente e sem remoção dos campos textuais legados.
+-- O executor local usa 15 s por lote; o backfill histórico completo precisa de
+-- uma janela própria. O timeout normal da sessão é restaurado no fim do arquivo.
+set statement_timeout = '5min';
 
 create table if not exists public.unidades (
   id uuid primary key default gen_random_uuid(),
@@ -1385,3 +1388,5 @@ grant execute on function public.active_company_unit_count(uuid) to authenticate
 grant execute on function public.effective_unit_limit(uuid) to authenticated, service_role;
 grant execute on function public.can_create_company_unit(uuid) to authenticated, service_role;
 grant execute on function public.can_access_evidence_object(text) to authenticated, service_role;
+
+reset statement_timeout;
