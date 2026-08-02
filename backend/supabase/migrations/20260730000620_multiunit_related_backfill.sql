@@ -65,9 +65,12 @@ where a.unidade_id is null;
 
 -- Backfill técnico não representa ação de usuário. Evita alterar updated_at e
 -- criar centenas de eventos artificiais na cadeia imutável de auditoria.
+-- A validação de tenant continua obrigatória em runtime, mas precisa ser suspensa
+-- nesta transação para preservar anexos históricos ligados a registros arquivados.
 alter table public.anexos disable trigger trg_anexos_audit_fields;
 alter table public.anexos disable trigger trg_anexos_audit_log;
 alter table public.anexos disable trigger trg_anexos_plan_feature;
+alter table public.anexos disable trigger trg_anexos_tenant_integrity;
 
 with anexos_resolvidos as materialized (
   select
@@ -117,6 +120,7 @@ where r.id = a.id
 alter table public.anexos enable trigger trg_anexos_audit_fields;
 alter table public.anexos enable trigger trg_anexos_audit_log;
 alter table public.anexos enable trigger trg_anexos_plan_feature;
+alter table public.anexos enable trigger trg_anexos_tenant_integrity;
 
 update public.interacoes_assistente i
 set unidade_id = e.unidade_id
@@ -129,4 +133,3 @@ set unidade_id = r.unidade_id
 from public.relatorios_agendados r
 where r.id = e.relatorio_agendado_id
   and e.unidade_id is null;
-
