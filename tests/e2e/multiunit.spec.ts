@@ -11,6 +11,10 @@ if (!supabaseUrl || !anonKey || !password) {
   throw new Error("E2E_CONFIGURATION_MISSING");
 }
 
+// Keep authentication credentials out of trace/video artifacts. Playwright
+// requires worker-scoped options at file level, not inside a describe block.
+test.use({ trace: "off", video: "off" });
+
 test.describe("isolamento multiunidade no backend", () => {
   test("colaborador visualiza somente a unidade autorizada e documentos corporativos", async () => {
     const client = await signIn(fixtures.users.collabA.email);
@@ -234,8 +238,6 @@ test.describe("isolamento multiunidade no backend", () => {
 });
 
 test.describe("experiência multiunidade na interface", () => {
-  test.use({ trace: "off", video: "off" });
-
   test("colaborador entra diretamente na única unidade permitida", async ({ page }) => {
     await login(page, fixtures.users.collabA.email);
     const switcher = page.locator('select[aria-label="Selecionar unidade operacional"]:visible');

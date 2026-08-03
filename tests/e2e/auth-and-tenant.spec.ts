@@ -11,12 +11,14 @@ if (!supabaseUrl || !anonKey || !password) {
   throw new Error("E2E_CONFIGURATION_MISSING");
 }
 
+// Keep authentication credentials out of trace/video artifacts. Playwright
+// requires worker-scoped options at file level, not inside a describe block.
+test.use({ trace: "off", video: "off" });
+
 test.describe("autenticação pela interface", () => {
   // O login usa senha real de fixture; não gerar trace/vídeo que possa
   // registrar o valor digitado. Screenshots de falha continuam mascarando o
   // input do tipo password.
-  test.use({ trace: "off", video: "off" });
-
   test("Admin Master é direcionado ao painel global", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("E-mail").fill(fixtures.users.master.email);
