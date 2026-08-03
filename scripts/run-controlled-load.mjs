@@ -316,19 +316,19 @@ const metrics = {
 };
 if (loginError) throw new Error(`LOAD_LOGIN_FAILED:${loginError.message}`);
 const firstCompanyUnit = unitsByCompany.get(firstCompany.id)[0];
-metrics.unit_selector_ms = await measureMany(() => userClient.rpc("api_listar_unidades", {
+metrics.unit_selector_ms = await measureMany("unit_selector", () => userClient.rpc("api_listar_unidades", {
   p_empresa_id: firstCompany.id,
 }));
-metrics.dashboard_ms = await measureMany(() => userClient.rpc("api_dashboard_unidade", {
+metrics.dashboard_ms = await measureMany("dashboard", () => userClient.rpc("api_dashboard_unidade", {
   p_empresa_id: firstCompany.id,
   p_unidade_id: firstCompanyUnit.id,
 }));
-metrics.documents_ms = await measureMany(() => userClient.from("documentos").select("id").eq("empresa_id", firstCompany.id).limit(100));
-metrics.search_ms = await measureMany(() => userClient.from("documentos").select("id, nome").eq("empresa_id", firstCompany.id).ilike("nome", "%carga%").limit(50));
-metrics.assistant_context_ms = await measureMany(() => userClient.rpc("api_assistente_contexto_unidade", {
+metrics.documents_ms = await measureMany("documents", () => userClient.from("documentos").select("id").eq("empresa_id", firstCompany.id).limit(100));
+metrics.search_ms = await measureMany("search", () => userClient.from("documentos").select("id, nome").eq("empresa_id", firstCompany.id).ilike("nome", "%carga%").limit(50));
+metrics.assistant_context_ms = await measureMany("assistant_context", () => userClient.rpc("api_assistente_contexto_unidade", {
   p_empresa_id: firstCompany.id,
   p_unidade_id: firstCompanyUnit.id,
-  p_pergunta: "Quais itens exigem atenção?",
+  p_escopo: "geral",
   p_equipamento_id: null,
   p_setor: null,
 }));
@@ -342,16 +342,22 @@ writeFileSync("artifacts/validation/performance/load.json", JSON.stringify({
 }, null, 2));
 console.log("VALIDATION_CONTROLLED_LOAD_CREATED companies=20 users=100 documents=1000 equipment=500 calibrations=1000 qualifications=500 maintenances=1000 pending=1000");
 
-async function measureMany(operation, runs = 25) {
+async function measureMany(label, operation, runs = 25) {
   const samples = [];
   let errors = 0;
+  let firstError = null;
   for (let index = 0; index < runs; index += 1) {
     const startedAt = performance.now();
     const { error } = await operation();
     samples.push(performance.now() - startedAt);
-    if (error) errors++;
+    if (error) {
+      errors++;
+      firstError ??= error.message;
+    }
   }
-  if (errors > 0) throw new Error(`LOAD_QUERY_FAILED:error_count=${errors}`);
+  if (errors > 0) {
+    throw new Error(`LOAD_QUERY_FAILED:${label}:error_count=${errors}:${firstError}`);
+  }
   samples.sort((a, b) => a - b);
   const percentile = (value) =>
     Math.round(samples[Math.min(samples.length - 1, Math.ceil(value * samples.length) - 1)] * 100) /
