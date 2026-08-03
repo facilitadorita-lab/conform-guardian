@@ -305,14 +305,14 @@ begin
       and unidade_id <> '81000000-0000-4000-8000-000000000101'
   ) then raise exception 'HISTORICAL_MAINTENANCE_MOVED'; end if;
 
-  insert into public.manutencoes(
-    empresa_id, equipamento_id, natureza, data_manutencao, numero_ordem_servico
-  ) values (
+  perform public.api_criar_manutencao(
     '81000000-0000-4000-8000-000000000010',
-    '81000000-0000-4000-8000-000000000301',
-    'preventiva',
-    current_date,
-    'OS-AFTER-TRANSFER'
+    jsonb_build_object(
+      'equipamento_id', '81000000-0000-4000-8000-000000000301',
+      'natureza', 'preventiva',
+      'data_manutencao', current_date,
+      'numero_ordem_servico', 'OS-AFTER-TRANSFER'
+    )
   );
 
   if not exists (
