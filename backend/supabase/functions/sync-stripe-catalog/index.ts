@@ -29,7 +29,8 @@ Deno.serve(async (request: Request) => {
     return json({ error: "CATALOG_SYNC_NOT_CONFIGURED" }, 503);
   }
 
-  if (!isServiceRoleRequest(request, serviceRoleKey, supabaseUrl)) {
+  const authorizedServiceCredential = serviceRoleCredential(request, serviceRoleKey, supabaseUrl);
+  if (!authorizedServiceCredential) {
     return json({ error: "UNAUTHORIZED" }, 401);
   }
 
@@ -53,7 +54,7 @@ Deno.serve(async (request: Request) => {
     );
   }
 
-  const admin = createClient(supabaseUrl, serviceRoleKey, {
+  const admin = createClient(supabaseUrl, authorizedServiceCredential, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { data: plansData, error: plansError } = await admin
@@ -361,23 +362,27 @@ function stripeMode(secret: string) {
   return "unknown";
 }
 
-function isServiceRoleRequest(request: Request, internalServiceKey: string, supabaseUrl: string) {
+function serviceRoleCredential(
+  request: Request,
+  internalServiceKey: string,
+  supabaseUrl: string,
+) {
   const authorization = request.headers.get("authorization") ?? "";
   const token = authorization.replace(/^Bearer\s+/i, "").trim();
-  if (!token) return false;
+  if (!token) return null;
 
   // New Supabase secret keys are available to the function through the runtime,
   // while CI may still use the legacy, gateway-verified service_role JWT.
-  if (token === internalServiceKey) return true;
+  if (token === internalServiceKey) return internalServiceKey;
 
   try {
     const parts = token.split(".");
-    if (parts.length !== 3) return false;
+    if (parts.length !== 3) return null;
     const header = JSON.parse(decodeBase64Url(parts[0])) as JsonObject;
     const claims = JSON.parse(decodeBase64Url(parts[1])) as JsonObject;
     const expectedRef = new URL(supabaseUrl).hostname.split(".")[0];
     const expiresAt = Number(claims.exp);
-    return (
+    const valid = (
       text(header.alg) === "HS256" &&
       text(claims.iss) === "supabase" &&
       text(claims.role) === "service_role" &&
@@ -385,8 +390,9 @@ function isServiceRoleRequest(request: Request, internalServiceKey: string, supa
       Number.isFinite(expiresAt) &&
       expiresAt * 1000 > Date.now()
     );
+    return valid ? token : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
