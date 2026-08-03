@@ -66,8 +66,8 @@ jobs:
       - name: Install Playwright test runner
         run: pnpm add --save-dev --ignore-workspace-root-check @playwright/test@1.52.0
 
-      - name: Install Chromium and system dependencies
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Install desktop and mobile browser engines
+        run: pnpm exec playwright install --with-deps chromium webkit
 
       - name: TypeScript preflight
         run: pnpm exec tsc --noEmit

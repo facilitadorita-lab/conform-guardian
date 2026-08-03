@@ -274,7 +274,7 @@ async function signIn(email: string) {
 async function login(page: import("@playwright/test").Page, email: string) {
   await page.goto("/login");
   await page.getByLabel("E-mail").fill(email);
-  await page.getByLabel("Senha").fill(password!);
+  await page.locator('input[autocomplete="current-password"]').fill(password!);
   await page.getByRole("button", { name: "Entrar na plataforma" }).click();
   await expect(page).toHaveURL(/\/(dashboard|master\/empresas)/);
 }

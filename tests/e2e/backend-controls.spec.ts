@@ -37,12 +37,14 @@ test.describe("controles de backend e evidências", () => {
 
     let messages: unknown[] = [];
     for (let attempt = 0; attempt < 15; attempt += 1) {
-      const response = await fetch(
-        `${mailCaptureUrl}/api/v1/mailbox/${encodeURIComponent(mailbox)}`,
-      );
-      if (response.ok) {
+      for (const endpoint of [
+        `/api/v1/mailbox/${encodeURIComponent(mailbox)}`,
+        "/api/v1/messages",
+      ]) {
+        const response = await fetch(`${mailCaptureUrl}${endpoint}`);
+        if (!response.ok) continue;
         const payload = (await response.json()) as unknown;
-        messages = Array.isArray(payload)
+        const candidates = Array.isArray(payload)
           ? payload
           : payload &&
               typeof payload === "object" &&
@@ -50,8 +52,12 @@ test.describe("controles de backend e evidências", () => {
               Array.isArray(payload.messages)
             ? payload.messages
             : [];
+        messages = candidates.filter((message) =>
+          JSON.stringify(message).toLowerCase().includes(email),
+        );
         if (messages.length > 0) break;
       }
+      if (messages.length > 0) break;
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
@@ -111,7 +117,8 @@ test.describe("controles de backend e evidências", () => {
         tamanho_bytes: 128,
       },
     });
-    expect(invalid.data?.error).toBe("invalid_file");
+    expect(invalid.error).not.toBeNull();
+    expect(await functionErrorCode(invalid)).toBe("invalid_file");
 
     const crossTenant = await admin.functions.invoke("create-evidence-upload", {
       body: {
@@ -176,4 +183,28 @@ async function signIn(email: string) {
   const { error } = await client.auth.signInWithPassword({ email, password });
   expect(error).toBeNull();
   return client;
+}
+
+async function functionErrorCode(result: {
+  data?: unknown;
+  error?: { context?: unknown } | null;
+}) {
+  if (
+    result.data &&
+    typeof result.data === "object" &&
+    "error" in result.data &&
+    typeof result.data.error === "string"
+  ) {
+    return result.data.error;
+  }
+
+  const context = result.error?.context;
+  if (!(context instanceof Response)) return null;
+  const payload = (await context.clone().json()) as unknown;
+  return payload &&
+    typeof payload === "object" &&
+    "error" in payload &&
+    typeof payload.error === "string"
+    ? payload.error
+    : null;
 }

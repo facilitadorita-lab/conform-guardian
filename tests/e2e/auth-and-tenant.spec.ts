@@ -22,7 +22,7 @@ test.describe("autenticação pela interface", () => {
   test("Admin Master é direcionado ao painel global", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("E-mail").fill(fixtures.users.master.email);
-    await page.getByLabel("Senha").fill(password);
+    await page.locator('input[autocomplete="current-password"]').fill(password);
     await page.getByRole("button", { name: "Entrar na plataforma" }).click();
     await expect(page).toHaveURL(/\/master\/empresas/);
     await expect(page.getByText("Empresas", { exact: true }).first()).toBeVisible();
