@@ -38,13 +38,39 @@ insert into public.documentos(id, empresa_id, nome, exige_anexo) values
   ('a1000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'Documento privado A', false),
   ('b1000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', 'Documento privado B', false);
 
-insert into public.equipamentos(id, empresa_id, nome, codigo_interno) values
-  ('a2000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'Equipamento privado A', 'EQ-A'),
-  ('b2000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', 'Equipamento privado B', 'EQ-B');
+insert into public.equipamentos(id, empresa_id, unidade_id, nome, codigo_interno) values
+  (
+    'a2000000-0000-4000-8000-000000000001',
+    'a0000000-0000-4000-8000-000000000001',
+    (select id from public.unidades where empresa_id = 'a0000000-0000-4000-8000-000000000001' and is_matriz limit 1),
+    'Equipamento privado A',
+    'EQ-A'
+  ),
+  (
+    'b2000000-0000-4000-8000-000000000002',
+    'b0000000-0000-4000-8000-000000000002',
+    (select id from public.unidades where empresa_id = 'b0000000-0000-4000-8000-000000000002' and is_matriz limit 1),
+    'Equipamento privado B',
+    'EQ-B'
+  );
 
-insert into public.manutencoes(id, empresa_id, equipamento_id, natureza, data_manutencao) values
-  ('a3000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', 'a2000000-0000-4000-8000-000000000001', 'preventiva', current_date),
-  ('b3000000-0000-4000-8000-000000000002', 'b0000000-0000-4000-8000-000000000002', 'b2000000-0000-4000-8000-000000000002', 'preventiva', current_date);
+insert into public.manutencoes(id, empresa_id, unidade_id, equipamento_id, natureza, data_manutencao) values
+  (
+    'a3000000-0000-4000-8000-000000000001',
+    'a0000000-0000-4000-8000-000000000001',
+    (select id from public.unidades where empresa_id = 'a0000000-0000-4000-8000-000000000001' and is_matriz limit 1),
+    'a2000000-0000-4000-8000-000000000001',
+    'preventiva',
+    current_date
+  ),
+  (
+    'b3000000-0000-4000-8000-000000000002',
+    'b0000000-0000-4000-8000-000000000002',
+    (select id from public.unidades where empresa_id = 'b0000000-0000-4000-8000-000000000002' and is_matriz limit 1),
+    'b2000000-0000-4000-8000-000000000002',
+    'preventiva',
+    current_date
+  );
 
 insert into public.documento_revisoes(id,empresa_id,documento_id,numero_versao,snapshot_json,conteudo_hash,created_by) values
   ('a4000000-0000-4000-8000-000000000001','a0000000-0000-4000-8000-000000000001','a1000000-0000-4000-8000-000000000001',1,'{}','hash-a','10000000-0000-4000-8000-000000000001'),
@@ -73,6 +99,12 @@ begin
     execute format('alter table public.%I enable trigger user', v_table);
   end loop;
 end $$;
+
+select set_config(
+  'conform.test.unit_b',
+  (select id::text from public.unidades where empresa_id = 'b0000000-0000-4000-8000-000000000002' and is_matriz limit 1),
+  true
+);
 
 set local role authenticated;
 select set_config(
@@ -125,8 +157,13 @@ begin
   end;
 
   begin
-    insert into public.equipamentos(empresa_id, nome, codigo_interno)
-    values ('b0000000-0000-4000-8000-000000000002', 'Tentativa cruzada', 'EQ-LEAK');
+    insert into public.equipamentos(empresa_id, unidade_id, nome, codigo_interno)
+    values (
+      'b0000000-0000-4000-8000-000000000002',
+      current_setting('conform.test.unit_b')::uuid,
+      'Tentativa cruzada',
+      'EQ-LEAK'
+    );
     raise exception 'TENANT_EQUIPMENT_WRITE_LEAK';
   exception
     when insufficient_privilege then null;

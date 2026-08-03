@@ -53,6 +53,29 @@ values (
   true
 );
 
+-- O fixture representa registros que já existiam antes da multiunidade. Eles são
+-- carregados diretamente e os controles normais voltam a ser ativados antes do upgrade.
+do $$
+declare
+  v_table text;
+begin
+  foreach v_table in array array[
+    'documentos',
+    'equipamentos',
+    'calibracoes',
+    'qualificacoes',
+    'manutencoes',
+    'pendencias',
+    'anexos',
+    'alertas',
+    'interacoes_assistente',
+    'relatorios_agendados'
+  ] loop
+    execute format('alter table public.%I disable trigger user', v_table);
+  end loop;
+end
+$$;
+
 insert into public.documentos (
   id, empresa_id, nome, numero_documento, exige_anexo, setor_unidade
 ) values (
@@ -179,3 +202,24 @@ insert into public.relatorios_agendados (
   array['legacy-multiunit@test.local'],
   '82000000-0000-4000-8000-000000000001'
 );
+
+do $$
+declare
+  v_table text;
+begin
+  foreach v_table in array array[
+    'documentos',
+    'equipamentos',
+    'calibracoes',
+    'qualificacoes',
+    'manutencoes',
+    'pendencias',
+    'anexos',
+    'alertas',
+    'interacoes_assistente',
+    'relatorios_agendados'
+  ] loop
+    execute format('alter table public.%I enable trigger user', v_table);
+  end loop;
+end
+$$;
