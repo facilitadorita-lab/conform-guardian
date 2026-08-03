@@ -5,10 +5,12 @@
 | Ambiente | Finalidade | Dados | Publicação |
 |---|---|---|---|
 | Desenvolvimento | Implementação local | Sintéticos | Manual |
-| Homologação | Validação funcional e regressão | Sintéticos, nunca cópia irrestrita de produção | Automática na branch `staging` |
+| Homologação | Validação funcional e regressão | Sintéticos, nunca cópia irrestrita de produção | Manual pelo workflow protegido `Deploy Supabase staging` |
 | Produção | Clientes pagantes | Reais e isolados por empresa | Manual, protegida e auditada |
 
 Cada ambiente deve usar um projeto Supabase diferente. Chaves de produção nunca podem ser usadas em desenvolvimento ou homologação.
+
+O procedimento completo de preparação, implantação e aceite da homologação está em `docs/HOMOLOGATION_RUNBOOK.md`.
 
 ## Critérios de entrada em produção
 
