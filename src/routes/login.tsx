@@ -39,8 +39,14 @@ function LoginPage() {
   const [forgotMsg, setForgotMsg] = useState<string | null>(null);
   const [forgotErr, setForgotErr] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const contextErrorMessage =
     user && contextError && !contextLoading ? formatLoginContextError(contextError) : null;
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setHydrated(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -156,6 +162,7 @@ function LoginPage() {
                     <input
                       type="email"
                       required
+                      disabled={!hydrated}
                       autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -170,6 +177,7 @@ function LoginPage() {
                     <span className="text-sm font-semibold text-slate-700">Senha</span>
                     <button
                       type="button"
+                      disabled={!hydrated}
                       onClick={() => setShowForgot((value) => !value)}
                       className="rounded-lg px-2 py-1 text-xs font-semibold text-cyan-700 outline-none hover:bg-cyan-50 hover:text-cyan-900 focus-visible:ring-4 focus-visible:ring-cyan-100"
                     >
@@ -181,6 +189,7 @@ function LoginPage() {
                     <input
                       type={showPassword ? "text" : "password"}
                       required
+                      disabled={!hydrated}
                       autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -189,6 +198,7 @@ function LoginPage() {
                     />
                     <button
                       type="button"
+                      disabled={!hydrated}
                       onClick={() => setShowPassword((value) => !value)}
                       className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 outline-none hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-4 focus-visible:ring-cyan-100"
                       aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
@@ -209,7 +219,7 @@ function LoginPage() {
 
                 <Button
                   type="submit"
-                  disabled={submitting}
+                  disabled={!hydrated || submitting}
                   className="h-12 w-full rounded-xl bg-slate-950 text-white shadow-lg shadow-slate-950/10 hover:-translate-y-0.5 hover:bg-slate-800"
                 >
                   {submitting ? "Entrando..." : "Entrar na plataforma"}
