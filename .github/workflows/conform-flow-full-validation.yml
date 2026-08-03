@@ -173,7 +173,7 @@ jobs:
             | tee artifacts/validation/stripe/contracts.log
 
       - name: Lint database
-        run: supabase db lint --workdir backend --local --level warning
+        run: supabase db lint --workdir backend --local --level warning --fail-on error
 
       - name: Bootstrap isolated accounts and operational fixtures
         run: node scripts/bootstrap-validation.mjs

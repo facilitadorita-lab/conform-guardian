@@ -39,7 +39,7 @@ import { Route as MasterFinanceiroRouteImport } from './routes/master.financeiro
 import { Route as MasterEmpresasRouteImport } from './routes/master.empresas'
 import { Route as MasterAssinaturasRouteImport } from './routes/master.assinaturas'
 import { Route as EquipamentosIdRouteImport } from './routes/equipamentos.$id'
-import { Route as ConfiguracoesUnidadesRouteImport } from './routes/configuracoes.unidades'
+import { Route as ConfiguracoesUnidadesRouteImport } from './routes/configuracoes_.unidades'
 import { Route as CheckoutSucessoRouteImport } from './routes/checkout.sucesso'
 import { Route as EquipamentoQrTokenRouteImport } from './routes/equipamento.qr.$token'
 
@@ -196,9 +196,9 @@ const EquipamentosIdRoute = EquipamentosIdRouteImport.update({
   getParentRoute: () => EquipamentosRoute,
 } as any)
 const ConfiguracoesUnidadesRoute = ConfiguracoesUnidadesRouteImport.update({
-  id: '/unidades',
-  path: '/unidades',
-  getParentRoute: () => ConfiguracoesRoute,
+  id: '/configuracoes_/unidades',
+  path: '/configuracoes/unidades',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutSucessoRoute = CheckoutSucessoRouteImport.update({
   id: '/checkout/sucesso',
@@ -217,7 +217,7 @@ export interface FileRoutesByFullPath {
   '/assistente': typeof AssistenteRoute
   '/auditoria': typeof AuditoriaRoute
   '/cadastro': typeof CadastroRoute
-  '/configuracoes': typeof ConfiguracoesRouteWithChildren
+  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
@@ -252,7 +252,7 @@ export interface FileRoutesByTo {
   '/assistente': typeof AssistenteRoute
   '/auditoria': typeof AuditoriaRoute
   '/cadastro': typeof CadastroRoute
-  '/configuracoes': typeof ConfiguracoesRouteWithChildren
+  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
@@ -288,7 +288,7 @@ export interface FileRoutesById {
   '/assistente': typeof AssistenteRoute
   '/auditoria': typeof AuditoriaRoute
   '/cadastro': typeof CadastroRoute
-  '/configuracoes': typeof ConfiguracoesRouteWithChildren
+  '/configuracoes': typeof ConfiguracoesRoute
   '/dashboard': typeof DashboardRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
@@ -301,7 +301,7 @@ export interface FileRoutesById {
   '/usuarios': typeof UsuariosRoute
   '/vencimentos': typeof VencimentosRoute
   '/checkout/sucesso': typeof CheckoutSucessoRoute
-  '/configuracoes/unidades': typeof ConfiguracoesUnidadesRoute
+  '/configuracoes_/unidades': typeof ConfiguracoesUnidadesRoute
   '/equipamentos/$id': typeof EquipamentosIdRoute
   '/master/assinaturas': typeof MasterAssinaturasRoute
   '/master/empresas': typeof MasterEmpresasRoute
@@ -408,7 +408,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/vencimentos'
     | '/checkout/sucesso'
-    | '/configuracoes/unidades'
+    | '/configuracoes_/unidades'
     | '/equipamentos/$id'
     | '/master/assinaturas'
     | '/master/empresas'
@@ -431,7 +431,7 @@ export interface RootRouteChildren {
   AssistenteRoute: typeof AssistenteRoute
   AuditoriaRoute: typeof AuditoriaRoute
   CadastroRoute: typeof CadastroRoute
-  ConfiguracoesRoute: typeof ConfiguracoesRouteWithChildren
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
   DashboardRoute: typeof DashboardRoute
   DefinirSenhaRoute: typeof DefinirSenhaRoute
   DocumentosRoute: typeof DocumentosRoute
@@ -444,6 +444,7 @@ export interface RootRouteChildren {
   UsuariosRoute: typeof UsuariosRoute
   VencimentosRoute: typeof VencimentosRoute
   CheckoutSucessoRoute: typeof CheckoutSucessoRoute
+  ConfiguracoesUnidadesRoute: typeof ConfiguracoesUnidadesRoute
   MasterAssinaturasRoute: typeof MasterAssinaturasRoute
   MasterEmpresasRoute: typeof MasterEmpresasRoute
   MasterFinanceiroRoute: typeof MasterFinanceiroRoute
@@ -671,12 +672,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EquipamentosIdRouteImport
       parentRoute: typeof EquipamentosRoute
     }
-    '/configuracoes/unidades': {
-      id: '/configuracoes/unidades'
-      path: '/unidades'
+    '/configuracoes_/unidades': {
+      id: '/configuracoes_/unidades'
+      path: '/configuracoes/unidades'
       fullPath: '/configuracoes/unidades'
       preLoaderRoute: typeof ConfiguracoesUnidadesRouteImport
-      parentRoute: typeof ConfiguracoesRoute
+      parentRoute: typeof rootRouteImport
     }
     '/checkout/sucesso': {
       id: '/checkout/sucesso'
@@ -694,18 +695,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface ConfiguracoesRouteChildren {
-  ConfiguracoesUnidadesRoute: typeof ConfiguracoesUnidadesRoute
-}
-
-const ConfiguracoesRouteChildren: ConfiguracoesRouteChildren = {
-  ConfiguracoesUnidadesRoute: ConfiguracoesUnidadesRoute,
-}
-
-const ConfiguracoesRouteWithChildren = ConfiguracoesRoute._addFileChildren(
-  ConfiguracoesRouteChildren,
-)
 
 interface EquipamentosRouteChildren {
   EquipamentosIdRoute: typeof EquipamentosIdRoute
@@ -725,7 +714,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssistenteRoute: AssistenteRoute,
   AuditoriaRoute: AuditoriaRoute,
   CadastroRoute: CadastroRoute,
-  ConfiguracoesRoute: ConfiguracoesRouteWithChildren,
+  ConfiguracoesRoute: ConfiguracoesRoute,
   DashboardRoute: DashboardRoute,
   DefinirSenhaRoute: DefinirSenhaRoute,
   DocumentosRoute: DocumentosRoute,
@@ -738,6 +727,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsuariosRoute: UsuariosRoute,
   VencimentosRoute: VencimentosRoute,
   CheckoutSucessoRoute: CheckoutSucessoRoute,
+  ConfiguracoesUnidadesRoute: ConfiguracoesUnidadesRoute,
   MasterAssinaturasRoute: MasterAssinaturasRoute,
   MasterEmpresasRoute: MasterEmpresasRoute,
   MasterFinanceiroRoute: MasterFinanceiroRoute,

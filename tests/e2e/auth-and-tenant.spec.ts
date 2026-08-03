@@ -25,7 +25,7 @@ test.describe("autenticação pela interface", () => {
     await page.locator('input[autocomplete="current-password"]').fill(password);
     await page.getByRole("button", { name: "Entrar na plataforma" }).click();
     await expect(page).toHaveURL(/\/master\/empresas/);
-    await expect(page.getByText("Empresas", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Empresas e parceiros" })).toBeVisible();
   });
 });
 
