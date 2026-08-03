@@ -29,7 +29,7 @@ Deno.serve(async (request: Request) => {
     return json({ error: "CATALOG_SYNC_NOT_CONFIGURED" }, 503);
   }
 
-  if (request.headers.get("authorization") !== `Bearer ${serviceRoleKey}`) {
+  if (!isServiceRoleRequest(request, serviceRoleKey, supabaseUrl)) {
     return json({ error: "UNAUTHORIZED" }, 401);
   }
 
@@ -355,6 +355,41 @@ function stripeMode(secret: string) {
   if (/^(sk|rk)_test_/.test(secret)) return "test";
   if (/^(sk|rk)_live_/.test(secret)) return "live";
   return "unknown";
+}
+
+function isServiceRoleRequest(request: Request, internalServiceKey: string, supabaseUrl: string) {
+  const authorization = request.headers.get("authorization") ?? "";
+  const token = authorization.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return false;
+
+  // New Supabase secret keys are available to the function through the runtime,
+  // while CI may still use the legacy, gateway-verified service_role JWT.
+  if (token === internalServiceKey) return true;
+
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+    const header = JSON.parse(decodeBase64Url(parts[0])) as JsonObject;
+    const claims = JSON.parse(decodeBase64Url(parts[1])) as JsonObject;
+    const expectedRef = new URL(supabaseUrl).hostname.split(".")[0];
+    const expiresAt = Number(claims.exp);
+    return (
+      text(header.alg) === "HS256" &&
+      text(claims.iss) === "supabase" &&
+      text(claims.role) === "service_role" &&
+      text(claims.ref) === expectedRef &&
+      Number.isFinite(expiresAt) &&
+      expiresAt * 1000 > Date.now()
+    );
+  } catch {
+    return false;
+  }
+}
+
+function decodeBase64Url(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
+  return atob(`${normalized}${padding}`);
 }
 
 function text(value: unknown) {
