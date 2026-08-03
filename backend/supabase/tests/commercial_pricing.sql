@@ -45,5 +45,18 @@ begin
       and preco_usuario_extra_centavos = 2990
       and preco_unidade_extra_centavos = 6990
   ) then raise exception 'COMMERCIAL_ADDONS_PRICE_INVALID'; end if;
+
+  if not has_table_privilege('service_role', 'public.planos', 'SELECT, UPDATE') then
+    raise exception 'SERVICE_ROLE_PLAN_CATALOG_PRIVILEGES_MISSING';
+  end if;
+
+  if not has_table_privilege('service_role', 'public.configuracoes_comerciais', 'SELECT, UPDATE') then
+    raise exception 'SERVICE_ROLE_COMMERCIAL_CONFIGURATION_PRIVILEGES_MISSING';
+  end if;
+
+  if has_table_privilege('anon', 'public.configuracoes_comerciais', 'SELECT')
+    or has_table_privilege('authenticated', 'public.configuracoes_comerciais', 'SELECT') then
+    raise exception 'COMMERCIAL_CONFIGURATION_EXPOSED_TO_CLIENTS';
+  end if;
 end;
 $$;
