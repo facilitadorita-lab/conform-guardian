@@ -1525,7 +1525,7 @@ create or replace function public.api_criar_documento(
   p_empresa_id uuid,
   p_payload jsonb
 )
-returns public.documentos
+returns jsonb
 language plpgsql
 security definer
 set search_path = public, auth, pg_temp
@@ -1586,7 +1586,7 @@ begin
   )
   returning * into v_row;
 
-  return v_row;
+  return to_jsonb(v_row);
 end
 $$;
 
@@ -1594,7 +1594,7 @@ create or replace function public.api_criar_equipamento(
   p_empresa_id uuid,
   p_payload jsonb
 )
-returns public.equipamentos
+returns jsonb
 language plpgsql
 security definer
 set search_path = public, auth, pg_temp
@@ -1642,7 +1642,7 @@ begin
   )
   returning * into v_row;
 
-  return v_row;
+  return to_jsonb(v_row);
 end
 $$;
 
@@ -1651,7 +1651,7 @@ create or replace function public.api_criar_calibracao(
   p_equipamento_id uuid,
   p_payload jsonb
 )
-returns public.calibracoes
+returns jsonb
 language plpgsql
 security definer
 set search_path = public, auth, pg_temp
@@ -1696,7 +1696,7 @@ begin
   )
   returning * into v_row;
 
-  return v_row;
+  return to_jsonb(v_row);
 end
 $$;
 
@@ -1705,7 +1705,7 @@ create or replace function public.api_criar_qualificacao(
   p_equipamento_id uuid,
   p_payload jsonb
 )
-returns public.qualificacoes
+returns jsonb
 language plpgsql
 security definer
 set search_path = public, auth, pg_temp
@@ -1750,7 +1750,7 @@ begin
   )
   returning * into v_row;
 
-  return v_row;
+  return to_jsonb(v_row);
 end
 $$;
 
@@ -1758,7 +1758,7 @@ create or replace function public.api_criar_manutencao(
   p_empresa_id uuid,
   p_payload jsonb
 )
-returns public.manutencoes
+returns jsonb
 language plpgsql
 security definer
 set search_path = public, auth, pg_temp
@@ -1828,7 +1828,7 @@ begin
   )
   returning * into v_row;
 
-  return v_row;
+  return to_jsonb(v_row);
 end
 $$;
 
