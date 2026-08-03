@@ -105,7 +105,7 @@ function LoginPage() {
     setForgotLoading(true);
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: "https://conform-guardian.lovable.app/definir-senha",
+        redirectTo: `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/definir-senha`,
       });
       if (resetError) throw resetError;
       setForgotMsg("Enviamos um link para o e-mail informado. Verifique sua caixa de entrada.");

@@ -1,0 +1,71 @@
+name: Deploy frontend staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Digite PUBLICAR-HOMOLOGACAO para confirmar a publicação do frontend de testes
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: conform-flow-frontend-staging
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    env:
+      VITE_USE_MOCKS: "false"
+      VITE_APP_BASE_PATH: /conform-guardian
+      VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - name: Block unconfirmed deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ inputs.confirmation }}" = "PUBLICAR-HOMOLOGACAO"
+          test -n "$VITE_SUPABASE_URL"
+          test -n "$VITE_SUPABASE_ANON_KEY"
+          test "$VITE_SUPABASE_URL" != "https://tvtpxgzwhakpypjdzphe.supabase.co"
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit
+      - name: Build isolated staging frontend
+        run: pnpm exec vite build --config vite.staging.config.ts
+      - name: Prepare GitHub Pages fallback
+        shell: bash
+        run: |
+          cp dist-staging/index.html dist-staging/404.html
+          touch dist-staging/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-staging
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy staging frontend
+        id: deployment
+        uses: actions/deploy-pages@v4

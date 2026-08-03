@@ -793,7 +793,7 @@ function EquipmentQrDialog({
 }) {
   const targetUrl =
     token && typeof window !== "undefined"
-      ? `${window.location.origin}/equipamento/qr/${token}`
+      ? `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/equipamento/qr/${token}`
       : "";
   const { data: dataUrl = "" } = useQuery({
     queryKey: ["equipment-qr-image", targetUrl],
