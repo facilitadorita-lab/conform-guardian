@@ -375,7 +375,7 @@ function AccessValidationScreen({ error }: { error?: Error | null }) {
     <main className="cf-subtle-grid flex min-h-screen items-center justify-center bg-background p-6">
       <section className="cf-page-card flex max-w-md flex-col items-center gap-4 p-8 text-center">
         <img
-          src="/conform-flow-logo-transparent.png"
+          src={`${import.meta.env.BASE_URL}conform-flow-logo-transparent.png`}
           alt="Conform Flow"
           className="h-16 w-16 object-contain"
         />
@@ -429,7 +429,7 @@ function BlockedAccessScreen({
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white">
             <img
-              src="/conform-flow-logo-transparent.png"
+              src={`${import.meta.env.BASE_URL}conform-flow-logo-transparent.png`}
               alt="Conform Flow"
               className="h-12 w-12 object-contain"
             />

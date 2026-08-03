@@ -40,6 +40,12 @@ import { cn } from "@/lib/utils";
 import { formatCurrencyFromCents } from "@/utils/money";
 import type { BillingInterval, PublicPlanCatalogItem } from "@/types";
 
+const publicBasePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+function withPublicBasePath(href: string) {
+  return href.startsWith("/") ? `${publicBasePath}${href}` : href;
+}
+
 export const publicModules = [
   {
     title: "Dashboard executivo",
@@ -132,7 +138,7 @@ export function LogoSignature({
         )}
       >
         <img
-          src="/conform-flow-logo-transparent.png"
+          src={withPublicBasePath("/conform-flow-logo-transparent.png")}
           alt="Conform Flow"
           className="h-full w-full object-contain"
         />
@@ -170,16 +176,22 @@ export function PublicHeader() {
         </Link>
 
         <nav className="hidden items-center gap-7 text-sm font-medium text-slate-600 lg:flex">
-          <a className="transition-colors hover:text-slate-950" href="/#beneficios">
+          <a
+            className="transition-colors hover:text-slate-950"
+            href={withPublicBasePath("/#beneficios")}
+          >
             Benefícios
           </a>
-          <a className="transition-colors hover:text-slate-950" href="/#modulos">
+          <a
+            className="transition-colors hover:text-slate-950"
+            href={withPublicBasePath("/#modulos")}
+          >
             Módulos
           </a>
           <Link className="transition-colors hover:text-slate-950" to="/planos">
             Planos
           </Link>
-          <a className="transition-colors hover:text-slate-950" href="/#faq">
+          <a className="transition-colors hover:text-slate-950" href={withPublicBasePath("/#faq")}>
             FAQ
           </a>
         </nav>
@@ -271,10 +283,10 @@ export function PublicFooter() {
         <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2 px-5 py-6 text-xs text-slate-500 md:flex-row lg:px-8">
           <span>© {new Date().getFullYear()} Conform Flow. Todos os direitos reservados.</span>
           <span className="flex items-center gap-4">
-            <a href="/#faq" className="transition-colors hover:text-slate-300">
+            <a href={withPublicBasePath("/#faq")} className="transition-colors hover:text-slate-300">
               Termos de uso
             </a>
-            <a href="/#faq" className="transition-colors hover:text-slate-300">
+            <a href={withPublicBasePath("/#faq")} className="transition-colors hover:text-slate-300">
               Privacidade
             </a>
           </span>
@@ -298,7 +310,7 @@ function FooterGroup({
         {links.map((link) => (
           <a
             key={link.label}
-            href={link.href}
+            href={withPublicBasePath(link.href)}
             className="transition-colors hover:text-white"
           >
             {link.label}
@@ -493,7 +505,11 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
                     : "bg-white text-slate-950 ring-1 ring-slate-200 hover:bg-slate-50",
                 )}
               >
-                <a href={`/cadastro?plan=${encodeURIComponent(plan.codigo)}&interval=${interval}`}>
+                <a
+                  href={withPublicBasePath(
+                    `/cadastro?plan=${encodeURIComponent(plan.codigo)}&interval=${interval}`,
+                  )}
+                >
                   Assinar {plan.nome}
                 </a>
               </Button>
