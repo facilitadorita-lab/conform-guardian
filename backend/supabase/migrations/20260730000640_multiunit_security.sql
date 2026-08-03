@@ -669,6 +669,26 @@ revoke all on table public.unidades, public.usuarios_unidades, public.transferen
 grant select on table public.unidades, public.usuarios_unidades, public.transferencias_unidades to authenticated;
 grant all on table public.unidades, public.usuarios_unidades, public.transferencias_unidades to service_role;
 
+-- O backend confiável usa a service_role para provisionamento, webhooks e
+-- rotinas administrativas. As tabelas legadas foram criadas antes de os
+-- privilégios padrão do Supabase serem normalizados, portanto o papel não
+-- herdava acesso a elas em uma instalação limpa.
+grant all on table
+  public.planos,
+  public.empresas,
+  public.usuarios,
+  public.usuarios_empresas,
+  public.assinaturas_empresas,
+  public.relacionamentos_parceiro_clientes,
+  public.limites_acesso_empresa,
+  public.documentos,
+  public.equipamentos,
+  public.calibracoes,
+  public.qualificacoes,
+  public.manutencoes,
+  public.pendencias
+to service_role;
+
 revoke all on function public.resolve_record_unit(uuid, text, uuid) from public, anon;
 revoke all on function public.ensure_company_matrix_unit() from public, anon;
 revoke all on function public.unit_belongs_to_company(uuid, uuid) from public, anon;
