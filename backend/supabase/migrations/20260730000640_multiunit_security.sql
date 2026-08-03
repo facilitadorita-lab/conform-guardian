@@ -308,9 +308,7 @@ begin
     if new.unidade_id is null then
       raise exception 'UNIT_REQUIRED' using errcode = '23514';
     end if;
-  elsif tg_table_name in ('calibracoes', 'qualificacoes')
-    or (tg_table_name = 'manutencoes' and new.equipamento_id is not null)
-  then
+  elsif tg_table_name = 'calibracoes' then
     select e.empresa_id, e.unidade_id
     into v_empresa_id, v_unidade_id
     from public.equipamentos e
@@ -321,16 +319,59 @@ begin
       raise exception 'EQUIPMENT_COMPANY_MISMATCH' using errcode = '23503';
     end if;
 
-    if tg_op = 'INSERT'
-      or new.equipamento_id is distinct from old.equipamento_id
-      or new.unidade_id is null
-    then
+    if tg_op = 'INSERT' then
       new.unidade_id := v_unidade_id;
-    elsif new.unidade_id <> v_unidade_id then
+    elsif new.equipamento_id is distinct from old.equipamento_id then
+      new.unidade_id := v_unidade_id;
+    elsif new.unidade_id is null then
+      new.unidade_id := v_unidade_id;
+    elsif new.unidade_id is distinct from old.unidade_id then
       raise exception 'EQUIPMENT_UNIT_MISMATCH' using errcode = '23514';
     end if;
-  elsif tg_table_name = 'manutencoes' and new.unidade_id is null then
-    raise exception 'UNIT_REQUIRED' using errcode = '23514';
+  elsif tg_table_name = 'qualificacoes' then
+    select e.empresa_id, e.unidade_id
+    into v_empresa_id, v_unidade_id
+    from public.equipamentos e
+    where e.id = new.equipamento_id
+      and e.deleted_at is null;
+
+    if v_empresa_id is null or v_empresa_id <> new.empresa_id then
+      raise exception 'EQUIPMENT_COMPANY_MISMATCH' using errcode = '23503';
+    end if;
+
+    if tg_op = 'INSERT' then
+      new.unidade_id := v_unidade_id;
+    elsif new.equipamento_id is distinct from old.equipamento_id then
+      new.unidade_id := v_unidade_id;
+    elsif new.unidade_id is null then
+      new.unidade_id := v_unidade_id;
+    elsif new.unidade_id is distinct from old.unidade_id then
+      raise exception 'EQUIPMENT_UNIT_MISMATCH' using errcode = '23514';
+    end if;
+  elsif tg_table_name = 'manutencoes' then
+    if new.equipamento_id is not null then
+      select e.empresa_id, e.unidade_id
+      into v_empresa_id, v_unidade_id
+      from public.equipamentos e
+      where e.id = new.equipamento_id
+        and e.deleted_at is null;
+
+      if v_empresa_id is null or v_empresa_id <> new.empresa_id then
+        raise exception 'EQUIPMENT_COMPANY_MISMATCH' using errcode = '23503';
+      end if;
+
+      if tg_op = 'INSERT' then
+        new.unidade_id := v_unidade_id;
+      elsif new.equipamento_id is distinct from old.equipamento_id then
+        new.unidade_id := v_unidade_id;
+      elsif new.unidade_id is null then
+        new.unidade_id := v_unidade_id;
+      elsif new.unidade_id is distinct from old.unidade_id then
+        raise exception 'EQUIPMENT_UNIT_MISMATCH' using errcode = '23514';
+      end if;
+    elsif new.unidade_id is null then
+      raise exception 'UNIT_REQUIRED' using errcode = '23514';
+    end if;
   elsif tg_table_name = 'tratativas_pendencias' then
     select p.empresa_id, p.unidade_id
     into v_empresa_id, v_unidade_id
@@ -657,4 +698,3 @@ grant execute on function public.active_company_unit_count(uuid) to authenticate
 grant execute on function public.effective_unit_limit(uuid) to authenticated, service_role;
 grant execute on function public.can_create_company_unit(uuid) to authenticated, service_role;
 grant execute on function public.can_access_evidence_object(text) to authenticated, service_role;
-
