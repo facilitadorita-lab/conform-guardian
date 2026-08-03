@@ -256,7 +256,7 @@ test.describe("experiência multiunidade na interface", () => {
     await expect(switcher.locator('option[value="consolidado"]')).toHaveCount(1);
 
     await page.goto("/configuracoes/unidades");
-    await expect(page.getByRole("heading", { name: "Unidades" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Unidades", exact: true })).toBeVisible();
     await expect(page.getByText("3 de 3", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: /Nova unidade/i })).toBeDisabled();
   });
