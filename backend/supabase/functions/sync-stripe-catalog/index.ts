@@ -142,7 +142,7 @@ Deno.serve(async (request: Request) => {
       }
 
       const { error: updateError } = await admin.from("planos").update(updates).eq("id", plan.id);
-      if (updateError) throw new Error(`PLAN_UPDATE_FAILED:${plan.codigo}`);
+      if (updateError) throw new Error(`PLAN_UPDATE_FAILED:${plan.codigo}:${updateError.code}`);
     }
 
     const { data: config, error: configError } = await admin
@@ -152,7 +152,8 @@ Deno.serve(async (request: Request) => {
       )
       .eq("id", true)
       .maybeSingle();
-    if (configError || !config) throw new Error("COMMERCIAL_CONFIGURATION_NOT_FOUND");
+    if (configError) throw new Error(`COMMERCIAL_CONFIGURATION_QUERY_FAILED:${configError.code}`);
+    if (!config) throw new Error("COMMERCIAL_CONFIGURATION_NOT_FOUND");
 
     const userExtra = await syncAddon(stripeSecretKey, {
       name: "Conform Flow - usuario adicional",
@@ -181,10 +182,13 @@ Deno.serve(async (request: Request) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", true);
-    if (configUpdateError) throw new Error("COMMERCIAL_CONFIGURATION_UPDATE_FAILED");
+    if (configUpdateError) {
+      throw new Error(`COMMERCIAL_CONFIGURATION_UPDATE_FAILED:${configUpdateError.code}`);
+    }
   } catch (error) {
-    console.error("stripe_catalog_sync_failed", error instanceof Error ? error.message : "unknown");
-    return json({ error: "STRIPE_CATALOG_SYNC_FAILED" }, 502);
+    const reason = safeFailureReason(error);
+    console.error("stripe_catalog_sync_failed", reason);
+    return json({ error: "STRIPE_CATALOG_SYNC_FAILED", reason }, 502);
   }
 
   return json({
@@ -390,6 +394,12 @@ function decodeBase64Url(value: string) {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
   const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
   return atob(`${normalized}${padding}`);
+}
+
+function safeFailureReason(error: unknown) {
+  const raw = error instanceof Error ? error.message : "UNKNOWN";
+  const safe = raw.toUpperCase().replace(/[^A-Z0-9_:.-]/g, "_").slice(0, 160);
+  return safe || "UNKNOWN";
 }
 
 function text(value: unknown) {
