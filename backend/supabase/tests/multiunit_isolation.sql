@@ -2,7 +2,8 @@
 -- Executa apenas no Supabase local e desfaz todas as fixtures ao final.
 
 begin;
-set local role service_role;
+-- A criação direta de identidades pertence ao executor administrativo do fixture.
+reset role;
 
 insert into auth.users(
   id, instance_id, aud, role, email, encrypted_password,
@@ -139,8 +140,8 @@ insert into public.anexos(
   id, empresa_id, modulo, registro_id, finalidade, storage_path,
   nome_original, mime_type, tamanho_bytes
 ) values
-  ('81000000-0000-4000-8000-000000000501', '81000000-0000-4000-8000-000000000010', 'documentos', '81000000-0000-4000-8000-000000000202', 'principal', '81000000-0000-4000-8000-000000000010/81000000-0000-4000-8000-000000000101/documentos/a/teste.pdf', 'teste-a.pdf', 'application/pdf', 100),
-  ('81000000-0000-4000-8000-000000000502', '81000000-0000-4000-8000-000000000010', 'documentos', '81000000-0000-4000-8000-000000000203', 'principal', '81000000-0000-4000-8000-000000000010/81000000-0000-4000-8000-000000000102/documentos/b/teste.pdf', 'teste-b.pdf', 'application/pdf', 100);
+  ('81000000-0000-4000-8000-000000000501', '81000000-0000-4000-8000-000000000010', 'documentos', '81000000-0000-4000-8000-000000000202', 'principal', '81000000-0000-4000-8000-000000000010/documentos/81000000-0000-4000-8000-000000000202/teste-a.pdf', 'teste-a.pdf', 'application/pdf', 100),
+  ('81000000-0000-4000-8000-000000000502', '81000000-0000-4000-8000-000000000010', 'documentos', '81000000-0000-4000-8000-000000000203', 'principal', '81000000-0000-4000-8000-000000000010/documentos/81000000-0000-4000-8000-000000000203/teste-b.pdf', 'teste-b.pdf', 'application/pdf', 100);
 
 do $$
 declare
@@ -206,11 +207,11 @@ begin
   end if;
 
   if not public.can_access_evidence_object(
-    '81000000-0000-4000-8000-000000000010/81000000-0000-4000-8000-000000000101/documentos/a/teste.pdf'
+    '81000000-0000-4000-8000-000000000010/documentos/81000000-0000-4000-8000-000000000202/teste-a.pdf'
   ) then raise exception 'AUTHORIZED_STORAGE_OBJECT_DENIED'; end if;
 
   if public.can_access_evidence_object(
-    '81000000-0000-4000-8000-000000000010/81000000-0000-4000-8000-000000000102/documentos/b/teste.pdf'
+    '81000000-0000-4000-8000-000000000010/documentos/81000000-0000-4000-8000-000000000203/teste-b.pdf'
   ) then raise exception 'CROSS_UNIT_STORAGE_OBJECT_LEAK'; end if;
 
   begin
