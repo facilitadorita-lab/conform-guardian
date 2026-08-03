@@ -338,7 +338,9 @@ begin
 end;
 $$;
 
-set local role service_role;
+-- Constraints e triggers internos são exercitados pelo executor administrativo;
+-- o acesso de usuários e service_role já foi coberto nos blocos anteriores.
+reset role;
 
 do $$
 begin
