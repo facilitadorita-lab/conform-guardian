@@ -19,28 +19,28 @@ Testes somente preparados nunca são classificados como PASS.
 | TypeScript | PASS local | `tsc --noEmit` sem erros. |
 | Build de produção | PASS local | Build concluído; maior chunk JavaScript do cliente com aproximadamente 295 kB. |
 | Lint dos arquivos alterados | PASS local | Regras funcionais passaram; a regra de formatação foi deliberadamente excluída para evitar alteração massiva de finais de linha. |
-| Schema multiunidade | PREPARED | Migrations `20260730000600` a `20260730000900` criam modelo, APIs, segurança, auditoria e contratos. |
-| Migração de dados legados | PREPARED | Fixture anterior à multiunidade e ensaio pós-migration estão no workflow descartável. |
-| Banco vazio | PREPARED | Reset completo do Supabase local está configurado no workflow. |
-| Matriz automática | PREPARED | Migration e teste verificam exatamente uma matriz por empresa. |
-| Documentos corporativos e por unidade | PREPARED | Escopo, backfill, RPCs, RLS e cenários SQL/E2E adicionados. |
-| Equipamentos e históricos | PREPARED | Unidade obrigatória, herança, transferência e preservação histórica cobertas. |
-| Usuários por unidade | PREPARED | Acesso global/específico, unidade principal e FK composta cobertos. |
-| RLS empresa + unidade | PREPARED | SQL testa SELECT, escrita, UUID cruzado, RPC, Storage, QR e FlowIA. |
-| Limite base + add-on | PREPARED | Limite efetivo usa assinatura e teste de regressão usa unidades reais. |
-| Concorrência da última vaga | PREPARED | Duas criações simultâneas e resultado único são exercitados por script. |
-| CRUD e seletor de unidades | PREPARED | Página, contexto, cache por empresa/unidade e cenários desktop/mobile adicionados. |
-| Dashboard e vencimentos | PREPARED | RPCs e telas suportam unidade ou consolidado. |
-| Relatórios | PREPARED | Escopo por unidade, consolidado, agendamento e relatório executivo com IA. |
-| FlowIA | PREPARED | Contexto recalculado no backend, sem leitura de anexos. |
-| QR Code | PREPARED | Resolução por equipamento, empresa e unidade; UUID não autorizado é negado. |
-| Parceiros | PREPARED | Carteira preserva cliente e unidade; parceiro vizinho é negado. |
-| Admin Master | PREPARED | Uso, limite, add-on, excesso, parceiro e receita de unidade extra. |
-| Auditoria | PREPARED | Unidade, trocas, transferências, acesso e ações semânticas são registradas. |
-| E2E | PREPARED | 22 cenários explícitos, executados em desktop/mobile quando aplicável. |
-| Carga controlada | PREPARED | 20 empresas, 1–5 unidades, 100 usuários e registros distribuídos. |
+| Schema multiunidade | PASS | Migrations divididas por estrutura, backfills, contratos e segurança; instalação limpa aprovada. |
+| Migração de dados legados | PASS | Fixture anterior à multiunidade preservada e validada após as migrations. |
+| Banco vazio | PASS | Reset completo do Supabase local aprovado. |
+| Matriz automática | PASS | Teste confirma exatamente uma matriz por empresa. |
+| Documentos corporativos e por unidade | PASS | Escopo, backfill, RPCs, RLS e cenários SQL/E2E aprovados. |
+| Equipamentos e históricos | PASS | Unidade obrigatória, herança, transferência e preservação histórica aprovadas. |
+| Usuários por unidade | PASS | Acesso global/específico, unidade principal e FK composta aprovados. |
+| RLS empresa + unidade | PASS | SELECT, escrita, UUID cruzado, RPC, Storage, QR e FlowIA aprovados. |
+| Limite base + add-on | PASS | Limite efetivo e regressão com unidades reais aprovados. |
+| Concorrência da última vaga | PASS | Duas criações simultâneas resultam em uma única vaga consumida. |
+| CRUD e seletor de unidades | PASS | Página, contexto, cache e cenários desktop/mobile aprovados. |
+| Dashboard e vencimentos | PASS | RPCs e telas por unidade/consolidado aprovados. |
+| Relatórios | PASS | Escopo por unidade, consolidado, agendamento e relatório executivo aprovados. |
+| FlowIA | PASS | Contexto recalculado no backend e ausência de leitura de anexos validados. |
+| QR Code | PASS | Resolução por equipamento/empresa/unidade e negação cruzada aprovadas. |
+| Parceiros | PASS | Carteira própria aprovada; parceiro vizinho permanece negado. |
+| Admin Master | PASS | Login, visão global, capacidade, parceiros e empresas aprovados. |
+| Auditoria | PASS | Imutabilidade e contexto de unidade aprovados. |
+| E2E | PASS | 22 cenários funcionais, totalizando 44 execuções em desktop e mobile. |
+| Carga controlada | PASS | 20 empresas, 60 unidades, 100 usuários e registros distribuídos. |
 | Stripe, SMTP e entrega externa | PARTIAL | Fora do escopo funcional da multiunidade e ainda dependente de sandbox/SMTP de homologação. |
 
 ## Decisão
 
-**MULTIUNIDADE NÃO APROVADA.** A implementação está pronta para validação isolada, mas somente poderá mudar para PASS depois de o workflow completo executar migrations, SQL/RLS, Edge Functions, E2E, concorrência, carga e geração de artifacts.
+**MULTIUNIDADE APROVADA PARA HOMOLOGAÇÃO.** Workflow 30778232447 integralmente verde; artifact `conform-flow-validation-30778232447` disponível por 14 dias. Produção não foi alterada e depende do rollout controlado.

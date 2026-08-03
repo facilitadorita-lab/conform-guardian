@@ -2,7 +2,7 @@
 
 ## Resumo executivo
 
-A implementação multiunidade foi construída na branch `feat/multiunidade-completa` sem alterar o Supabase remoto. O código local passa em TypeScript, build de produção e lint funcional dos arquivos alterados. A validação de banco e navegador foi preparada para um Supabase local descartável no GitHub Actions e ainda precisa ser executada antes da aprovação.
+A implementação multiunidade foi construída na branch `feat/multiunidade-completa` sem alterar o Supabase remoto. A validação integral foi executada em Supabase local descartável no commit `b4373b6` e terminou sem falhas no [workflow 30778232447](https://github.com/facilitadorita-lab/conform-guardian/actions/runs/30778232447).
 
 ## Escopo implementado
 
@@ -21,7 +21,7 @@ A implementação multiunidade foi construída na branch `feat/multiunidade-comp
 - interface desktop, tablet e mobile;
 - ensaio de migração legada, 22 cenários E2E e carga controlada.
 
-## Evidência já executada
+## Evidência executada
 
 | Verificação | Resultado |
 | --- | --- |
@@ -31,12 +31,18 @@ A implementação multiunidade foi construída na branch `feat/multiunidade-comp
 | Scripts de bootstrap, carga e concorrência | PASS de sintaxe |
 | Diferenças inválidas/whitespace | PASS local |
 | Bundle acima de 500 kB | Não ocorre; maior chunk cliente aproximado de 295 kB |
+| Migração a partir do schema legado | PASS no workflow 30778232447 |
+| Instalação completa em banco vazio | PASS no workflow 30778232447 |
+| SQL, RLS, contratos e lint bloqueante do banco | PASS no workflow 30778232447 |
+| Playwright desktop e mobile | PASS, 44 execuções |
+| Carga controlada | PASS, 20 empresas, 60 unidades, 100 usuários e dados operacionais distribuídos |
+| Evidências | Artifact `conform-flow-validation-30778232447`, ID `8842855944`, retenção de 14 dias |
 
 Não foi aplicada formatação automática global. A base usa finais de linha mistos e uma correção integral criaria um commit massivo sem relação funcional.
 
-## Evidência pendente
+## Fluxo validado
 
-O workflow `Conform Flow full isolated validation` deve:
+O workflow `Conform Flow full isolated validation` executou:
 
 1. subir Supabase local;
 2. restaurar o schema anterior à multiunidade;
@@ -61,4 +67,4 @@ O workflow `Conform Flow full isolated validation` deve:
 
 ## Decisão atual
 
-**MULTIUNIDADE NÃO APROVADA.** A implementação está funcionalmente completa no código, porém a aprovação depende do workflow isolado integralmente verde e da análise dos artifacts.
+**MULTIUNIDADE APROVADA PARA HOMOLOGAÇÃO.** A aprovação cobre a implementação e a validação isolada. O Supabase remoto e a produção permanecem inalterados; rollout produtivo continua condicionado a backup, homologação anonimizada e liberação gradual.

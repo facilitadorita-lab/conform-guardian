@@ -49,16 +49,15 @@ Os testes cobrem:
 
 ## Evidência
 
-TypeScript, build e lint funcional passaram localmente. Os testes SQL, RLS, Edge e E2E estão preparados para ambiente descartável, mas ainda não foram executados neste branch. Por isso, o estado operacional permanece **PREPARED**, não PASS.
+TypeScript, build, lint funcional, migrations, SQL, RLS, contratos, Edge Functions e E2E desktop/mobile passaram no ambiente descartável do [workflow 30778232447](https://github.com/facilitadorita-lab/conform-guardian/actions/runs/30778232447). O lint do banco usa `--fail-on error`, portanto erros reais de funções SQL bloqueiam o pipeline.
 
 ## Riscos restantes
 
-1. É obrigatória a execução integral do workflow isolado.
-2. O rollout remoto deve usar backup e cópia anonimizada de homologação.
-3. As duas árvores Supabase aumentam o risco de editar a origem errada.
-4. SMTP, Stripe Test Mode e recuperação de conta requerem validação de segurança própria.
-5. Logs e métricas de negação por unidade devem ser acompanhados no rollout.
+1. O rollout remoto deve usar backup e cópia anonimizada de homologação.
+2. `backend/supabase` deve permanecer como fonte canônica das migrations executadas pelo CI.
+3. SMTP, Stripe Test Mode e recuperação de conta requerem validação de segurança própria.
+4. Logs e métricas de negação por unidade devem ser acompanhados no rollout.
 
 ## Decisão
 
-Segurança de desenho: **implementada e revisada**. Segurança executada da multiunidade: **PENDENTE DO WORKFLOW ISOLADO**.
+Segurança de desenho: **implementada e revisada**. Segurança executada da multiunidade: **PASS EM AMBIENTE ISOLADO**. A passagem para homologação está aprovada; produção permanece condicionada ao rollout controlado.

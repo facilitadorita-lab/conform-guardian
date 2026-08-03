@@ -61,4 +61,6 @@ Monitorar:
 
 ## Decisão atual
 
-Enquanto o workflow do Pull Request não concluir com sucesso, a classificação permanece **MULTIUNIDADE NÃO APROVADA**. A existência de código e testes preparados não equivale a evidência executada.
+A validação isolada da Fase 1 está **APROVADA** no commit `b4373b6`, pelo workflow `Conform Flow full isolated validation` [run 30778232447](https://github.com/facilitadorita-lab/conform-guardian/actions/runs/30778232447). O artifact `conform-flow-validation-30778232447` preserva as evidências por 14 dias.
+
+Esta aprovação autoriza o avanço para homologação. Ela não autoriza merge, aplicação no Supabase remoto nem publicação em produção sem backup, ensaio anonimizado e liberação controlada.
