@@ -164,7 +164,7 @@ function nextMonthAnchorUnix() {
   return Math.floor(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1) / 1000);
 }
 
-function normalizedAppUrl(value: string | undefined) { try { const url = new URL((value ?? "").split(",")[0].trim()); return ["http:", "https:"].includes(url.protocol) ? url.origin : null; } catch { return null; } }
+function normalizedAppUrl(value: string | undefined) { try { const url = new URL((value ?? "").split(",")[0].trim()); return ["http:", "https:"].includes(url.protocol) ? `${url.origin}${url.pathname.replace(/\/$/, "")}` : null; } catch { return null; } }
 function corsHeaders(request: Request) { const origin = request.headers.get("origin") ?? ""; const configured = (Deno.env.get("ALLOWED_ORIGINS") ?? Deno.env.get("ALLOWED_ORIGIN") ?? "").split(",").map((v) => v.trim()).filter(Boolean); return { "access-control-allow-origin": configured.length === 0 ? "*" : configured.includes(origin) ? origin : configured[0], "access-control-allow-headers": "authorization, apikey, content-type, x-client-info", "access-control-allow-methods": "POST, OPTIONS", vary: "origin" }; }
 function respond(body: unknown, status: number, cors: Record<string, string>) { return new Response(JSON.stringify(body), { status, headers: { ...cors, "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } }); }
 function text(value: unknown) { return typeof value === "string" ? value.trim() : ""; }

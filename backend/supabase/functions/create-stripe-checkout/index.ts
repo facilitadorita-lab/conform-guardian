@@ -181,7 +181,8 @@ function normalizedAppUrl(value: string | undefined) {
   try {
     const url = new URL(value.split(",")[0].trim());
     if (!["http:", "https:"].includes(url.protocol)) return null;
-    return url.origin;
+    const basePath = url.pathname.replace(/\/$/, "");
+    return `${url.origin}${basePath}`;
   } catch {
     return null;
   }

@@ -19,6 +19,8 @@ import { useAppSession } from "@/hooks/use-app-session";
 import { adminMasterService } from "@/services/adminMasterService";
 import { partnerService } from "@/services/partnerService";
 import { edgeFunctionsService } from "@/services/edgeFunctionsService";
+import type { PartnerPlanCatalogItem } from "@/types";
+import { formatCurrencyFromCents } from "@/utils/money";
 
 const checklistDocumentalPorTipo: Record<string, string[]> = {
   Clínica: [
@@ -125,7 +127,8 @@ export function MasterEmpresasPage() {
   const parceiroPlanosQuery = useQuery({
     queryKey: ["partner-plans"],
     queryFn: () => partnerService.listarPlanos(),
-    enabled: isParceiro && isAdministradorParceiro,
+    enabled:
+      (isParceiro && isAdministradorParceiro) || Boolean(authContext?.usuario.isMaster),
     staleTime: 60_000,
   });
 
@@ -1293,6 +1296,7 @@ export function MasterEmpresasPage() {
       ) : null}
       {modalParceiroAberto ? (
         <NovoParceiroModal
+          planos={parceiroPlanosQuery.data ?? []}
           erro={erroCadastro}
           isSaving={criarParceiroMutation.isPending}
           onClose={() => {
@@ -1631,11 +1635,13 @@ function IsencaoParceiroModal({
 }
 
 function NovoParceiroModal({
+  planos,
   erro,
   isSaving,
   onClose,
   onSubmit,
 }: {
+  planos: PartnerPlanCatalogItem[];
   erro: string | null;
   isSaving: boolean;
   onClose: () => void;
@@ -1684,13 +1690,12 @@ function NovoParceiroModal({
               className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
               <option value="">Sem plano — configurar depois</option>
-              <option value="parceiro_start">
-                Parceiro Start · R$ 499,00 · 5 clientes incluídos
-              </option>
-              <option value="parceiro_pro">Parceiro Pro · R$ 899,00 · 15 clientes incluídos</option>
-              <option value="parceiro_enterprise">
-                Parceiro Enterprise · R$ 1.699,00 · 40 clientes incluídos
-              </option>
+              {planos.map((plano) => (
+                <option key={plano.id} value={plano.codigo}>
+                  {plano.nome} · {formatCurrencyFromCents(plano.valor_mensal_centavos)} ·{" "}
+                  {plano.limite_clientes} clientes incluídos
+                </option>
+              ))}
             </select>
           </label>
           <label className="md:col-span-2">

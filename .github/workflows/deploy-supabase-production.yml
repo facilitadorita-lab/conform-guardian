@@ -49,6 +49,9 @@ jobs:
       - env:
           PGPASSWORD: postgres
         run: psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/supabase/tests/production_readiness.sql
+      - env:
+          PGPASSWORD: postgres
+        run: psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -f backend/supabase/tests/commercial_pricing.sql
       - if: always()
         run: supabase stop --workdir backend --no-backup
 
@@ -78,6 +81,13 @@ jobs:
         run: supabase db push --workdir backend --linked --include-all
       - name: Deploy Edge Functions
         run: supabase functions deploy --workdir backend --project-ref "$PROJECT_ID"
+      - name: Synchronize Stripe live catalog
+        run: |
+          curl --fail-with-body --request POST "$SUPABASE_URL/functions/v1/sync-stripe-catalog" \
+            --header "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            --header "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            --header "Content-Type: application/json" \
+            --data '{"confirmation":"SINCRONIZAR-CATALOGO","expected_mode":"live"}'
       - name: Register successful production release
         if: ${{ success() && env.SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: |
