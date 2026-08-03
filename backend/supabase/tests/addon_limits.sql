@@ -88,7 +88,9 @@ $$;
 
 -- Cenario de capacidade: a empresa ocupa as seis vagas efetivas (quatro do
 -- plano + duas extras) e a sétima associação deve ser recusada pelo trigger.
-set local role service_role;
+-- A carga direta de identidades é uma operação administrativa do fixture.
+-- O trigger de capacidade continua ativo nas associações abaixo.
+reset role;
 insert into auth.users(
   id, instance_id, aud, role, email, encrypted_password,
   email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data
