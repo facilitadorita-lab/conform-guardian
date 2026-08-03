@@ -310,7 +310,7 @@ async function ensurePrice(
     secret,
     "/v1/prices",
     form,
-    `conform-flow-price-${input.code}-${input.amount}`,
+    `conform-flow-price-${input.code}-${input.amount}-${input.productId}`,
   );
   return { id: text(price.id), created: true };
 }
