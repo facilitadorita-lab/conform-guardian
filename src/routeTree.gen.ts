@@ -16,6 +16,7 @@ import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as PendenciasRouteImport } from './routes/pendencias'
 import { Route as ManutencoesRouteImport } from './routes/manutencoes'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FiscalizacaoRouteImport } from './routes/fiscalizacao'
 import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as DocumentosRouteImport } from './routes/documentos'
 import { Route as DefinirSenhaRouteImport } from './routes/definir-senha'
@@ -76,6 +77,11 @@ const ManutencoesRoute = ManutencoesRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FiscalizacaoRoute = FiscalizacaoRouteImport.update({
+  id: '/fiscalizacao',
+  path: '/fiscalizacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EquipamentosRoute = EquipamentosRouteImport.update({
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
+  '/fiscalizacao': typeof FiscalizacaoRoute
   '/login': typeof LoginRoute
   '/manutencoes': typeof ManutencoesRoute
   '/pendencias': typeof PendenciasRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByTo {
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
+  '/fiscalizacao': typeof FiscalizacaoRoute
   '/login': typeof LoginRoute
   '/manutencoes': typeof ManutencoesRoute
   '/pendencias': typeof PendenciasRoute
@@ -293,6 +301,7 @@ export interface FileRoutesById {
   '/definir-senha': typeof DefinirSenhaRoute
   '/documentos': typeof DocumentosRoute
   '/equipamentos': typeof EquipamentosRouteWithChildren
+  '/fiscalizacao': typeof FiscalizacaoRoute
   '/login': typeof LoginRoute
   '/manutencoes': typeof ManutencoesRoute
   '/pendencias': typeof PendenciasRoute
@@ -330,6 +339,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/documentos'
     | '/equipamentos'
+    | '/fiscalizacao'
     | '/login'
     | '/manutencoes'
     | '/pendencias'
@@ -365,6 +375,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/documentos'
     | '/equipamentos'
+    | '/fiscalizacao'
     | '/login'
     | '/manutencoes'
     | '/pendencias'
@@ -400,6 +411,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/documentos'
     | '/equipamentos'
+    | '/fiscalizacao'
     | '/login'
     | '/manutencoes'
     | '/pendencias'
@@ -436,6 +448,7 @@ export interface RootRouteChildren {
   DefinirSenhaRoute: typeof DefinirSenhaRoute
   DocumentosRoute: typeof DocumentosRoute
   EquipamentosRoute: typeof EquipamentosRouteWithChildren
+  FiscalizacaoRoute: typeof FiscalizacaoRoute
   LoginRoute: typeof LoginRoute
   ManutencoesRoute: typeof ManutencoesRoute
   PendenciasRoute: typeof PendenciasRoute
@@ -509,6 +522,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fiscalizacao': {
+      id: '/fiscalizacao'
+      path: '/fiscalizacao'
+      fullPath: '/fiscalizacao'
+      preLoaderRoute: typeof FiscalizacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/equipamentos': {
@@ -719,6 +739,7 @@ const rootRouteChildren: RootRouteChildren = {
   DefinirSenhaRoute: DefinirSenhaRoute,
   DocumentosRoute: DocumentosRoute,
   EquipamentosRoute: EquipamentosRouteWithChildren,
+  FiscalizacaoRoute: FiscalizacaoRoute,
   LoginRoute: LoginRoute,
   ManutencoesRoute: ManutencoesRoute,
   PendenciasRoute: PendenciasRoute,

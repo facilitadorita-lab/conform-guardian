@@ -27,6 +27,7 @@ import { SecureUploadButton } from "@/components/secure-upload-button";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { EvidenciasTimeline } from "@/components/evidencias-timeline";
+import { EquipmentPassport } from "@/components/equipment-passport";
 import { useEquipamento } from "@/hooks/use-conform-data";
 import { useSession } from "@/hooks/use-session";
 import { useUnitContext } from "@/hooks/use-unit-context";
@@ -415,6 +416,8 @@ export function EquipamentoDetalhePage({ id }: { id: string }) {
           }}
         />
       )}
+
+      <EquipmentPassport equipment={equipamento} />
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr]">
         <EquipmentSummaryCard

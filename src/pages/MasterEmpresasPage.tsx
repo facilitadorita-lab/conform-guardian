@@ -19,6 +19,7 @@ import { useAppSession } from "@/hooks/use-app-session";
 import { adminMasterService } from "@/services/adminMasterService";
 import { partnerService } from "@/services/partnerService";
 import { edgeFunctionsService } from "@/services/edgeFunctionsService";
+import { PartnerPortfolioHealth } from "@/components/partner-portfolio-health";
 import type { PartnerPlanCatalogItem } from "@/types";
 import { formatCurrencyFromCents } from "@/utils/money";
 
@@ -590,6 +591,10 @@ export function MasterEmpresasPage() {
             </div>
           </div>
         </div>
+
+        {isParceiro && empresaParceira ? (
+          <PartnerPortfolioHealth partnerCompanyId={empresaParceira.id} />
+        ) : null}
 
         {authContext.usuario.isMaster ? (
           <section className="rounded-xl border border-border bg-card p-5">

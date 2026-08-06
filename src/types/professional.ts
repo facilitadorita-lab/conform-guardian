@@ -137,3 +137,100 @@ export interface ProfessionalFinanceSummary {
     created_at: ISODateTime;
   }>;
 }
+
+export interface AuditIntegritySnapshot {
+  status: "verificada" | "parcial" | "invalida";
+  eventos_verificados: number;
+  eventos_legado: number;
+  elos_inconsistentes: number;
+  hashes_invalidos: number;
+  anexos_sem_hash: number;
+  ultimo_evento_em?: ISODateTime | null;
+  politica: {
+    trilha_imutavel: boolean;
+    conteudo_anexo_exposto: boolean;
+    algoritmo: string;
+  };
+}
+
+export interface CopilotAction {
+  id: string;
+  modulo: "documentos" | "equipamentos" | "manutencoes" | "pendencias" | string;
+  titulo: string;
+  descricao: string;
+  prazo?: string | null;
+  prioridade: "critica" | "alta" | "media" | string;
+  destino: string;
+}
+
+export interface CopilotActionsResponse {
+  politica_ia: {
+    leu_anexos: boolean;
+    fonte: string;
+    execucao_automatica: boolean;
+  };
+  acoes: CopilotAction[];
+}
+
+export interface PartnerPortfolioHealth {
+  resumo: {
+    clientes: number;
+    clientes_em_risco: number;
+    clientes_em_atencao: number;
+    vencimentos_30d: number;
+    pendencias_criticas: number;
+  };
+  clientes: Array<{
+    empresa_id: UUID;
+    nome: string;
+    cnpj: string;
+    risco: "alto" | "medio" | "baixo";
+    vencimentos_30d: number;
+    pendencias_criticas: number;
+    proximo_vencimento?: string | null;
+  }>;
+}
+
+export interface InspectionPanel {
+  empresa: {
+    nome: string;
+    razao_social: string;
+    cnpj: string;
+    responsavel_legal?: string | null;
+    responsavel_tecnico?: string | null;
+  };
+  gerado_em: ISODateTime;
+  escopo: "consolidado" | "unidade";
+  documentos: Array<{
+    id: UUID;
+    nome: string;
+    numero?: string | null;
+    vencimento?: string | null;
+    status: string;
+    possui_anexo: boolean;
+  }>;
+  equipamentos: Array<{
+    id: UUID;
+    nome: string;
+    codigo?: string | null;
+    setor?: string | null;
+    criticidade: string;
+    status: string;
+    calibracao?: string | null;
+    qualificacao?: string | null;
+    manutencao?: string | null;
+  }>;
+  evidencias: Array<{
+    nome: string;
+    modulo: string;
+    versao: number;
+    hash?: string | null;
+    enviado_em: ISODateTime;
+    status: string;
+  }>;
+  politica: {
+    somente_leitura: boolean;
+    anexos_nao_expostos: boolean;
+    acesso_requer_sessao: boolean;
+  };
+}

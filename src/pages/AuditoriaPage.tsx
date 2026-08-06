@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "@/components/conform/dashboard-widgets";
 import { EmptyState, Surface } from "@/components/conform/surface";
+import { EvidenceIntegrityCard } from "@/components/evidence-integrity-card";
 import { useAuditoriaAvancada } from "@/hooks/use-conform-data";
 import { AppShell } from "@/layouts/app-layout";
 import { cn } from "@/lib/utils";
@@ -87,6 +88,8 @@ export function AuditoriaPage() {
           />
         </section>
       ) : null}
+
+      <EvidenceIntegrityCard />
 
       <Surface className="space-y-4">
         <SectionHeader

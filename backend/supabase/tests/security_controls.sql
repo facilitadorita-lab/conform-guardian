@@ -15,6 +15,22 @@ begin
     select 1 from information_schema.routines
     where routine_schema = 'public' and routine_name = 'api_master_listar_sandbox'
   ) then raise exception 'SANDBOX_RPC_MISSING'; end if;
+  if not exists (
+    select 1 from information_schema.routines
+    where routine_schema = 'public' and routine_name = 'api_auditoria_integridade'
+  ) then raise exception 'AUDIT_INTEGRITY_RPC_MISSING'; end if;
+  if not exists (
+    select 1 from information_schema.routines
+    where routine_schema = 'public' and routine_name = 'api_copiloto_proximas_acoes'
+  ) then raise exception 'COPILOT_ACTIONS_RPC_MISSING'; end if;
+  if not exists (
+    select 1 from information_schema.routines
+    where routine_schema = 'public' and routine_name = 'api_painel_fiscalizacao'
+  ) then raise exception 'INSPECTION_PANEL_RPC_MISSING'; end if;
+  if not exists (
+    select 1 from information_schema.routines
+    where routine_schema = 'public' and routine_name = 'api_partner_carteira_saude'
+  ) then raise exception 'PARTNER_PORTFOLIO_RPC_MISSING'; end if;
 end;
 $$;
 
@@ -37,8 +53,31 @@ join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public'
   and p.proname in (
     'api_mfa_policy_status', 'api_master_stripe_health', 'api_master_listar_sandbox',
-    'api_master_criar_sandbox', 'api_master_arquivar_sandbox'
+    'api_master_criar_sandbox', 'api_master_arquivar_sandbox',
+    'api_auditoria_integridade', 'api_copiloto_proximas_acoes',
+    'api_registrar_acao_copiloto', 'api_painel_fiscalizacao',
+    'api_registrar_acesso_fiscalizacao', 'api_partner_carteira_saude'
   );
+
+do $$
+declare v_exposta integer;
+begin
+  select count(*) into v_exposta
+  from pg_proc p
+  join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public'
+    and p.proname in (
+      'api_auditoria_integridade', 'api_copiloto_proximas_acoes',
+      'api_registrar_acao_copiloto', 'api_painel_fiscalizacao',
+      'api_registrar_acesso_fiscalizacao', 'api_partner_carteira_saude'
+    )
+    and has_function_privilege('anon', p.oid, 'EXECUTE');
+
+  if v_exposta <> 0 then
+    raise exception 'OPERATIONAL_COPILOT_RPC_EXPOSED_TO_ANON: %', v_exposta;
+  end if;
+end;
+$$;
 
 select tg.tgname
 from pg_trigger tg

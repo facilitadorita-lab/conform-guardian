@@ -183,6 +183,46 @@ begin
     raise exception 'TENANT_SCHEDULED_REPORT_RPC_LEAK';
   exception when insufficient_privilege then null;
   end;
+
+  begin
+    perform public.api_auditoria_integridade('b0000000-0000-4000-8000-000000000002', null);
+    raise exception 'TENANT_AUDIT_INTEGRITY_RPC_LEAK';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    perform public.api_copiloto_proximas_acoes('b0000000-0000-4000-8000-000000000002', null);
+    raise exception 'TENANT_COPILOT_RPC_LEAK';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    perform public.api_registrar_acao_copiloto(
+      'b0000000-0000-4000-8000-000000000002',
+      'documentos:tentativa-cruzada',
+      '/documentos'
+    );
+    raise exception 'TENANT_COPILOT_WRITE_RPC_LEAK';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    perform public.api_painel_fiscalizacao('b0000000-0000-4000-8000-000000000002', null);
+    raise exception 'TENANT_INSPECTION_RPC_LEAK';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    perform public.api_registrar_acesso_fiscalizacao('b0000000-0000-4000-8000-000000000002', null);
+    raise exception 'TENANT_INSPECTION_WRITE_RPC_LEAK';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    perform public.api_partner_carteira_saude('b0000000-0000-4000-8000-000000000002');
+    raise exception 'TENANT_PARTNER_PORTFOLIO_RPC_LEAK';
+  exception when insufficient_privilege then null;
+  end;
 end;
 $$;
 

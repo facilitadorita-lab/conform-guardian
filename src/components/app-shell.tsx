@@ -44,6 +44,7 @@ const mobileNavigationItems: Array<{
   { label: "Vencimentos", to: "/vencimentos", recurso: "vencimentos" },
   { label: "Relatórios", to: "/relatorios", recurso: "relatorios" },
   { label: "Auditoria", to: "/auditoria", recurso: "auditoria" },
+  { label: "Modo fiscalização", to: "/fiscalizacao", recurso: "auditoria" },
   { label: "Usuários", to: "/usuarios", recurso: "usuarios", adminOnly: true },
   { label: "Configurações", to: "/configuracoes" },
   { label: "Empresas e parceiros", to: "/master/empresas", masterOnly: true },

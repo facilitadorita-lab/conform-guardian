@@ -20,6 +20,7 @@ import {
   SectionHeader,
   type ExecutiveTone,
 } from "@/components/conform/dashboard-widgets";
+import { CopilotActionsPanel } from "@/components/copilot-actions-panel";
 import { EmptyState, Surface } from "@/components/conform/surface";
 import { useDashboardData, useOnboardingEmpresa } from "@/hooks/use-conform-data";
 import { AppShell, StatusBadge } from "@/layouts/app-layout";
@@ -261,6 +262,8 @@ export function DashboardPage() {
           </div>
         </Surface>
       ) : null}
+
+      <CopilotActionsPanel />
 
       <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <Surface>

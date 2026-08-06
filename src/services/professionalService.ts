@@ -1,7 +1,11 @@
 import type {
+  AuditIntegritySnapshot,
+  CopilotActionsResponse,
   DataQualityResult,
   DocumentWorkflow,
+  InspectionPanel,
   NotificationCenter,
+  PartnerPortfolioHealth,
   PermissionMatrix,
   ProfessionalFinanceSummary,
   ScheduledReportsData,
@@ -133,6 +137,42 @@ export const professionalService = {
       p_empresa_id: companyId,
       p_inicio: null,
       p_fim: null,
+    });
+  },
+  auditIntegrity(companyId: string, unitId: string | null) {
+    return invokeRpc<AuditIntegritySnapshot>("api_auditoria_integridade", {
+      p_empresa_id: companyId,
+      p_unidade_id: unitId,
+    });
+  },
+  copilotActions(companyId: string, unitId: string | null) {
+    return invokeRpc<CopilotActionsResponse>("api_copiloto_proximas_acoes", {
+      p_empresa_id: companyId,
+      p_unidade_id: unitId,
+    });
+  },
+  registerCopilotAction(companyId: string, actionId: string, destination: string) {
+    return invokeRpc("api_registrar_acao_copiloto", {
+      p_empresa_id: companyId,
+      p_acao_id: actionId,
+      p_destino: destination,
+    });
+  },
+  inspectionPanel(companyId: string, unitId: string | null) {
+    return invokeRpc<InspectionPanel>("api_painel_fiscalizacao", {
+      p_empresa_id: companyId,
+      p_unidade_id: unitId,
+    });
+  },
+  registerInspectionAccess(companyId: string, unitId: string | null) {
+    return invokeRpc("api_registrar_acesso_fiscalizacao", {
+      p_empresa_id: companyId,
+      p_unidade_id: unitId,
+    });
+  },
+  partnerPortfolioHealth(partnerCompanyId: string) {
+    return invokeRpc<PartnerPortfolioHealth>("api_partner_carteira_saude", {
+      p_parceiro_empresa_id: partnerCompanyId,
     });
   },
   isolationDiagnostic(companyId: string) {

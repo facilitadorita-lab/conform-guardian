@@ -14,6 +14,7 @@ import { useUnitContext } from "@/hooks/use-unit-context";
 import { assistantService } from "@/services";
 import type { AssistantSource } from "@/services/assistantService";
 import { formatDateBR } from "@/utils/date";
+import { CopilotActionsPanel } from "@/components/copilot-actions-panel";
 
 type ChatMessage = {
   id: string;
@@ -184,6 +185,10 @@ export function FloatingAssistant() {
                       {sugestao}
                     </button>
                   ))}
+                </div>
+                <div className="border-t border-border pt-4">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Ações sugeridas</p>
+                  <CopilotActionsPanel compact />
                 </div>
               </div>
             ) : (
