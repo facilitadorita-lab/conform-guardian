@@ -481,7 +481,7 @@ begin
         'vencimentos_30d', x.vencimentos_30d,
         'pendencias_criticas', x.pendencias_criticas,
         'proximo_vencimento', x.proximo_vencimento
-      ) order by case x.risco when 'alto' then 0 when 'medio' then 1 else 2 end, x.proximo_vencimento nulls last, x.nome), '[]'::jsonb)
+      ) order by case x.risco when 'alto' then 0 when 'medio' then 1 else 2 end, x.proximo_vencimento nulls last, x.nome)
       from (
         select
           c.id as empresa_id,
@@ -501,7 +501,7 @@ begin
         where rpc.parceiro_empresa_id = p_parceiro_empresa_id
           and rpc.status <> 'encerrado'
       ) x
-    )
+    ), '[]'::jsonb)
   );
 end;
 $$;
