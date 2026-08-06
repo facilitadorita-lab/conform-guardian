@@ -76,7 +76,7 @@ function CadastroPage() {
     event.preventDefault();
     const legal = catalog.data?.legal;
     if (!selectedPlan || !legal?.terms_version || !legal.privacy_version) {
-      setError("O catálogo comercial ainda não está pronto. Tente novamente em instantes.");
+      setError("Não foi possível carregar as opções agora. Tente novamente em instantes.");
       return;
     }
     if (!accepted) {
@@ -404,7 +404,7 @@ function CadastroPage() {
               <Notice tone="success">Tudo certo. Confira seu pedido e continue quando quiser.</Notice>
               {hasDirectMonthlyTrial ? (
                 <Notice tone="success">
-                  Você terá 7 dias gratuitos. O cartão é solicitado no checkout seguro, mas não há
+                  Você terá 7 dias gratuitos. O cartão é solicitado na próxima etapa, mas não há
                   cobrança hoje. A primeira mensalidade só será cobrada ao fim do período, caso você
                   não cancele antes.
                 </Notice>
