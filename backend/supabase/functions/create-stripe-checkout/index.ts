@@ -2,6 +2,10 @@ import { createClient } from "npm:@supabase/supabase-js@^2";
 
 type JsonObject = Record<string, unknown>;
 
+// A regra comercial é aplicada exclusivamente no backend. A tela apenas
+// apresenta a oferta e não decide se haverá período gratuito.
+const DIRECT_MONTHLY_TRIAL_DAYS = 7;
+
 Deno.serve(async (request: Request) => {
   const cors = corsHeaders(request);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -77,7 +81,7 @@ Deno.serve(async (request: Request) => {
 
   const { data: snapshot, error: snapshotError } = await admin
     .from("fotografias_contratacao")
-    .select("id, stripe_price_id, plano_codigo, plano_nome, periodicidade, valor_centavos, moeda, addons_json")
+    .select("id, plano_id, stripe_price_id, plano_codigo, plano_nome, periodicidade, valor_centavos, moeda, addons_json")
     .eq("sessao_contratacao_id", signup.id)
     .order("versao", { ascending: false })
     .limit(1)
@@ -86,8 +90,27 @@ Deno.serve(async (request: Request) => {
   if (snapshotError || !snapshot)
     return respond({ error: "CONTRACT_SNAPSHOT_NOT_FOUND" }, 503, cors);
 
+  const { data: commercialPlan, error: planError } = await admin
+    .from("planos")
+    .select("tipo_plano")
+    .eq("id", snapshot.plano_id)
+    .maybeSingle();
+  if (planError || !commercialPlan) return respond({ error: "CONTRACT_PLAN_NOT_FOUND" }, 503, cors);
+
+  // Parceiros possuem cobrança consolidada; a experiência gratuita é exclusiva
+  // de empresas que contratam o plano direto no ciclo mensal.
+  const startsFreeTrial =
+    commercialPlan.tipo_plano === "direto" && snapshot.periodicidade === "monthly";
+
   const form = new URLSearchParams();
   form.set("mode", "subscription");
+  if (startsFreeTrial) {
+    form.set("payment_method_collection", "always");
+    form.set("payment_method_types[0]", "card");
+    form.set("subscription_data[trial_period_days]", String(DIRECT_MONTHLY_TRIAL_DAYS));
+    form.set("subscription_data[metadata][trial_days]", String(DIRECT_MONTHLY_TRIAL_DAYS));
+    form.set("subscription_data[metadata][billing_flow]", "direct_monthly_trial");
+  }
   form.set("line_items[0][price]", snapshot.stripe_price_id);
   form.set("line_items[0][quantity]", "1");
   const addons = isObject(snapshot.addons_json) ? snapshot.addons_json : {};
@@ -167,7 +190,12 @@ Deno.serve(async (request: Request) => {
     status_anterior: "pre_analisada",
     status_novo: "checkout_pendente",
     origem: "edge_function",
-    metadata_json: { checkout_session_id: checkout.id, snapshot_id: snapshot.id },
+    metadata_json: {
+      checkout_session_id: checkout.id,
+      snapshot_id: snapshot.id,
+      billing_flow: startsFreeTrial ? "direct_monthly_trial" : "immediate_charge",
+      trial_days: startsFreeTrial ? DIRECT_MONTHLY_TRIAL_DAYS : 0,
+    },
   });
 
   return respond(

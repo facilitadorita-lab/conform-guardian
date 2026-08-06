@@ -70,6 +70,7 @@ function CadastroPage() {
     }
     return catalog.data?.plans.find((plan) => plan.codigo === planCode) ?? catalog.data?.plans[0];
   }, [catalog.data?.plans, commercialMode, partnerCatalog.data, planCode]);
+  const hasDirectMonthlyTrial = commercialMode === "empresa" && interval === "monthly";
 
   async function onPrepare(event: React.FormEvent) {
     event.preventDefault();
@@ -171,7 +172,10 @@ function CadastroPage() {
 
           {search.checkout === "cancelled" ? (
             <Notice tone="warning">
-              <div>O pagamento foi cancelado. Seus dados não liberaram acesso à plataforma.</div>
+              <div>
+                O checkout foi cancelado. Nenhuma cobrança foi realizada e nenhum acesso foi
+                liberado.
+              </div>
               {resumableToken ? (
                 <button
                   type="button"
@@ -427,6 +431,13 @@ function CadastroPage() {
                 Esta fotografia da contratação será preservada. Mudanças futuras no preço ou no
                 plano não alteram este checkout.
               </p>
+              {hasDirectMonthlyTrial ? (
+                <Notice tone="success">
+                  Você terá 7 dias gratuitos. O cartão é solicitado no checkout seguro, mas não há
+                  cobrança hoje. A primeira mensalidade só será cobrada ao fim do período, caso você
+                  não cancele antes.
+                </Notice>
+              ) : null}
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
                   type="button"
@@ -448,7 +459,8 @@ function CadastroPage() {
                     </>
                   ) : (
                     <>
-                      Ir para pagamento seguro <ArrowRight className="h-4 w-4" />
+                      {hasDirectMonthlyTrial ? "Começar 7 dias grátis" : "Ir para pagamento seguro"}{" "}
+                      <ArrowRight className="h-4 w-4" />
                     </>
                   )}
                 </Button>
@@ -467,6 +479,9 @@ function CadastroPage() {
               <SecureItem>O pagamento é confirmado por webhook assinado.</SecureItem>
               <SecureItem>A página de sucesso nunca libera acesso.</SecureItem>
               <SecureItem>O acesso nasce bloqueado até validar o e-mail.</SecureItem>
+              {hasDirectMonthlyTrial ? (
+                <SecureItem>O cartão é guardado pelo Stripe; não há cobrança hoje.</SecureItem>
+              ) : null}
             </div>
           </div>
           {selectedPlan ? (

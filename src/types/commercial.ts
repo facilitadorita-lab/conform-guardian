@@ -255,6 +255,10 @@ export interface CheckoutStatus {
   can_send_otp: boolean;
   ready: boolean;
   expires_at: string;
+  trial: {
+    enabled: boolean;
+    days: number;
+  };
 }
 
 export interface MasterSystemHealth {

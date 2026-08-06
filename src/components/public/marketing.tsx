@@ -478,6 +478,11 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
                 </span>
               </div>
               {interval === "yearly" ? <AnnualSavings plan={plan} /> : null}
+              {interval === "monthly" ? (
+                <p className="mt-2 text-xs font-medium text-emerald-700">
+                  7 dias grátis. Cartão necessário, sem cobrança hoje.
+                </p>
+              ) : null}
               <div className="mt-4 grid gap-1.5 text-[13px] text-slate-600">
                 <PlanMeta icon={Users}>
                   {limitLabel(plan.limites.usuarios, "usuário", "usuários")}
@@ -510,7 +515,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
                     `/cadastro?plan=${encodeURIComponent(plan.codigo)}&interval=${interval}`,
                   )}
                 >
-                  Assinar {plan.nome}
+                  {interval === "monthly" ? "Começar 7 dias grátis" : `Assinar ${plan.nome}`}
                 </a>
               </Button>
             </div>

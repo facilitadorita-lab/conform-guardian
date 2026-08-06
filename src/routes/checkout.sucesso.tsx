@@ -82,6 +82,7 @@ function CheckoutSuccessPage() {
 
   const missingSecureContext = hydrated && (!checkoutSessionId || !sessionToken);
   const current = status.data;
+  const freeTrial = current?.trial.enabled === true;
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(8,145,178,0.12),transparent_36%),#f8fafc] px-5 py-8 text-slate-950">
@@ -130,22 +131,34 @@ function CheckoutSuccessPage() {
             <State
               icon={Loader2}
               spinning
-              title="Confirmando o pagamento"
-              description="Estamos aguardando a confirmação segura do provedor. Esta página não libera acesso por conta própria."
+              title={freeTrial ? "Confirmando seu teste gratuito" : "Confirmando o pagamento"}
+              description={
+                freeTrial
+                  ? "Estamos aguardando a confirmação segura do início do seu período gratuito. Esta página não libera acesso por conta própria."
+                  : "Estamos aguardando a confirmação segura do provedor. Esta página não libera acesso por conta própria."
+              }
             />
           ) : current.status === "checkout_pendente" ||
             current.status === "pagamento_confirmado" ? (
             <State
               icon={Clock3}
-              title="Pagamento em processamento"
-              description="Aguardando o webhook assinado confirmar a cobrança. Você pode manter esta página aberta."
+              title={freeTrial ? "Teste gratuito em processamento" : "Pagamento em processamento"}
+              description={
+                freeTrial
+                  ? "Aguardando o webhook assinado confirmar o início do seu período gratuito. Você pode manter esta página aberta."
+                  : "Aguardando o webhook assinado confirmar a cobrança. Você pode manter esta página aberta."
+              }
             />
           ) : current.can_send_otp ? (
             <div>
               <State
                 icon={MailCheck}
-                title="Pagamento confirmado"
-                description={`Agora valide o e-mail ${current.email_masked}. O ambiente continua bloqueado até essa confirmação.`}
+                title={freeTrial ? "Seu teste gratuito começou" : "Pagamento confirmado"}
+                description={
+                  freeTrial
+                    ? `Nenhuma cobrança foi feita hoje. Valide o e-mail ${current.email_masked} para acessar. O cartão cadastrado será cobrado automaticamente após ${current.trial.days} dias, salvo cancelamento antes disso.`
+                    : `Agora valide o e-mail ${current.email_masked}. O ambiente continua bloqueado até essa confirmação.`
+                }
               />
               <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 {!otpSent ? (

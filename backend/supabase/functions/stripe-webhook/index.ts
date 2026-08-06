@@ -2,6 +2,8 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@^2"
 
 type JsonObject = Record<string, unknown>;
 
+const DIRECT_MONTHLY_TRIAL_DAYS = 7;
+
 Deno.serve(async (request: Request) => {
   if (request.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
 
@@ -116,7 +118,10 @@ async function handleCheckoutCompleted(admin: SupabaseClient, checkout: JsonObje
   if (error || !signup) throw new Error("SIGNUP_SESSION_NOT_FOUND");
   if (signup.stripe_checkout_session_id !== checkoutId)
     throw new Error("CHECKOUT_REFERENCE_MISMATCH");
-  if (signup.status === "provisionada" || signup.status === "email_pendente") return;
+  if (signup.status === "provisionada" || signup.status === "email_pendente") {
+    await syncDirectTrialSubscription(admin, signupId, paymentStatus === "no_payment_required");
+    return;
+  }
   if (!["checkout_pendente", "pagamento_confirmado"].includes(signup.status))
     throw new Error("SIGNUP_SESSION_INVALID_STATUS");
 
@@ -172,6 +177,67 @@ async function handleCheckoutCompleted(admin: SupabaseClient, checkout: JsonObje
   });
   if (provisionError) throw new Error(`PROVISIONING_FAILED:${provisionError.code ?? "unknown"}`);
   await syncProvisionedAddons(admin, signupId);
+  await syncDirectTrialSubscription(admin, signupId, paymentStatus === "no_payment_required");
+}
+
+async function syncDirectTrialSubscription(
+  admin: SupabaseClient,
+  signupId: string,
+  isTrialCheckout: boolean,
+) {
+  if (!isTrialCheckout) return;
+  const [{ data: signup }, { data: snapshot }] = await Promise.all([
+    admin
+      .from("sessoes_contratacao")
+      .select("assinatura_id")
+      .eq("id", signupId)
+      .maybeSingle(),
+    admin
+      .from("fotografias_contratacao")
+      .select("plano_id, periodicidade")
+      .eq("sessao_contratacao_id", signupId)
+      .order("versao", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  if (!signup?.assinatura_id || !snapshot || snapshot.periodicidade !== "monthly") return;
+
+  const { data: plan, error: planError } = await admin
+    .from("planos")
+    .select("tipo_plano")
+    .eq("id", snapshot.plano_id)
+    .maybeSingle();
+  if (planError || !plan) throw new Error("TRIAL_PLAN_LOOKUP_FAILED");
+  if (plan.tipo_plano !== "direto") return;
+
+  const { data: existing, error: existingError } = await admin
+    .from("assinaturas_empresas")
+    .select("trial_termina_em")
+    .eq("id", signup.assinatura_id)
+    .eq("gateway", "stripe")
+    .maybeSingle();
+  if (existingError || !existing) throw new Error("TRIAL_SUBSCRIPTION_LOOKUP_FAILED");
+  // A data inicial é imutável: uma repetição de webhook não estende o teste
+  // nem altera uma cobrança regularizada depois do sétimo dia.
+  if (existing.trial_termina_em) return;
+
+  const trialEndsAt = new Date(
+    Date.now() + DIRECT_MONTHLY_TRIAL_DAYS * 24 * 60 * 60 * 1000,
+  )
+    .toISOString()
+    .slice(0, 10);
+  const { error } = await admin
+    .from("assinaturas_empresas")
+    .update({
+      status: "trial",
+      trial_termina_em: trialEndsAt,
+      proximo_vencimento: trialEndsAt,
+      grace_period_ends_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", signup.assinatura_id)
+    .eq("gateway", "stripe");
+  if (error) throw new Error("TRIAL_SUBSCRIPTION_UPDATE_FAILED");
 }
 
 async function handlePartnerCheckoutCompleted(admin: SupabaseClient, checkout: JsonObject) {
@@ -478,7 +544,7 @@ async function handleSubscriptionCanceled(admin: SupabaseClient, subscription: J
 async function syncPartnerClientAccess(
   admin: SupabaseClient,
   empresaIdOrSubscriptionId: string,
-  status: "ativa" | "pagamento_pendente" | "inadimplente" | "bloqueada" | "cancelada",
+  status: "trial" | "ativa" | "pagamento_pendente" | "inadimplente" | "bloqueada" | "cancelada",
   bySubscriptionId = false,
 ) {
   let partnerId = empresaIdOrSubscriptionId;
@@ -504,7 +570,7 @@ async function syncPartnerClientAccess(
     if (!owner || owner.tipo_conta !== "parceira") return;
     partnerId = data.empresa_id;
   }
-  const blocked = status !== "ativa";
+  const blocked = !["trial", "ativa"].includes(status);
   const { data: relations } = await admin
     .from("relacionamentos_parceiro_clientes")
     .select("cliente_empresa_id")
@@ -593,7 +659,8 @@ function boundedQuantity(value: unknown) {
 }
 
 function subscriptionStatus(value: string) {
-  if (["active", "trialing"].includes(value)) return "ativa";
+  if (value === "trialing") return "trial";
+  if (value === "active") return "ativa";
   if (["past_due"].includes(value)) return "inadimplente";
   if (["unpaid"].includes(value)) return "bloqueada";
   if (["canceled", "incomplete_expired"].includes(value)) return "cancelada";

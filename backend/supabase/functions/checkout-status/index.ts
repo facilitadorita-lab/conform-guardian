@@ -1,5 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@^2";
 
+const DIRECT_MONTHLY_TRIAL_DAYS = 7;
+
 Deno.serve(async (request: Request) => {
   const cors = corsHeaders(request);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
@@ -27,13 +29,21 @@ Deno.serve(async (request: Request) => {
   });
   const { data: session, error } = await admin
     .from("sessoes_contratacao")
-    .select("status, email_responsavel, pagamento_confirmado_at, email_verificado_at, expira_em")
+    .select("plano_id, periodicidade, status, email_responsavel, pagamento_confirmado_at, email_verificado_at, expira_em")
     .eq("stripe_checkout_session_id", checkoutId)
     .eq("token_hash", await sha256(token))
     .maybeSingle();
 
   if (error) return respond({ error: "SIGNUP_STATUS_UNAVAILABLE" }, 503, cors);
   if (!session) return respond({ error: "SIGNUP_SESSION_NOT_FOUND" }, 404, cors);
+
+  const { data: plan } = await admin
+    .from("planos")
+    .select("tipo_plano")
+    .eq("id", session.plano_id)
+    .maybeSingle();
+  const freeTrial =
+    plan?.tipo_plano === "direto" && session.periodicidade === "monthly";
 
   return respond(
     {
@@ -44,6 +54,10 @@ Deno.serve(async (request: Request) => {
       can_send_otp: session.status === "email_pendente",
       ready: session.status === "provisionada",
       expires_at: session.expira_em,
+      trial: {
+        enabled: freeTrial,
+        days: freeTrial ? DIRECT_MONTHLY_TRIAL_DAYS : 0,
+      },
     },
     200,
     cors,
