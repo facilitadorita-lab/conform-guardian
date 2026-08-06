@@ -29,7 +29,10 @@ Deno.serve(async (request: Request) => {
         status: "bloqueada", bloqueada_em: new Date().toISOString(), updated_at: new Date().toISOString(),
       }).eq("id", subscription.id);
       await admin.from("empresas").update({
-        status: "bloqueada", access_status: "blocked", updated_at: new Date().toISOString(),
+        status: "bloqueada",
+        access_status: "blocked",
+        billing_access_locked_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }).eq("id", subscription.empresa_id);
       await admin.from("notificacoes").insert({
         empresa_id: subscription.empresa_id,

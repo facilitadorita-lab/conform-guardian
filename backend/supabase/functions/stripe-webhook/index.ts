@@ -512,16 +512,35 @@ async function syncPartnerClientAccess(
     .eq("status", "ativo");
   const clientIds = (relations ?? []).map((relation) => text(relation.cliente_empresa_id)).filter(Boolean);
   if (clientIds.length === 0) return;
+  if (blocked) {
+    await admin
+      .from("empresas")
+      .update({
+        access_status: status === "inadimplente" ? "restricted" : "blocked",
+        status: "bloqueada",
+        billing_access_locked_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .in("id", clientIds)
+      .eq("tipo_conta", "cliente")
+      .is("deleted_at", null);
+    return;
+  }
+
+  // Somente clientes travados pela cobranca do parceiro podem ser reativados.
+  // Uma suspensao manual continua intacta mesmo apos o pagamento.
   await admin
     .from("empresas")
     .update({
-      access_status: blocked ? (status === "inadimplente" ? "restricted" : "blocked") : "active",
-      status: blocked ? "bloqueada" : "ativa",
+      access_status: "active",
+      status: "ativa",
+      billing_access_locked_at: null,
       updated_at: new Date().toISOString(),
     })
     .in("id", clientIds)
     .eq("tipo_conta", "cliente")
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .not("billing_access_locked_at", "is", null);
 }
 
 async function verifyStripeSignature(payload: string, header: string, secret: string) {

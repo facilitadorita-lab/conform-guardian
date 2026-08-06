@@ -63,7 +63,9 @@ Deno.serve(async (request: Request) => {
 
   const form = new URLSearchParams();
   form.set("customer", subscription.gateway_customer_id);
-  form.set("return_url", `${appUrl}/configuracoes?billing=updated`);
+  // O AppShell consulta o backend novamente ao retornar. O frontend nunca libera
+  // modulos por conta propria: somente o webhook assinado restaura o acesso.
+  form.set("return_url", `${appUrl}/dashboard?billing=updated`);
   const stripeResponse = await fetch("https://api.stripe.com/v1/billing_portal/sessions", {
     method: "POST",
     headers: {

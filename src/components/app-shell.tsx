@@ -26,6 +26,7 @@ import { CompanySwitcher } from "./company-switcher";
 import { FloatingAssistant } from "./floating-assistant";
 import { UnitSwitcher } from "./unit-switcher";
 import { hasPlanFeature } from "@/utils/plan-features";
+import { stripeService } from "@/services";
 
 const mobileNavigationItems: Array<{
   label: string;
@@ -145,10 +146,12 @@ export function AppShell({
   if (acessoBloqueado) {
     return (
       <BlockedAccessScreen
+        empresaId={empresaAtual.id}
         empresaNome={empresaAtual.nome}
         empresaCnpj={empresaAtual.cnpj}
         status={empresaAtual.status}
         reason={permissions?.reason_code}
+        subscriptionStatus={permissions?.subscription_status ?? empresaAtual.subscriptionStatus}
         onSignOut={signOut}
       />
     );
@@ -399,21 +402,32 @@ function AccessValidationScreen({ error }: { error?: Error | null }) {
 }
 
 function BlockedAccessScreen({
+  empresaId,
   empresaNome,
   empresaCnpj,
   status,
   reason,
+  subscriptionStatus,
   onSignOut,
 }: {
+  empresaId: string;
   empresaNome: string;
   empresaCnpj: string;
   status: string;
   reason?: string | null;
+  subscriptionStatus?: string | null;
   onSignOut: () => Promise<void>;
 }) {
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
-  const paymentIssue = reason === "SUBSCRIPTION_PAST_DUE" || reason === "SUBSCRIPTION_REQUIRED";
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
+  const paymentIssue =
+    subscriptionStatus === "past_due" ||
+    subscriptionStatus === "canceled" ||
+    subscriptionStatus === "expired" ||
+    reason === "SUBSCRIPTION_PAST_DUE" ||
+    reason === "SUBSCRIPTION_REQUIRED";
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -424,6 +438,19 @@ function BlockedAccessScreen({
       setSigningOut(false);
     }
   }
+
+  async function openBillingPortal() {
+    setPortalLoading(true);
+    setPortalError(null);
+    try {
+      const url = await stripeService.abrirPortal(empresaId);
+      window.location.assign(url);
+    } catch {
+      setPortalError("Nao foi possivel abrir a regularizacao agora. Tente novamente.");
+      setPortalLoading(false);
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 text-white">
       <section className="w-full max-w-2xl rounded-3xl border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur">
@@ -443,9 +470,7 @@ function BlockedAccessScreen({
             </div>
 
             <h1 className="text-3xl font-semibold tracking-tight">
-              {paymentIssue
-                ? "Regularize a assinatura para continuar"
-                : "Acesso operacional restrito"}
+              {paymentIssue ? "Regularize sua assinatura" : "Acesso operacional restrito"}
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               Por segurança, enquanto a empresa estiver com status{" "}
@@ -474,6 +499,19 @@ function BlockedAccessScreen({
                 </p>
               </div>
             </div>
+
+            {paymentIssue ? (
+              <button
+                type="button"
+                onClick={() => void openBillingPortal()}
+                disabled={portalLoading}
+                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-60"
+              >
+                <CreditCard className="h-4 w-4" />
+                {portalLoading ? "Abrindo regularizacao..." : "Regularizar pagamento"}
+              </button>
+            ) : null}
+            {portalError ? <p className="mt-3 text-xs text-red-200">{portalError}</p> : null}
 
             <p className="mt-6 text-xs text-slate-400">
               Caso o pagamento já tenha sido realizado, aguarde a confirmação automática ou fale com
