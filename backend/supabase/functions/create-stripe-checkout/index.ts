@@ -77,7 +77,7 @@ Deno.serve(async (request: Request) => {
 
   const { data: snapshot, error: snapshotError } = await admin
     .from("fotografias_contratacao")
-    .select("id, stripe_price_id, plano_nome, periodicidade, valor_centavos, moeda, addons_json")
+    .select("id, stripe_price_id, plano_codigo, plano_nome, periodicidade, valor_centavos, moeda, addons_json")
     .eq("sessao_contratacao_id", signup.id)
     .order("versao", { ascending: false })
     .limit(1)
@@ -109,7 +109,12 @@ Deno.serve(async (request: Request) => {
   form.set("metadata[signup_session_id]", signup.id);
   form.set("subscription_data[metadata][signup_session_id]", signup.id);
   form.set("success_url", `${appUrl}/checkout/sucesso?checkout_session_id={CHECKOUT_SESSION_ID}`);
-  form.set("cancel_url", `${appUrl}/cadastro?checkout=cancelled`);
+  const cancelParams = new URLSearchParams({
+    checkout: "cancelled",
+    plan: text(snapshot.plano_codigo),
+    interval: text(snapshot.periodicidade) === "yearly" ? "yearly" : "monthly",
+  });
+  form.set("cancel_url", `${appUrl}/cadastro?${cancelParams.toString()}`);
   form.set("locale", "auto");
   form.set("billing_address_collection", "auto");
   form.set("allow_promotion_codes", "true");
