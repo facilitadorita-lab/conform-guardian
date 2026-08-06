@@ -13,7 +13,7 @@ export const Route = createFileRoute("/checkout/sucesso")({
     checkout_session_id:
       typeof search.checkout_session_id === "string" ? search.checkout_session_id : undefined,
   }),
-  head: () => ({ meta: [{ title: "Confirmando pagamento — Conform Flow" }] }),
+  head: () => ({ meta: [{ title: "Finalizando contratação — Conform Flow" }] }),
   component: CheckoutSuccessPage,
 });
 
@@ -55,7 +55,7 @@ function CheckoutSuccessPage() {
       await signupService.enviarOtp(email);
       setOtpSent(true);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível enviar o código.");
+      setError(friendlyError(caught, "Não foi possível enviar o código agora. Tente novamente."));
     } finally {
       setSendingOtp(false);
     }
@@ -74,7 +74,7 @@ function CheckoutSuccessPage() {
       sessionStorage.removeItem("cf_checkout_session_id");
       await navigate({ to: "/dashboard" });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível validar o código.");
+      setError(friendlyError(caught, "Não foi possível confirmar o código. Tente novamente."));
     } finally {
       setVerifying(false);
     }
@@ -90,7 +90,7 @@ function CheckoutSuccessPage() {
         <div className="mb-8 flex items-center justify-between">
           <LogoSignature />
           <div className="inline-flex items-center gap-2 text-xs font-medium text-slate-500">
-            <ShieldCheck className="h-4 w-4 text-cyan-700" /> Checkout protegido
+            <ShieldCheck className="h-4 w-4 text-cyan-700" /> Pagamento seguro
           </div>
         </div>
 
@@ -99,14 +99,14 @@ function CheckoutSuccessPage() {
             <State
               icon={Loader2}
               spinning
-              title="Validando contratação"
-              description="Verificando o contexto seguro deste checkout."
+              title="Preparando sua ativação"
+              description="Estamos finalizando os últimos detalhes da sua contratação."
             />
           ) : missingSecureContext ? (
             <State
               icon={LockKeyhole}
-              title="Não foi possível validar esta contratação"
-              description="Por segurança, volte aos planos e inicie novamente. Nenhum acesso foi liberado."
+              title="Não foi possível continuar"
+              description="Volte aos planos e comece novamente."
             >
               <Button asChild className="mt-6 rounded-xl">
                 <Link to="/planos">Voltar aos planos</Link>
@@ -116,7 +116,7 @@ function CheckoutSuccessPage() {
             <State
               icon={Clock3}
               title="A confirmação está demorando"
-              description="O pagamento pode continuar em processamento. Tente consultar novamente sem refazer a cobrança."
+              description="Seu pagamento pode estar sendo processado. Consulte novamente em alguns instantes."
             >
               <Button
                 type="button"
@@ -134,8 +134,8 @@ function CheckoutSuccessPage() {
               title={freeTrial ? "Confirmando seu teste gratuito" : "Confirmando o pagamento"}
               description={
                 freeTrial
-                  ? "Estamos aguardando a confirmação segura do início do seu período gratuito. Esta página não libera acesso por conta própria."
-                  : "Estamos aguardando a confirmação segura do provedor. Esta página não libera acesso por conta própria."
+                  ? "Estamos preparando seu acesso para que você possa começar a testar a plataforma."
+                  : "Estamos preparando seu acesso à plataforma."
               }
             />
           ) : current.status === "checkout_pendente" ||
@@ -145,8 +145,8 @@ function CheckoutSuccessPage() {
               title={freeTrial ? "Teste gratuito em processamento" : "Pagamento em processamento"}
               description={
                 freeTrial
-                  ? "Aguardando o webhook assinado confirmar o início do seu período gratuito. Você pode manter esta página aberta."
-                  : "Aguardando o webhook assinado confirmar a cobrança. Você pode manter esta página aberta."
+                  ? "Seu período gratuito está sendo iniciado. Você pode manter esta página aberta."
+                  : "Estamos concluindo sua contratação. Você pode manter esta página aberta."
               }
             />
           ) : current.can_send_otp ? (
@@ -156,8 +156,8 @@ function CheckoutSuccessPage() {
                 title={freeTrial ? "Seu teste gratuito começou" : "Pagamento confirmado"}
                 description={
                   freeTrial
-                    ? `Nenhuma cobrança foi feita hoje. Valide o e-mail ${current.email_masked} para acessar. O cartão cadastrado será cobrado automaticamente após ${current.trial.days} dias, salvo cancelamento antes disso.`
-                    : `Agora valide o e-mail ${current.email_masked}. O ambiente continua bloqueado até essa confirmação.`
+                    ? `Nenhuma cobrança foi feita hoje. Confirme o e-mail ${current.email_masked} para acessar. O cartão cadastrado será cobrado automaticamente após ${current.trial.days} dias, salvo cancelamento antes disso.`
+                    : `Confirme o e-mail ${current.email_masked} para acessar a plataforma.`
                 }
               />
               <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -199,7 +199,7 @@ function CheckoutSuccessPage() {
                           <Loader2 className="h-4 w-4 animate-spin" /> Validando...
                         </>
                       ) : (
-                        "Validar e acessar"
+                        "Confirmar e acessar"
                       )}
                     </Button>
                     <button
@@ -217,8 +217,8 @@ function CheckoutSuccessPage() {
           ) : current.ready ? (
             <State
               icon={CheckCircle2}
-              title="Ambiente preparado"
-              description="Pagamento e e-mail confirmados. Você já pode acessar o Conform Flow."
+              title="Tudo pronto"
+              description="Sua contratação está confirmada. Você já pode acessar o Conform Flow."
             >
               <Button asChild className="mt-6 rounded-xl bg-slate-950 text-white">
                 <Link to="/dashboard">Acessar plataforma</Link>
@@ -228,7 +228,7 @@ function CheckoutSuccessPage() {
             <State
               icon={LockKeyhole}
               title="Contratação não disponível"
-              description="Este checkout foi expirado, cancelado ou recusado. Nenhum acesso foi liberado."
+              description="Esta etapa não está mais disponível. Escolha um plano para começar novamente."
             >
               <Button asChild variant="outline" className="mt-6 rounded-xl">
                 <Link to="/planos">Ver planos</Link>
@@ -243,8 +243,7 @@ function CheckoutSuccessPage() {
         </section>
 
         <p className="mt-6 text-center text-xs leading-5 text-slate-500">
-          Não atualizamos a assinatura a partir do navegador. Somente eventos validados no backend
-          alteram o acesso.
+          Precisa de ajuda? Volte aos planos e escolha a opção ideal para a sua operação.
         </p>
       </div>
     </main>
@@ -274,4 +273,15 @@ function State({
       {children}
     </div>
   );
+}
+
+function friendlyError(caught: unknown, fallback: string) {
+  const message = caught instanceof Error ? caught.message.trim() : "";
+  if (!message) return fallback;
+
+  if (/backend|webhook|api|rpc|supabase|stripe|permission|postgres|database|network/i.test(message)) {
+    return fallback;
+  }
+
+  return message;
 }

@@ -210,9 +210,12 @@ export function PublicHeader() {
             asChild
             className="rounded-xl bg-slate-950 px-4 text-white shadow-[0_12px_28px_-20px_rgba(15,23,42,0.72)] hover:-translate-y-0.5 hover:bg-slate-800"
           >
-            <a href="mailto:comercial@conformflow.com.br?subject=Solicitar demonstração Conform Flow">
-              Solicitar demo
-            </a>
+            <Link
+              to="/cadastro"
+              search={{ plan: "profissional", interval: "monthly", checkout: undefined }}
+            >
+              Testar grátis por 7 dias
+            </Link>
           </Button>
         </div>
       </div>
@@ -273,7 +276,7 @@ export function PublicFooter() {
             title="Acesso"
             links={[
               { label: "Entrar na plataforma", href: "/login" },
-              { label: "Solicitar demonstração", href: "mailto:comercial@conformflow.com.br" },
+              { label: "Começar teste gratuito", href: "/cadastro?plan=profissional&interval=monthly" },
               { label: "Definir nova senha", href: "/definir-senha" },
             ]}
           />
@@ -418,7 +421,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
       <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center">
         <h3 className="font-semibold text-slate-950">Planos temporariamente indisponíveis</h3>
         <p className="mt-2 text-sm text-slate-600">
-          Não exibimos valores desatualizados. Tente novamente ou fale com nosso time comercial.
+          Não foi possível carregar os planos agora. Tente novamente em instantes.
         </p>
         <Button type="button" variant="outline" className="mt-5" onClick={() => catalog.refetch()}>
           Tentar novamente
@@ -479,8 +482,8 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
               </div>
               {interval === "yearly" ? <AnnualSavings plan={plan} /> : null}
               {interval === "monthly" ? (
-                <p className="mt-2 text-xs font-medium text-emerald-700">
-                  7 dias grátis. Cartão necessário, sem cobrança hoje.
+                <p className="mt-2 text-xs font-medium leading-5 text-emerald-700">
+                  7 dias grátis. Sem cobrança hoje. Cancele quando quiser.
                 </p>
               ) : null}
               <div className="mt-4 grid gap-1.5 text-[13px] text-slate-600">
@@ -515,7 +518,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
                     `/cadastro?plan=${encodeURIComponent(plan.codigo)}&interval=${interval}`,
                   )}
                 >
-                  {interval === "monthly" ? "Começar 7 dias grátis" : `Assinar ${plan.nome}`}
+                  {interval === "monthly" ? "Testar grátis por 7 dias" : `Assinar ${plan.nome}`}
                 </a>
               </Button>
             </div>
@@ -578,9 +581,9 @@ function PlanMeta({ icon: Icon, children }: { icon: LucideIcon; children: React.
 
 export function SecurityBand() {
   const items = [
-    "Ambientes separados por empresa",
-    "Controle de perfis e permissões",
-    "Logs de auditoria",
+    "Dados organizados por empresa",
+    "Acesso personalizado por usuário",
+    "Histórico completo de atividades",
     "Anexos com rastreabilidade",
   ];
 
@@ -593,11 +596,10 @@ export function SecurityBand() {
             Segurança e governança
           </div>
           <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            Segurança operacional sem misturar dados entre empresas.
+            Segurança para trabalhar com tranquilidade.
           </h2>
           <p className="mt-4 text-sm leading-7 text-slate-300">
-            O Conform Flow foi pensado para ambientes multiempresa, com controle de acesso,
-            rastreabilidade e visão organizada por unidade.
+            Informações organizadas, histórico completo e uma visão clara para cada operação.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -636,7 +638,7 @@ export function FAQSection() {
     },
     {
       q: "Existe controle de acesso por usuário?",
-      a: "Sim. A plataforma trabalha com perfis, permissões e isolamento por empresa no backend.",
+      a: "Sim. Cada pessoa acessa apenas o que precisa para trabalhar na sua operação.",
     },
   ];
 
@@ -678,21 +680,24 @@ export function CtaSection() {
           <div>
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
               <Sparkles className="h-3.5 w-3.5" />
-              Pronto para vender e operar
+              Comece agora
             </div>
             <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
-              Transforme conformidade em uma rotina controlada.
+              Teste o Conform Flow sem compromisso.
             </h2>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-              Organize documentos, equipamentos, vencimentos e pendências em um ambiente
-              profissional, rastreável e preparado para auditorias.
+              Experimente todos os recursos por 7 dias. A ativação é rápida, você pode cancelar
+              quando quiser e não precisa falar com vendas.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
             <Button asChild className="rounded-xl bg-white text-slate-950 hover:bg-slate-100">
-              <a href="mailto:comercial@conformflow.com.br?subject=Solicitar demonstração Conform Flow">
-                Solicitar demonstração
-              </a>
+              <Link
+                to="/cadastro"
+                search={{ plan: "profissional", interval: "monthly", checkout: undefined }}
+              >
+                Testar grátis por 7 dias
+              </Link>
             </Button>
             <Button
               asChild
@@ -931,12 +936,21 @@ export function ProcessSteps() {
   );
 }
 
-export function AddOn({ title, price }: { title: string; price: string }) {
+export function AddOn({
+  title,
+  price,
+  description,
+}: {
+  title: string;
+  price: string;
+  description: string;
+}) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
       <PlusCircle className="mb-3 h-5 w-5 text-cyan-700" />
       <div className="text-sm font-semibold text-slate-950">{title}</div>
       <div className="mt-1 text-xl font-semibold text-slate-950">{price}</div>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
     </div>
   );
 }

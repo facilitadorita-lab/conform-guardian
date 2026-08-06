@@ -53,27 +53,29 @@ function LandingPage() {
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-200/80 bg-white/90 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 shadow-[0_10px_24px_-20px_rgba(6,182,212,0.6)] backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" />
-              Plataforma enterprise de conformidade
+              7 dias grátis · sem compromisso
             </div>
             <h1 className="text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.045em] text-slate-950 md:text-[3.75rem]">
-              Conformidade sem sobressaltos.{" "}
+              Planos claros para crescer{" "}
               <span className="bg-gradient-to-r from-cyan-700 to-blue-700 bg-clip-text text-transparent">
-                Auditorias tranquilas.
+                com controle.
               </span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
-              Antecipe vencimentos, organize evidências e chegue preparado em cada fiscalização.
-              O Conform Flow tira sua operação regulada do improviso e coloca em uma rotina segura,
-              rastreável e sob controle.
+              Comece gratuitamente por 7 dias e descubra como o Conform Flow simplifica a gestão da
+              conformidade, dos documentos, equipamentos e qualificações.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button
                 asChild
                 className="h-12 rounded-xl bg-slate-950 px-6 text-white shadow-[0_20px_40px_-24px_rgba(15,23,42,0.8)] hover:-translate-y-0.5 hover:bg-slate-800"
               >
-                <a href="mailto:comercial@conformflow.com.br?subject=Solicitar demonstração Conform Flow">
-                  Solicitar demonstração <ArrowRight className="h-4 w-4" />
-                </a>
+                <Link
+                  to="/cadastro"
+                  search={{ plan: "profissional", interval: "monthly", checkout: undefined }}
+                >
+                  Testar grátis por 7 dias <ArrowRight className="h-4 w-4" />
+                </Link>
               </Button>
               <Button
                 asChild
@@ -85,10 +87,10 @@ function LandingPage() {
             </div>
             <div className="mt-8 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
               {[
-                "Redução real de riscos operacionais",
-                "Alertas antes do vencimento",
-                "Evidências prontas para o fiscal",
-                "Histórico completo e rastreável",
+                "7 dias gratuitos",
+                "Cancele quando quiser",
+                "Ativação imediata",
+                "Sem burocracia",
               ].map((item) => (
                 <div key={item} className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
@@ -145,8 +147,8 @@ function LandingPage() {
           <SectionTitle
             align="center"
             eyebrow="Planos"
-            title="Comece pequeno. Escale quando precisar."
-            description="Do controle documental à gestão multiunidade — escolha o nível de controle ideal para o momento da sua operação."
+            title="Comece grátis. Evolua no seu ritmo."
+            description="Experimente todos os recursos por 7 dias, sem compromisso e sem precisar falar com vendas."
           />
           <div className="mt-12" />
           <PricingGrid compact />

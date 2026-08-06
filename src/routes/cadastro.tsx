@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Building2, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, CheckCircle2, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { LogoSignature } from "@/components/public/marketing";
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,7 @@ function CadastroPage() {
       });
       setPrepared(result);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível analisar o cadastro.");
+      setError(friendlyError(caught, "Não foi possível continuar agora. Tente novamente em instantes."));
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +121,7 @@ function CadastroPage() {
       sessionStorage.setItem("cf_checkout_session_id", checkout.checkout_session_id);
       window.location.assign(checkout.checkout_url);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível abrir o pagamento.");
+      setError(friendlyError(caught, "Não foi possível abrir o pagamento agora. Tente novamente."));
       setOpeningCheckout(false);
     }
   }
@@ -134,7 +134,7 @@ function CadastroPage() {
       const checkout = await signupService.criarCheckout(resumableToken);
       window.location.assign(checkout.checkout_url);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Não foi possível retomar o pagamento.");
+      setError(friendlyError(caught, "Não foi possível retomar o pagamento agora. Tente novamente."));
       setOpeningCheckout(false);
     }
   }
@@ -162,10 +162,9 @@ function CadastroPage() {
               <Building2 className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Contratação segura</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Comece seu teste gratuito</h1>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Antes do pagamento, validamos o CNPJ, a situação cadastral e a disponibilidade do
-                ambiente.
+                Leva menos de 2 minutos. Preencha seus dados para personalizar sua experiência.
               </p>
             </div>
           </div>
@@ -173,8 +172,7 @@ function CadastroPage() {
           {search.checkout === "cancelled" ? (
             <Notice tone="warning">
               <div>
-                O checkout foi cancelado. Nenhuma cobrança foi realizada e nenhum acesso foi
-                liberado.
+                  Você cancelou esta etapa. Nenhuma cobrança foi realizada.
               </div>
               {resumableToken ? (
                 <button
@@ -183,7 +181,7 @@ function CadastroPage() {
                   disabled={openingCheckout}
                   className="mt-2 font-semibold underline underline-offset-4"
                 >
-                  Retomar o mesmo checkout
+                    Continuar de onde parou
                 </button>
               ) : null}
             </Notice>
@@ -192,9 +190,9 @@ function CadastroPage() {
 
           {!prepared ? (
             <form onSubmit={onPrepare} className="mt-8 space-y-7">
-              <FormSection title="Plano e cobrança">
+              <FormSection title="Escolha seu plano">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Perfil de contratação" className="sm:col-span-2">
+                  <Field label="Como você quer usar o Conform Flow?" className="sm:col-span-2">
                     <select
                       value={commercialMode}
                       onChange={(event) => {
@@ -241,7 +239,7 @@ function CadastroPage() {
                     <div className="sm:col-span-2 rounded-2xl border border-cyan-200 bg-cyan-50 p-4 text-sm leading-6 text-cyan-950">
                       Este plano inclui{" "}
                       {Number((selectedPlan as { limite_clientes?: number }).limite_clientes ?? 0)}{" "}
-                      clientes. A cobrança fica no parceiro; cada cliente terá um ambiente separado.
+                      empresas clientes para você acompanhar em uma única conta.
                     </div>
                   ) : null}
                   <Field label="Usuários extras (opcional)">
@@ -392,45 +390,18 @@ function CadastroPage() {
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Analisando cadastro...
+                    <Loader2 className="h-4 w-4 animate-spin" /> Preparando seu pedido...
                   </>
                 ) : (
                   <>
-                    Analisar antes do pagamento <ArrowRight className="h-4 w-4" />
+                    Continuar <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </Button>
             </form>
           ) : (
             <div className="mt-8 space-y-6">
-              <Notice tone="success">CNPJ ativo, disponível e aprovado na pré-análise.</Notice>
-              <div className="grid gap-4 rounded-2xl border border-slate-200 p-5 sm:grid-cols-2">
-                <Review label="Razão social" value={prepared.company.legal_name} />
-                <Review
-                  label="Nome fantasia"
-                  value={prepared.company.trade_name ?? prepared.company.legal_name}
-                />
-                <Review label="CNPJ" value={formatCnpj(prepared.company.cnpj)} />
-                <Review
-                  label="Situação cadastral"
-                  value={prepared.company.registration_status ?? "Ativa"}
-                />
-                <Review label="Plano" value={prepared.plan.name} />
-                {prepared.plan.add_ons && prepared.plan.add_ons.value_cents > 0 ? (
-                  <Review
-                    label="Extras"
-                    value={`${prepared.plan.add_ons.users} usuÃ¡rio(s) e ${prepared.plan.add_ons.units} unidade(s)`}
-                  />
-                ) : null}
-                <Review
-                  label="Valor contratado"
-                  value={`${formatCurrencyFromCents(prepared.plan.price_cents, prepared.plan.currency)} / ${prepared.plan.billing_interval === "yearly" ? "ano" : "mês"}`}
-                />
-              </div>
-              <p className="text-sm leading-6 text-slate-600">
-                Esta fotografia da contratação será preservada. Mudanças futuras no preço ou no
-                plano não alteram este checkout.
-              </p>
+              <Notice tone="success">Tudo certo. Confira seu pedido e continue quando quiser.</Notice>
               {hasDirectMonthlyTrial ? (
                 <Notice tone="success">
                   Você terá 7 dias gratuitos. O cartão é solicitado no checkout seguro, mas não há
@@ -470,34 +441,34 @@ function CadastroPage() {
         </section>
 
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-          <div className="rounded-3xl bg-slate-950 p-6 text-white">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <ShieldCheck className="h-4 w-4 text-cyan-300" /> Proteção comercial
-            </div>
-            <div className="mt-5 space-y-4 text-sm text-slate-300">
-              <SecureItem>O preço vem diretamente do backend.</SecureItem>
-              <SecureItem>O pagamento é confirmado por webhook assinado.</SecureItem>
-              <SecureItem>A página de sucesso nunca libera acesso.</SecureItem>
-              <SecureItem>O acesso nasce bloqueado até validar o e-mail.</SecureItem>
-              {hasDirectMonthlyTrial ? (
-                <SecureItem>O cartão é guardado pelo Stripe; não há cobrança hoje.</SecureItem>
-              ) : null}
-            </div>
-          </div>
           {selectedPlan ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-6">
-              <div className="text-sm font-semibold text-slate-950">{selectedPlan.nome}</div>
-              <div className="mt-3 text-2xl font-semibold">
-                {formatCurrencyFromCents(
-                  interval === "yearly"
-                    ? selectedPlan.valor_anual_centavos
-                    : selectedPlan.valor_mensal_centavos,
-                  selectedPlan.moeda,
-                )}
+            <OrderSummary
+              planName={prepared?.plan.name ?? selectedPlan.nome}
+              interval={prepared?.plan.billing_interval ?? interval}
+              includedClients={
+                commercialMode === "parceiro"
+                  ? Number((selectedPlan as { limite_clientes?: number }).limite_clientes ?? 0)
+                  : 1
+              }
+              extraUsers={prepared?.plan.add_ons?.users ?? (commercialMode === "parceiro" ? 0 : extraUsers)}
+              extraUnits={prepared?.plan.add_ons?.units ?? (commercialMode === "parceiro" ? 0 : extraUnits)}
+              totalCents={
+                prepared?.plan.price_cents ??
+                (interval === "yearly"
+                  ? selectedPlan.valor_anual_centavos
+                  : selectedPlan.valor_mensal_centavos)
+              }
+              currency={prepared?.plan.currency ?? selectedPlan.moeda}
+            />
+          ) : null}
+          {hasDirectMonthlyTrial ? (
+            <div className="rounded-3xl border border-emerald-200 bg-emerald-50/70 p-5 text-sm leading-6 text-emerald-950">
+              <div className="flex items-center gap-2 font-semibold">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" /> 7 dias grátis
               </div>
-              <div className="mt-1 text-xs text-slate-500">
-                por {interval === "yearly" ? "ano" : "mês"}
-              </div>
+              <p className="mt-2">
+                Cartão necessário para começar. Sem cobrança hoje e cancelamento a qualquer momento.
+              </p>
             </div>
           ) : null}
         </aside>
@@ -533,21 +504,66 @@ function Field({
     </label>
   );
 }
-function Review({ label, value }: { label: string; value: string }) {
+function OrderSummary({
+  planName,
+  interval,
+  includedClients,
+  extraUsers,
+  extraUnits,
+  totalCents,
+  currency,
+}: {
+  planName: string;
+  interval: BillingInterval;
+  includedClients: number;
+  extraUsers: number;
+  extraUnits: number;
+  totalCents: number | null;
+  currency: string;
+}) {
+  const clientLabel = includedClients === 1 ? "1 empresa" : `${includedClients} empresas`;
+
   return (
-    <div>
-      <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-slate-950">{value}</div>
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_20px_54px_-46px_rgba(15,23,42,0.45)]">
+      <h2 className="text-base font-semibold text-slate-950">Resumo do pedido</h2>
+      <dl className="mt-5 space-y-4 text-sm">
+        <SummaryRow label="Plano" value={planName} />
+        <SummaryRow label="Periodicidade" value={interval === "yearly" ? "Anual" : "Mensal"} />
+        <SummaryRow label="Empresas incluídas" value={clientLabel} />
+        <SummaryRow label="Usuários extras" value={String(extraUsers)} />
+        <SummaryRow label="Unidades extras" value={String(extraUnits)} />
+      </dl>
+      <div className="mt-5 flex items-end justify-between border-t border-slate-100 pt-5">
+        <span className="text-sm font-medium text-slate-600">Valor total</span>
+        <span className="text-xl font-semibold tracking-tight text-slate-950">
+          {totalCents === null ? "Sob consulta" : formatCurrencyFromCents(totalCents, currency)}
+          <span className="ml-1 text-xs font-medium text-slate-500">
+            /{interval === "yearly" ? "ano" : "mês"}
+          </span>
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="text-right font-medium text-slate-950">{value}</dd>
     </div>
   );
 }
-function SecureItem({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2">
-      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
-      <span>{children}</span>
-    </div>
-  );
+
+function friendlyError(caught: unknown, fallback: string) {
+  const message = caught instanceof Error ? caught.message.trim() : "";
+  if (!message) return fallback;
+
+  if (/backend|webhook|api|rpc|supabase|stripe|permission|postgres|database|network/i.test(message)) {
+    return fallback;
+  }
+
+  return message;
 }
 function Notice({
   children,

@@ -177,7 +177,7 @@
     text-rendering: optimizeLegibility;
     height: 100%;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll;
   }
 
   body {
@@ -187,13 +187,12 @@
     font-size: 0.9375rem;
     line-height: 1.5;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
+    min-height: 100%;
+    overflow: visible;
   }
 
   #root {
-    min-height: 100%;
+    min-height: 100dvh;
     overflow: visible;
   }
 

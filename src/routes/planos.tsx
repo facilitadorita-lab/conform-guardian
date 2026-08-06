@@ -47,17 +47,20 @@ function PlanosPage() {
                 Planos claros para crescer com controle.
               </h1>
               <p className="mt-6 text-lg leading-8 text-slate-600">
-                Comece com documentos e alertas. Evolua para equipamentos, manutenções,
-                qualificações e visão multiunidade quando sua operação precisar.
+                Comece gratuitamente por 7 dias, teste todos os recursos e escolha com calma o plano
+                ideal para a sua operação.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button
                   asChild
                   className="h-12 rounded-xl bg-slate-950 px-6 text-white hover:bg-slate-800"
                 >
-                  <a href="#comparativo">
-                    Escolher plano <ArrowRight className="h-4 w-4" />
-                  </a>
+                  <Link
+                    to="/cadastro"
+                    search={{ plan: "profissional", interval: "monthly", checkout: undefined }}
+                  >
+                    Testar grátis por 7 dias <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </Button>
                 <Button asChild variant="outline" className="h-12 rounded-xl bg-white px-6">
                   <Link to="/login" search={{ msg: undefined }}>
@@ -73,15 +76,13 @@ function PlanosPage() {
                 <AddOn
                   title="Usuário extra"
                   price={formatOptionalPrice(addOns?.usuario_extra_centavos, addOns?.moeda)}
+                  description="Adicione novos colaboradores ao ambiente."
                 />
                 <AddOn
                   title="Unidade extra"
                   price={formatOptionalPrice(addOns?.unidade_extra_centavos, addOns?.moeda)}
+                  description="Gerencie mais unidades na mesma conta."
                 />
-              </div>
-              <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-                Valores, limites e permissões são carregados do backend. O navegador nunca decide
-                quais recursos uma empresa pode utilizar.
               </div>
             </div>
           </div>
@@ -94,7 +95,7 @@ function PlanosPage() {
             align="center"
             eyebrow="Comparativo"
             title="Escolha o plano pelo nível de maturidade da operação."
-            description="Preços, usuários, unidades e módulos vêm do catálogo comercial oficial do Conform Flow."
+            description="Compare recursos, usuários e unidades para encontrar a melhor opção para você."
           />
           <div className="mt-12">
             <PricingGrid />
@@ -107,8 +108,8 @@ function PlanosPage() {
           <div className="mx-auto max-w-7xl">
             <SectionTitle
               eyebrow="O que cada plano destrava"
-              title="Permissões comerciais conectadas ao uso real da plataforma."
-              description="O backend aplica os módulos e limites correspondentes ao plano contratado."
+              title="Tudo o que você precisa, no momento certo."
+              description="Veja os recursos incluídos em cada plano e evolua quando sua operação pedir."
             />
             <div className="mt-10 grid gap-5 lg:grid-cols-3">
               {catalog.data.plans.map((plan) => (
