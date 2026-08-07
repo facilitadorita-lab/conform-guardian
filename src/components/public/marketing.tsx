@@ -597,40 +597,42 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
           </div>
         </div>
       ) : null}
-      <div className="cf-stagger-grid grid gap-5 lg:grid-cols-3">
+      <div className="cf-stagger-grid grid items-stretch gap-5 lg:grid-cols-3">
         {catalog.data.plans.map((plan) => (
           <article
             key={plan.id}
             className={cn(
-              "relative flex rounded-2xl border bg-white p-6 shadow-[0_18px_50px_-42px_rgba(15,41,71,0.4)] transition-[border-color,box-shadow,transform] duration-[200ms] ease-out hover:-translate-y-1 hover:shadow-[0_24px_58px_-42px_rgba(15,41,71,0.5)]",
+              "cf-plan-card relative flex rounded-2xl border bg-white p-7 shadow-[0_18px_50px_-42px_rgba(15,41,71,0.4)] transition-[border-color,box-shadow,transform] duration-[200ms] ease-out hover:-translate-y-1 hover:shadow-[0_24px_58px_-42px_rgba(15,41,71,0.5)]",
               plan.mais_escolhido
-                ? "border-cyan-500 ring-2 ring-cyan-200/60 shadow-[0_26px_60px_-38px_rgba(6,182,212,0.55)] lg:-translate-y-2 lg:scale-[1.02]"
+                ? "cf-plan-card-featured border-cyan-500/90"
                 : "border-slate-200",
             )}
           >
             {plan.mais_escolhido ? (
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white shadow-lg">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white shadow-lg">
                 Recomendado
               </div>
             ) : null}
             <div className="flex w-full flex-col">
-              <h3 className="text-lg font-semibold text-slate-950">{plan.nome}</h3>
-              <p className="mt-1.5 min-h-10 text-[13px] leading-5 text-slate-600">{plan.descricao}</p>
-              <div className="mt-4 flex items-end gap-1">
-                <span className="text-3xl font-semibold tracking-tight text-slate-950">
+              <h3 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                {plan.nome}
+              </h3>
+              <p className="mt-2 min-h-10 text-[13px] leading-5 text-slate-600">{plan.descricao}</p>
+              <div className="mt-5 flex items-end gap-1.5">
+                <span className="text-[2.6rem] font-semibold leading-none tracking-[-0.045em] text-slate-950 tabular-nums">
                   {formatPlanPrice(plan, interval)}
                 </span>
-                <span className="pb-1 text-sm text-slate-500">
+                <span className="pb-1.5 text-sm font-medium text-slate-500">
                   /{interval === "monthly" ? "mês" : "ano"}
                 </span>
               </div>
               {interval === "yearly" ? <AnnualSavings plan={plan} /> : null}
               {interval === "monthly" ? (
-                <p className="mt-2 text-xs font-medium leading-5 text-emerald-700">
-                  7 dias grátis. Sem cobrança hoje. Cancele quando quiser.
+                <p className="mt-3 text-xs font-medium leading-5 text-emerald-700">
+                  Experimente por 7 dias antes da primeira cobrança. Cancele quando quiser.
                 </p>
               ) : null}
-              <div className="mt-4 grid gap-1.5 text-[13px] text-slate-600">
+              <div className="mt-5 grid gap-1.5 border-y border-slate-100 py-4 text-[13px] text-slate-600">
                 <PlanMeta icon={Users}>
                   {limitLabel(plan.limites.usuarios, "usuário", "usuários")}
                 </PlanMeta>
@@ -638,7 +640,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
                   {limitLabel(plan.limites.unidades, "unidade", "unidades")}
                 </PlanMeta>
               </div>
-              <div className={cn("mt-4 space-y-2", compact && "mt-4")}>
+              <div className="mt-4 space-y-2.5">
                 {enabledFeatureLabels(plan)
                   .slice(0, compact ? 4 : 6)
                   .map((feature) => (
@@ -651,11 +653,12 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
               <Button
                 asChild
                 className={cn(
-                  "mt-5 h-10 rounded-xl text-sm",
+                  "mt-auto h-11 rounded-xl pt-0 text-sm",
                   plan.mais_escolhido
                     ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500"
-                    : "bg-white text-slate-950 ring-1 ring-slate-200 hover:bg-slate-50",
+                    : "bg-slate-950 text-white hover:bg-slate-800",
                 )}
+                style={{ marginTop: "1.75rem" }}
               >
                 <a
                   href={withPublicBasePath(
