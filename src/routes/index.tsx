@@ -16,6 +16,27 @@ import {
   SectionTitle,
 } from "@/components/public/marketing";
 
+function HeroAtmosphere() {
+  return (
+    <div aria-hidden className="cf-hero-atmosphere">
+      <span className="cf-hero-glow cf-hero-glow-primary" />
+      <span className="cf-hero-glow cf-hero-glow-secondary" />
+      <span className="cf-hero-glow cf-hero-glow-accent" />
+
+      <span className="cf-hero-arc cf-hero-arc-one" />
+      <span className="cf-hero-arc cf-hero-arc-two" />
+
+      <span className="cf-flow-track cf-flow-track-one"><span className="cf-flow-node cf-flow-node-one" /></span>
+      <span className="cf-flow-track cf-flow-track-two"><span className="cf-flow-node cf-flow-node-two" /></span>
+      <span className="cf-flow-track cf-flow-track-three"><span className="cf-flow-node cf-flow-node-three" /></span>
+      <span className="cf-flow-track cf-flow-track-four"><span className="cf-flow-node cf-flow-node-four" /></span>
+      <span className="cf-flow-track cf-flow-track-five"><span className="cf-flow-node cf-flow-node-five" /></span>
+      <span className="cf-flow-track cf-flow-track-six"><span className="cf-flow-node cf-flow-node-six" /></span>
+      <span className="cf-flow-track cf-flow-track-seven"><span className="cf-flow-node cf-flow-node-seven" /></span>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -39,6 +60,7 @@ function LandingPage() {
       <section className="relative isolate overflow-hidden bg-[radial-gradient(circle_at_15%_-10%,rgba(6,182,212,0.18),transparent_45%),radial-gradient(circle_at_100%_20%,rgba(59,130,246,0.12),transparent_45%),linear-gradient(180deg,#f6faff_0%,#fbfcfe_80%)]">
         {/* Grid overlay */}
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(15,41,71,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(15,41,71,0.04)_1px,transparent_1px)] bg-[size:44px_44px] [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
+        <HeroAtmosphere />
 
         {/* Institutional watermark */}
         <div
@@ -50,7 +72,7 @@ function LandingPage() {
           </span>
         </div>
 
-        <div className="relative mx-auto grid max-w-[86rem] gap-12 px-5 pb-16 pt-16 md:pt-20 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-16 lg:px-8 lg:pb-24 lg:pt-24">
+        <div className="relative z-10 mx-auto grid max-w-[86rem] gap-12 px-5 pb-16 pt-16 md:pt-20 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-16 lg:px-8 lg:pb-24 lg:pt-24">
           <Reveal className="cf-hero-sequence">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-200/80 bg-white/90 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 shadow-[0_10px_24px_-20px_rgba(6,182,212,0.6)] backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" />
@@ -103,7 +125,10 @@ function LandingPage() {
 
           {/* Enlarged mockup */}
           <Reveal delay={120} className="relative lg:-mr-6 xl:-mr-16">
-            <div className="cf-product-stage"><ProductMockup /></div>
+            <div className="cf-product-stage cf-hero-product-stage">
+              <span aria-hidden className="cf-hero-product-halo" />
+              <div className="relative z-10"><ProductMockup /></div>
+            </div>
           </Reveal>
         </div>
       </section>
