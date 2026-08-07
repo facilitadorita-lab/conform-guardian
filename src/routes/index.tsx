@@ -74,8 +74,8 @@ function LandingPage() {
           </span>
         </div>
 
-        <div className="relative z-10 mx-auto grid max-w-[86rem] gap-12 px-5 pb-16 pt-16 md:pt-20 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-16 lg:px-8 lg:pb-24 lg:pt-24">
-          <Reveal className="cf-hero-sequence">
+        <div className="relative z-10 mx-auto grid max-w-[86rem] gap-12 px-5 pb-16 pt-16 md:pt-20 lg:grid-cols-[0.88fr_1.12fr] lg:items-start lg:gap-16 lg:px-8 lg:pb-24 lg:pt-24">
+          <Reveal className="cf-hero-sequence lg:pt-14">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-200/80 bg-white/90 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 shadow-[0_10px_24px_-20px_rgba(6,182,212,0.6)] backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" />
               7 dias grátis · sem compromisso
