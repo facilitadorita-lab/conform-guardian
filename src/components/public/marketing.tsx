@@ -653,12 +653,11 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
               <Button
                 asChild
                 className={cn(
-                  "mt-auto h-11 rounded-xl pt-0 text-sm",
+                  "mt-7 h-11 rounded-xl text-sm",
                   plan.mais_escolhido
                     ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-500 hover:to-blue-500"
                     : "bg-slate-950 text-white hover:bg-slate-800",
                 )}
-                style={{ marginTop: "1.75rem" }}
               >
                 <a
                   href={withPublicBasePath(
