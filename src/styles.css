@@ -342,6 +342,69 @@
     animation: cf-fade-up 220ms var(--cf-ease) both;
   }
 
+  .cf-reveal {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  .cf-reveal.is-visible {
+    animation: cf-public-reveal 520ms var(--cf-ease) var(--cf-reveal-delay, 0ms) both;
+  }
+
+  .cf-reveal.is-visible .cf-hero-sequence > * {
+    animation: cf-public-reveal 460ms var(--cf-ease) both;
+  }
+
+  .cf-reveal.is-visible .cf-hero-sequence > *:nth-child(1) {
+    animation-delay: 40ms;
+  }
+
+  .cf-reveal.is-visible .cf-hero-sequence > *:nth-child(2) {
+    animation-delay: 110ms;
+  }
+
+  .cf-reveal.is-visible .cf-hero-sequence > *:nth-child(3) {
+    animation-delay: 180ms;
+  }
+
+  .cf-reveal.is-visible .cf-hero-sequence > *:nth-child(4) {
+    animation-delay: 250ms;
+  }
+
+  @keyframes cf-public-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .cf-product-stage {
+    animation: cf-product-settle 600ms var(--cf-ease) 140ms both;
+  }
+
+  @keyframes cf-product-settle {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .cf-cta-arrow {
+    transition: transform var(--cf-duration) var(--cf-ease);
+  }
+
+  .group:hover .cf-cta-arrow {
+    transform: translateX(3px);
+  }
+
   @keyframes cf-fade-up {
     from {
       opacity: 0;

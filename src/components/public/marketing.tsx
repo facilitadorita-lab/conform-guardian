@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowRight,
   BellRing,
@@ -12,9 +12,6 @@ import {
   LineChart,
   LockKeyhole,
   type LucideIcon,
-  Mail,
-  MapPin,
-  Phone,
   PlusCircle,
   ShieldAlert,
   ShieldCheck,
@@ -168,9 +165,23 @@ export function LogoSignature({
 }
 
 export function PublicHeader() {
+  const [isCompact, setIsCompact] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setIsCompact(window.scrollY > 16);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-2xl">
-      <div className="mx-auto flex h-[5.25rem] w-full max-w-7xl items-center justify-between gap-4 px-5 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-2xl transition-[background-color,border-color] duration-200 ease-out">
+      <div
+        className={cn(
+          "mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 transition-[height] duration-200 ease-out lg:px-8",
+          isCompact ? "h-16" : "h-[5.25rem]",
+        )}
+      >
         <Link to="/" aria-label="Página inicial Conform Flow">
           <LogoSignature />
         </Link>
@@ -227,33 +238,13 @@ export function PublicFooter() {
   return (
     <footer className="border-t border-slate-200 bg-slate-950 text-slate-300">
       <div className="mx-auto w-full max-w-7xl px-5 py-16 lg:px-8">
-        <div className="grid gap-12 md:grid-cols-[1.4fr_0.8fr_0.8fr_1fr]">
+        <div className="grid gap-12 md:grid-cols-[1.4fr_0.8fr_0.8fr]">
           <div>
             <LogoSignature tone="light" />
             <p className="mt-5 max-w-sm text-sm leading-6 text-slate-400">
               Plataforma SaaS para gestão de conformidade operacional em empresas reguladas.
               Documentos, equipamentos e vencimentos sob controle.
             </p>
-            <div className="mt-6 flex flex-col gap-3 text-sm text-slate-400">
-              <a
-                href="mailto:comercial@conformflow.com.br"
-                className="flex items-center gap-2.5 transition-colors hover:text-white"
-              >
-                <Mail className="h-4 w-4 text-cyan-400" />
-                comercial@conformflow.com.br
-              </a>
-              <a
-                href="tel:+5511999999999"
-                className="flex items-center gap-2.5 transition-colors hover:text-white"
-              >
-                <Phone className="h-4 w-4 text-cyan-400" />
-                +55 (11) 9 9999-9999
-              </a>
-              <div className="flex items-center gap-2.5">
-                <MapPin className="h-4 w-4 text-cyan-400" />
-                São Paulo, Brasil
-              </div>
-            </div>
           </div>
           <FooterGroup
             title="Produto"
@@ -268,16 +259,8 @@ export function PublicFooter() {
             title="Empresa"
             links={[
               { label: "Sobre", href: "/#beneficios" },
-              { label: "Contato", href: "mailto:comercial@conformflow.com.br" },
-              { label: "Suporte", href: "mailto:suporte@conformflow.com.br" },
-            ]}
-          />
-          <FooterGroup
-            title="Acesso"
-            links={[
               { label: "Entrar na plataforma", href: "/login" },
               { label: "Começar teste gratuito", href: "/cadastro?plan=profissional&interval=monthly" },
-              { label: "Definir nova senha", href: "/definir-senha" },
             ]}
           />
         </div>
@@ -285,14 +268,6 @@ export function PublicFooter() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-2 px-5 py-6 text-xs text-slate-500 md:flex-row lg:px-8">
           <span>© {new Date().getFullYear()} Conform Flow. Todos os direitos reservados.</span>
-          <span className="flex items-center gap-4">
-            <a href={withPublicBasePath("/#faq")} className="transition-colors hover:text-slate-300">
-              Termos de uso
-            </a>
-            <a href={withPublicBasePath("/#faq")} className="transition-colors hover:text-slate-300">
-              Privacidade
-            </a>
-          </span>
         </div>
       </div>
     </footer>
@@ -350,6 +325,50 @@ export function SectionTitle({
   );
 }
 
+export function Reveal({
+  children,
+  className,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const reference = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const element = reference.current;
+    if (!element) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
+      setVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setVisible(true);
+        observer.disconnect();
+      },
+      { threshold: 0.12 },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={reference}
+      className={cn("cf-reveal", visible && "is-visible", className)}
+      style={{ "--cf-reveal-delay": `${delay}ms` } as CSSProperties}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function FeatureCard({
   icon: Icon,
   title,
@@ -402,6 +421,27 @@ export function ModuleCard({
   );
 }
 
+const publicPlanFallbacks = [
+  {
+    name: "Essencial",
+    audience: "Para centralizar documentos, anexos e vencimentos.",
+    price: "R$ 159,90",
+    features: ["Documentos e anexos", "Vencimentos e alertas", "Dashboard e assistente IA"],
+  },
+  {
+    name: "Profissional",
+    audience: "Para controlar toda a rotina de conformidade.",
+    price: "R$ 249,90",
+    features: ["Tudo do Essencial", "Equipamentos e manutenções", "Calibrações e qualificações"],
+  },
+  {
+    name: "Plano Rede",
+    audience: "Para operações com mais unidades e visão consolidada.",
+    price: "R$ 399,90",
+    features: ["Tudo do Profissional", "Visão multiunidade", "Relatórios por unidade"],
+  },
+];
+
 export function PricingGrid({ compact = false }: { compact?: boolean }) {
   const catalog = usePublicCatalog();
   const [interval, setInterval] = useState<BillingInterval>("monthly");
@@ -418,14 +458,40 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
 
   if (catalog.error || !catalog.data?.plans.length) {
     return (
-      <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center">
-        <h3 className="font-semibold text-slate-950">Planos temporariamente indisponíveis</h3>
-        <p className="mt-2 text-sm text-slate-600">
-          Não foi possível carregar os planos agora. Tente novamente em instantes.
-        </p>
-        <Button type="button" variant="outline" className="mt-5" onClick={() => catalog.refetch()}>
-          Tentar novamente
-        </Button>
+      <div>
+        <div className="mb-6 flex flex-col items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-center sm:flex-row sm:text-left">
+          <p className="text-sm text-slate-600">
+            Estamos atualizando as opções de assinatura. Confira os planos abaixo ou tente novamente.
+          </p>
+          <Button type="button" variant="outline" className="shrink-0 rounded-lg" onClick={() => catalog.refetch()}>
+            Atualizar
+          </Button>
+        </div>
+        <div className="grid gap-5 lg:grid-cols-3">
+          {publicPlanFallbacks.map((plan) => (
+            <article key={plan.name} className="flex rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_18px_50px_-42px_rgba(15,41,71,0.4)]">
+              <div className="flex w-full flex-col">
+                <h3 className="text-lg font-semibold text-slate-950">{plan.name}</h3>
+                <p className="mt-1.5 min-h-10 text-[13px] leading-5 text-slate-600">{plan.audience}</p>
+                <div className="mt-4 flex items-end gap-1">
+                  <span className="text-3xl font-semibold tracking-tight text-slate-950">{plan.price}</span>
+                  <span className="pb-1 text-sm text-slate-500">/mês</span>
+                </div>
+                <div className="mt-5 space-y-2">
+                  {plan.features.map((feature) => (
+                    <div key={feature} className="flex items-start gap-2 text-[13px] text-slate-700">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                <Button type="button" variant="outline" disabled className="mt-5 h-10 rounded-xl text-sm">
+                  Consulte as opções
+                </Button>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     );
   }
