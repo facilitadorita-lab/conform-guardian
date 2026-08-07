@@ -420,18 +420,11 @@ export function Reveal({
   delay?: number;
 }) {
   const { reference, visible } = useInViewOnce<HTMLDivElement>();
-  const [motionReady, setMotionReady] = useState(false);
-
-  useEffect(() => {
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setMotionReady(true);
-    }
-  }, []);
 
   return (
     <div
       ref={reference}
-      className={cn("cf-reveal", motionReady && "is-pending", visible && "is-visible", className)}
+      className={cn("cf-reveal", visible && "is-visible", className)}
       style={{ "--cf-reveal-delay": `${delay}ms` } as CSSProperties}
     >
       {children}

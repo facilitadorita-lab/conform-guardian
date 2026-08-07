@@ -19,6 +19,7 @@ import {
 function HeroAtmosphere() {
   return (
     <div aria-hidden className="cf-hero-atmosphere">
+      <span className="cf-hero-noise" />
       <span className="cf-hero-glow cf-hero-glow-primary" />
       <span className="cf-hero-glow cf-hero-glow-secondary" />
       <span className="cf-hero-glow cf-hero-glow-accent" />
@@ -57,15 +58,16 @@ function LandingPage() {
       <PublicHeader />
 
       {/* HERO */}
-      <section className="relative isolate overflow-hidden bg-[radial-gradient(circle_at_15%_-10%,rgba(6,182,212,0.18),transparent_45%),radial-gradient(circle_at_100%_20%,rgba(59,130,246,0.12),transparent_45%),linear-gradient(180deg,#f6faff_0%,#fbfcfe_80%)]">
+      <section className="relative isolate overflow-hidden bg-[linear-gradient(112deg,#fbfdff_0%,#f7fcff_34%,#ecfbff_64%,#f5f6ff_100%)]">
         {/* Grid overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(15,41,71,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(15,41,71,0.04)_1px,transparent_1px)] bg-[size:44px_44px] [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
+        <div aria-hidden className="cf-hero-grid" />
         <HeroAtmosphere />
+        <div aria-hidden className="cf-hero-bottom-fade" />
 
         {/* Institutional watermark */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-[42%] flex select-none justify-center overflow-hidden"
+          className="pointer-events-none absolute inset-x-0 top-[42%] z-0 flex select-none justify-center overflow-hidden"
         >
           <span className="whitespace-nowrap bg-gradient-to-b from-slate-900/[0.05] to-transparent bg-clip-text text-[18vw] font-black leading-none tracking-[-0.06em] text-transparent md:text-[14vw]">
             conform.
@@ -108,14 +110,14 @@ function LandingPage() {
                 <Link to="/planos">Ver planos e preços</Link>
               </Button>
             </div>
-            <div className="mt-8 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+            <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-600">
               {[
                 "7 dias gratuitos",
                 "Cancele quando quiser",
                 "Ativação imediata",
-                "Sem burocracia",
-              ].map((item) => (
+              ].map((item, index) => (
                 <div key={item} className="flex items-center gap-2">
+                  {index > 0 && <span aria-hidden className="text-slate-300">{"\u00B7"}</span>}
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
                   <span>{item}</span>
                 </div>
@@ -124,9 +126,36 @@ function LandingPage() {
           </Reveal>
 
           {/* Enlarged mockup */}
-          <Reveal delay={120} className="relative lg:-mr-6 xl:-mr-16">
+          <Reveal delay={120} className="relative lg:pr-5 xl:pr-8">
             <div className="cf-product-stage cf-hero-product-stage">
               <span aria-hidden className="cf-hero-product-halo" />
+              <div aria-hidden className="cf-hero-context cf-hero-context-a">
+                <div className="cf-hero-context-card">
+                  <ShieldCheck className="h-4 w-4 text-cyan-700" />
+                  <span>
+                    <strong>Pronto para auditoria</strong>
+                    <small>Ambiente monitorado</small>
+                  </span>
+                </div>
+              </div>
+              <div aria-hidden className="cf-hero-context cf-hero-context-b">
+                <div className="cf-hero-context-card">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>
+                    <strong>92% de conformidade</strong>
+                    <small>Indicador atualizado</small>
+                  </span>
+                </div>
+              </div>
+              <div aria-hidden className="cf-hero-context cf-hero-context-c">
+                <div className="cf-hero-context-card">
+                  <Sparkles className="h-4 w-4 text-amber-600" />
+                  <span>
+                    <strong>{"3 vencimentos pr\u00f3ximos"}</strong>
+                    <small>{"A\u00e7\u00e3o recomendada"}</small>
+                  </span>
+                </div>
+              </div>
               <div className="relative z-10"><ProductMockup /></div>
             </div>
           </Reveal>
