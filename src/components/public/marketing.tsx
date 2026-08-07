@@ -353,7 +353,7 @@ export function SectionTitle({
   );
 }
 
-function useInViewOnce<T extends Element>(threshold = 0.12) {
+export function useInViewOnce<T extends Element>(threshold = 0.12) {
   const reference = useRef<T>(null);
   const [visible, setVisible] = useState(false);
 
