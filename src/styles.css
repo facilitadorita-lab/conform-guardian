@@ -646,6 +646,24 @@
     will-change: transform, opacity;
   }
 
+  .cf-mockup-shell {
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.94), inset 0 -1px 0 rgba(148, 163, 184, 0.06);
+  }
+
+  .cf-mockup-shell::before {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    right: 8%;
+    left: 8%;
+    height: 1px;
+    content: "";
+    background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.55), transparent);
+    opacity: 0.7;
+  }
+
   .cf-hero-context {
     position: absolute;
     z-index: 1;
