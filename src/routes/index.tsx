@@ -3,19 +3,21 @@ import { useEffect, useRef } from "react";
 import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  benefitCards,
   CtaSection,
   FAQSection,
-  FeatureCard,
-  ModuleCard,
   PricingGrid,
   ProductMockup,
-  publicModules,
   PublicFooter,
   PublicHeader,
   Reveal,
   SectionTitle,
 } from "@/components/public/marketing";
+import {
+  BenefitsBento,
+  HowItWorks,
+  ModuleShowcase,
+  useHeroVisibilityFlag,
+} from "@/components/public/sections";
 
 function HeroAtmosphere() {
   const atmosphereRef = useRef<HTMLDivElement>(null);
@@ -97,12 +99,14 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
+  const heroRef = useHeroVisibilityFlag<HTMLElement>();
+
   return (
     <main className="min-h-screen bg-[#fbfcfe] text-slate-950">
       <PublicHeader />
 
       {/* HERO */}
-      <section className="cf-hero-surface relative isolate overflow-hidden">
+      <section ref={heroRef} className="cf-hero-surface relative isolate overflow-hidden">
         {/* Grid overlay */}
         <div aria-hidden className="cf-hero-grid" />
         <HeroAtmosphere />
@@ -206,8 +210,8 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* BENEFITS — single focused section */}
-      <section id="beneficios" className="bg-white py-24">
+      {/* BENEFITS — bento grid */}
+      <section id="beneficios" className="cf-band-white py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <Reveal>
             <SectionTitle
@@ -218,17 +222,13 @@ function LandingPage() {
             />
           </Reveal>
           <Reveal delay={60} className="mt-12">
-            <div className="cf-stagger-grid grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {benefitCards.map((item) => (
-                <FeatureCard key={item.title} {...item} />
-              ))}
-            </div>
+            <BenefitsBento />
           </Reveal>
         </div>
       </section>
 
-      {/* MODULES */}
-      <section id="modulos" className="bg-slate-50 py-24">
+      {/* MODULES — product showcase */}
+      <section id="modulos" className="cf-band-ice py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <Reveal>
             <SectionTitle
@@ -239,17 +239,15 @@ function LandingPage() {
             />
           </Reveal>
           <Reveal delay={60} className="mt-12">
-            <div className="cf-stagger-grid grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {publicModules.map((module) => (
-                <ModuleCard key={module.title} {...module} />
-              ))}
-            </div>
+            <ModuleShowcase />
           </Reveal>
         </div>
       </section>
 
+      <HowItWorks />
+
       {/* PLANS */}
-      <section id="planos" className="bg-white py-24">
+      <section id="planos" className="cf-band-slate py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <Reveal>
             <SectionTitle
