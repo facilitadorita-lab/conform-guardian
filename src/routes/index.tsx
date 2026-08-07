@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +18,52 @@ import {
 } from "@/components/public/marketing";
 
 function HeroAtmosphere() {
+  const atmosphereRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const atmosphere = atmosphereRef.current;
+    if (
+      !atmosphere
+      || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      || !window.matchMedia("(hover: hover) and (pointer: fine) and (min-width: 1024px)").matches
+    ) {
+      return;
+    }
+
+    let frame = 0;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const update = () => {
+      currentX += (targetX - currentX) * 0.08;
+      currentY += (targetY - currentY) * 0.08;
+      atmosphere.style.setProperty("--cf-pointer-x", `${currentX.toFixed(2)}px`);
+      atmosphere.style.setProperty("--cf-pointer-y", `${currentY.toFixed(2)}px`);
+      frame = Math.abs(targetX - currentX) + Math.abs(targetY - currentY) > 0.04
+        ? requestAnimationFrame(update)
+        : 0;
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      targetX = Math.max(-10, Math.min(10, (event.clientX / window.innerWidth - 0.5) * 20));
+      targetY = Math.max(-8, Math.min(8, (event.clientY / window.innerHeight - 0.5) * 16));
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
   return (
-    <div aria-hidden className="cf-hero-atmosphere">
+    <div ref={atmosphereRef} aria-hidden className="cf-hero-atmosphere">
+      <span className="cf-hero-mesh" />
       <span className="cf-hero-noise" />
+      <span className="cf-hero-pointer-glow" />
       <span className="cf-hero-glow cf-hero-glow-primary" />
       <span className="cf-hero-glow cf-hero-glow-secondary" />
       <span className="cf-hero-glow cf-hero-glow-accent" />
@@ -58,7 +102,7 @@ function LandingPage() {
       <PublicHeader />
 
       {/* HERO */}
-      <section className="relative isolate overflow-hidden bg-[linear-gradient(112deg,#fbfdff_0%,#f7fcff_34%,#ecfbff_64%,#f5f6ff_100%)]">
+      <section className="cf-hero-surface relative isolate overflow-hidden">
         {/* Grid overlay */}
         <div aria-hidden className="cf-hero-grid" />
         <HeroAtmosphere />

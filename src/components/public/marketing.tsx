@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowRight,
   BellRing,
@@ -381,8 +381,18 @@ function useInViewOnce<T extends Element>(threshold = 0.12) {
   return { reference, visible };
 }
 
-function useCountUp(value: number, active: boolean, duration = 760) {
-  const [current, setCurrent] = useState(value);
+const AnimatedNumber = memo(function AnimatedNumber({
+  value,
+  active,
+  duration = 2100,
+  delay = 760,
+}: {
+  value: number;
+  active: boolean;
+  duration?: number;
+  delay?: number;
+}) {
+  const [current, setCurrent] = useState(0);
   const didAnimate = useRef(false);
 
   useEffect(() => {
@@ -394,21 +404,26 @@ function useCountUp(value: number, active: boolean, duration = 760) {
       return;
     }
 
-    setCurrent(0);
-    const startedAt = performance.now();
+    const startedAt = performance.now() + delay;
     let frame = 0;
     const tick = (now: number) => {
+      if (now < startedAt) {
+        frame = requestAnimationFrame(tick);
+        return;
+      }
+
       const progress = Math.min((now - startedAt) / duration, 1);
-      const eased = 1 - (1 - progress) ** 3;
-      setCurrent(Math.round(value * eased));
+      const eased = 1 - (1 - progress) ** 4;
+      const next = Math.round(value * eased);
+      setCurrent((previous) => (previous === next ? previous : next));
       if (progress < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [active, duration, value]);
+  }, [active, delay, duration, value]);
 
-  return current;
-}
+  return <>{current}</>;
+});
 
 export function Reveal({
   children,
@@ -852,7 +867,6 @@ export function CtaSection() {
 
 export function ProductMockup() {
   const { reference, visible } = useInViewOnce<HTMLDivElement>(0.2);
-  const score = useCountUp(92, visible);
   const rows: Array<{ nome: string; tipo: string; prazo: string; status: string; tone: "warn" | "danger" | "ok" }> = [
     { nome: "AVCB — sede administrativa", tipo: "Documento", prazo: "vence em 12 dias", status: "Atenção", tone: "warn" },
     { nome: "Geladeira de vacinas 01", tipo: "Calibração", prazo: "vence em 18 dias", status: "A vencer", tone: "warn" },
@@ -880,7 +894,7 @@ export function ProductMockup() {
       )}
     >
       <div className="pointer-events-none absolute -inset-8 -z-10 rounded-[2rem] bg-gradient-to-br from-cyan-400/15 via-white/0 to-blue-500/15 blur-3xl" />
-      <div className="rounded-[1rem] border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white p-5 shadow-inner">
+      <div className="cf-mockup-shell rounded-[1rem] border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white p-5 shadow-inner">
         {/* Chrome */}
         <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2.5">
@@ -901,7 +915,7 @@ export function ProductMockup() {
         </div>
 
         {/* Header row */}
-        <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="cf-mockup-header mb-5 flex items-start justify-between gap-4">
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-700">
               Dashboard executivo
@@ -910,8 +924,8 @@ export function ProductMockup() {
               Índice de conformidade
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-4xl font-semibold tracking-[-0.03em] text-slate-950 tabular-nums">
-                {score}
+              <span className="cf-mockup-score inline-block min-w-[2.2ch] text-4xl font-semibold tracking-[-0.03em] text-slate-950 tabular-nums">
+                <AnimatedNumber value={92} active={visible} />
               </span>
               <span className="text-lg font-semibold text-slate-500">%</span>
               <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
@@ -953,7 +967,7 @@ export function ProductMockup() {
 
         {/* Chart + activity */}
         <div className="mt-4 grid gap-3 lg:grid-cols-[1.4fr_1fr]">
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="cf-mockup-chart rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
@@ -997,7 +1011,7 @@ export function ProductMockup() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="cf-mockup-activity-panel rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                 Atividade recente
@@ -1021,7 +1035,7 @@ export function ProductMockup() {
         </div>
 
         {/* Table */}
-        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="cf-mockup-table mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5">
             <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
               Próximos vencimentos

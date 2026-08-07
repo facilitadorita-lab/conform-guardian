@@ -403,12 +403,47 @@
     }
   }
 
+  .cf-hero-surface {
+    background:
+      radial-gradient(68% 76% at 69% 54%, rgba(103, 232, 249, 0.19), transparent 69%),
+      radial-gradient(44% 58% at 96% 7%, rgba(129, 140, 248, 0.11), transparent 72%),
+      radial-gradient(40% 52% at 44% 84%, rgba(147, 197, 253, 0.1), transparent 74%),
+      linear-gradient(112deg, #fcfeff 0%, #f7fcff 34%, #effbff 66%, #f7f7ff 100%);
+  }
+
   .cf-hero-atmosphere {
     position: absolute;
     inset: 0;
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
+    --cf-pointer-x: 0px;
+    --cf-pointer-y: 0px;
+  }
+
+  .cf-hero-mesh {
+    position: absolute;
+    inset: -10%;
+    display: block;
+    opacity: 0.68;
+    background:
+      radial-gradient(38% 48% at 75% 53%, rgba(56, 189, 248, 0.17), transparent 72%),
+      radial-gradient(31% 43% at 58% 25%, rgba(125, 211, 252, 0.13), transparent 74%),
+      radial-gradient(28% 36% at 96% 15%, rgba(165, 180, 252, 0.1), transparent 76%);
+  }
+
+  .cf-hero-pointer-glow {
+    position: absolute;
+    right: 5%;
+    bottom: 8%;
+    display: block;
+    width: min(46vw, 44rem);
+    aspect-ratio: 1.3;
+    border-radius: 48%;
+    opacity: 0.28;
+    background: radial-gradient(ellipse, rgba(14, 165, 233, 0.18) 0%, rgba(34, 211, 238, 0.06) 45%, transparent 72%);
+    transform: translate3d(var(--cf-pointer-x), var(--cf-pointer-y), 0);
+    will-change: transform;
   }
 
   .cf-hero-grid {
@@ -771,6 +806,17 @@
     }
   }
 
+  @keyframes cf-mockup-panel-enter {
+    from {
+      opacity: 0.97;
+      transform: translate3d(0, 5px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
   @media (prefers-reduced-motion: no-preference) {
     .cf-hero-sequence > * {
       animation: cf-hero-content-enter 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -803,15 +849,15 @@
     }
 
     .cf-hero-glow-primary {
-      animation: cf-hero-glow-primary 27s cubic-bezier(0.45, 0, 0.55, 1) -9s infinite;
+      animation: cf-hero-glow-primary 26s cubic-bezier(0.45, 0, 0.55, 1) -9s infinite;
     }
 
     .cf-hero-glow-secondary {
-      animation: cf-hero-glow-secondary 31s cubic-bezier(0.45, 0, 0.55, 1) -16s infinite;
+      animation: cf-hero-glow-secondary 34s cubic-bezier(0.45, 0, 0.55, 1) -16s infinite;
     }
 
     .cf-hero-glow-accent {
-      animation: cf-hero-glow-accent 23s cubic-bezier(0.45, 0, 0.55, 1) -6s infinite;
+      animation: cf-hero-glow-accent 41s cubic-bezier(0.45, 0, 0.55, 1) -6s infinite;
     }
 
     .cf-hero-product-halo {
@@ -846,48 +892,43 @@
       animation: cf-flow-right-one 18s linear -15s infinite;
     }
 
+    .cf-mockup-active .cf-mockup-header {
+      animation: cf-mockup-panel-enter 500ms var(--cf-ease) 180ms both;
+    }
+
     .cf-mockup-active .cf-mockup-kpi {
-      animation: cf-public-reveal 460ms var(--cf-ease) both;
+      animation: cf-mockup-panel-enter 560ms var(--cf-ease) both;
     }
 
-    .cf-mockup-active .cf-mockup-kpi:nth-child(1) {
-      animation-delay: 90ms;
-    }
-
-    .cf-mockup-active .cf-mockup-kpi:nth-child(2) {
-      animation-delay: 150ms;
-    }
-
-    .cf-mockup-active .cf-mockup-kpi:nth-child(3) {
-      animation-delay: 210ms;
-    }
+    .cf-mockup-active .cf-mockup-kpi:nth-child(1) { animation-delay: 700ms; }
+    .cf-mockup-active .cf-mockup-kpi:nth-child(2) { animation-delay: 820ms; }
+    .cf-mockup-active .cf-mockup-kpi:nth-child(3) { animation-delay: 940ms; }
 
     .cf-mockup-active .cf-mockup-progress {
-      animation: cf-mockup-progress 620ms var(--cf-ease) 190ms both;
+      animation: cf-mockup-progress 1600ms cubic-bezier(0.16, 1, 0.3, 1) 1160ms both;
     }
 
-    .cf-mockup-active .cf-mockup-kpi:nth-child(2) .cf-mockup-progress {
-      animation-delay: 250ms;
+    .cf-mockup-active .cf-mockup-kpi:nth-child(2) .cf-mockup-progress { animation-delay: 1300ms; }
+    .cf-mockup-active .cf-mockup-kpi:nth-child(3) .cf-mockup-progress { animation-delay: 1440ms; }
+
+    .cf-mockup-active .cf-mockup-chart {
+      animation: cf-mockup-panel-enter 620ms var(--cf-ease) 1660ms both;
     }
 
-    .cf-mockup-active .cf-mockup-kpi:nth-child(3) .cf-mockup-progress {
-      animation-delay: 310ms;
+    .cf-mockup-active .cf-mockup-activity-panel {
+      animation: cf-mockup-panel-enter 620ms var(--cf-ease) 1840ms both;
     }
 
     .cf-mockup-active .cf-mockup-activity {
-      animation: cf-public-reveal 380ms var(--cf-ease) both;
+      animation: cf-mockup-panel-enter 420ms var(--cf-ease) both;
     }
 
-    .cf-mockup-active .cf-mockup-activity:nth-child(1) {
-      animation-delay: 320ms;
-    }
+    .cf-mockup-active .cf-mockup-activity:nth-child(1) { animation-delay: 2020ms; }
+    .cf-mockup-active .cf-mockup-activity:nth-child(2) { animation-delay: 2120ms; }
+    .cf-mockup-active .cf-mockup-activity:nth-child(3) { animation-delay: 2220ms; }
 
-    .cf-mockup-active .cf-mockup-activity:nth-child(2) {
-      animation-delay: 390ms;
-    }
-
-    .cf-mockup-active .cf-mockup-activity:nth-child(3) {
-      animation-delay: 460ms;
+    .cf-mockup-active .cf-mockup-table {
+      animation: cf-mockup-panel-enter 620ms var(--cf-ease) 2040ms both;
     }
   }
 
@@ -930,6 +971,7 @@
 
     .cf-hero-glow-accent,
     .cf-hero-glow-secondary,
+    .cf-hero-pointer-glow,
     .cf-hero-arc,
     .cf-hero-context,
     .cf-flow-track-three,
