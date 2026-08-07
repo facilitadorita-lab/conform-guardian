@@ -3,7 +3,6 @@ import { useEffect, useRef } from "react";
 import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  benefitCards,
   CtaSection,
   FAQSection,
   PricingGrid,
