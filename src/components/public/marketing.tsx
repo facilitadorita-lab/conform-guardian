@@ -789,7 +789,7 @@ export function FAQSection() {
   ];
 
   return (
-    <section id="faq" className="bg-white py-20">
+    <section id="faq" className="cf-band-white py-24">
       <div className="mx-auto max-w-4xl px-5 lg:px-8">
         <Reveal>
           <SectionTitle
@@ -800,17 +800,13 @@ export function FAQSection() {
           />
         </Reveal>
         <Reveal delay={80}>
-          <Accordion
-            type="single"
-            collapsible
-            className="mt-10 rounded-2xl border border-slate-200 bg-slate-50/55 px-6 shadow-[0_18px_50px_-42px_rgba(15,23,42,0.28)]"
-          >
+          <Accordion type="single" collapsible className="cf-faq mt-12">
             {faqs.map((faq) => (
-              <AccordionItem key={faq.q} value={faq.q}>
-                <AccordionTrigger className="text-left text-base text-slate-950 hover:no-underline">
+              <AccordionItem key={faq.q} value={faq.q} className="border-slate-200/90">
+                <AccordionTrigger className="py-5 text-left text-[15.5px] font-semibold tracking-[-0.01em] text-slate-950 hover:no-underline">
                   {faq.q}
                 </AccordionTrigger>
-                <AccordionContent className="text-sm leading-6 text-slate-600">
+                <AccordionContent className="max-w-[54rem] pb-6 text-[14px] leading-7 text-slate-600">
                   {faq.a}
                 </AccordionContent>
               </AccordionItem>
