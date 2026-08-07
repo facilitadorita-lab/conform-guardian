@@ -43,6 +43,13 @@ function withPublicBasePath(href: string) {
   return href.startsWith("/") ? `${publicBasePath}${href}` : href;
 }
 
+const publicNavigationItems = [
+  { label: "Benefícios", href: withPublicBasePath("/#beneficios"), section: "beneficios" },
+  { label: "Módulos", href: withPublicBasePath("/#modulos"), section: "modulos" },
+  { label: "Planos", href: withPublicBasePath("/#planos"), section: "planos" },
+  { label: "FAQ", href: withPublicBasePath("/#faq"), section: "faq" },
+];
+
 export const publicModules = [
   {
     title: "Dashboard executivo",
@@ -166,12 +173,38 @@ export function LogoSignature({
 
 export function PublicHeader() {
   const [isCompact, setIsCompact] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const compactReference = useRef(false);
 
   useEffect(() => {
-    const onScroll = () => setIsCompact(window.scrollY > 16);
+    const onScroll = () => {
+      const nextValue = window.scrollY > 24;
+      if (nextValue === compactReference.current) return;
+      compactReference.current = nextValue;
+      setIsCompact(nextValue);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const sections = publicNavigationItems
+      .map((item) => ({ item, element: document.getElementById(item.section) }))
+      .filter((entry): entry is { item: (typeof publicNavigationItems)[number]; element: HTMLElement } => entry.element !== null);
+    if (!sections.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+        if (visible) setActiveSection(visible.target.id);
+      },
+      { rootMargin: "-22% 0px -64% 0px", threshold: [0.1, 0.35, 0.6] },
+    );
+    sections.forEach(({ element }) => observer.observe(element));
+    return () => observer.disconnect();
   }, []);
 
   return (
@@ -186,25 +219,20 @@ export function PublicHeader() {
           <LogoSignature />
         </Link>
 
-        <nav className="hidden items-center gap-7 text-sm font-medium text-slate-600 lg:flex">
-          <a
-            className="transition-colors hover:text-slate-950"
-            href={withPublicBasePath("/#beneficios")}
-          >
-            Benefícios
-          </a>
-          <a
-            className="transition-colors hover:text-slate-950"
-            href={withPublicBasePath("/#modulos")}
-          >
-            Módulos
-          </a>
-          <Link className="transition-colors hover:text-slate-950" to="/planos">
-            Planos
-          </Link>
-          <a className="transition-colors hover:text-slate-950" href={withPublicBasePath("/#faq")}>
-            FAQ
-          </a>
+        <nav className="hidden items-center gap-7 text-sm font-medium text-slate-600 lg:flex" aria-label="Navegação principal">
+          {publicNavigationItems.map((item) => (
+            <a
+              key={item.section}
+              href={item.href}
+              aria-current={activeSection === item.section ? "page" : undefined}
+              className={cn(
+                "relative rounded-md py-2 transition-colors hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-4",
+                activeSection === item.section && "text-slate-950 after:absolute after:inset-x-1 after:-bottom-0.5 after:h-px after:bg-cyan-600",
+              )}
+            >
+              {item.label}
+            </a>
+          ))}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -219,7 +247,7 @@ export function PublicHeader() {
           </Button>
           <Button
             asChild
-            className="rounded-xl bg-slate-950 px-4 text-white shadow-[0_12px_28px_-20px_rgba(15,23,42,0.72)] hover:-translate-y-0.5 hover:bg-slate-800"
+            className="cf-public-cta rounded-xl bg-slate-950 px-4 text-white shadow-[0_12px_28px_-20px_rgba(15,23,42,0.72)] hover:-translate-y-0.5 hover:bg-slate-800"
           >
             <Link
               to="/cadastro"
@@ -325,16 +353,8 @@ export function SectionTitle({
   );
 }
 
-export function Reveal({
-  children,
-  className,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
-  const reference = useRef<HTMLDivElement>(null);
+function useInViewOnce<T extends Element>(threshold = 0.12) {
+  const reference = useRef<T>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -352,16 +372,66 @@ export function Reveal({
         setVisible(true);
         observer.disconnect();
       },
-      { threshold: 0.12 },
+      { threshold },
     );
     observer.observe(element);
     return () => observer.disconnect();
+  }, [threshold]);
+
+  return { reference, visible };
+}
+
+function useCountUp(value: number, active: boolean, duration = 760) {
+  const [current, setCurrent] = useState(value);
+  const didAnimate = useRef(false);
+
+  useEffect(() => {
+    if (!active || didAnimate.current) return;
+    didAnimate.current = true;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setCurrent(value);
+      return;
+    }
+
+    setCurrent(0);
+    const startedAt = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      setCurrent(Math.round(value * eased));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [active, duration, value]);
+
+  return current;
+}
+
+export function Reveal({
+  children,
+  className,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const { reference, visible } = useInViewOnce<HTMLDivElement>();
+  const [motionReady, setMotionReady] = useState(false);
+
+  useEffect(() => {
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setMotionReady(true);
+    }
   }, []);
 
   return (
     <div
       ref={reference}
-      className={cn("cf-reveal", visible && "is-visible", className)}
+      className={cn("cf-reveal", motionReady && "is-pending", visible && "is-visible", className)}
       style={{ "--cf-reveal-delay": `${delay}ms` } as CSSProperties}
     >
       {children}
@@ -450,7 +520,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
     return (
       <div className="grid gap-5 lg:grid-cols-3" aria-label="Carregando planos">
         {[0, 1, 2].map((item) => (
-          <Skeleton key={item} className="h-[430px] rounded-3xl" />
+          <Skeleton key={item} className="cf-skeleton-shimmer h-[430px] rounded-3xl" />
         ))}
       </div>
     );
@@ -467,7 +537,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
             Atualizar
           </Button>
         </div>
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="cf-stagger-grid grid gap-5 lg:grid-cols-3">
           {publicPlanFallbacks.map((plan) => (
             <article key={plan.name} className="flex rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_18px_50px_-42px_rgba(15,41,71,0.4)]">
               <div className="flex w-full flex-col">
@@ -519,7 +589,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
           </div>
         </div>
       ) : null}
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="cf-stagger-grid grid gap-5 lg:grid-cols-3">
         {catalog.data.plans.map((plan) => (
           <article
             key={plan.id}
@@ -711,28 +781,32 @@ export function FAQSection() {
   return (
     <section id="faq" className="bg-white py-20">
       <div className="mx-auto max-w-4xl px-5 lg:px-8">
-        <SectionTitle
-          align="center"
-          eyebrow="FAQ"
-          title="Perguntas frequentes"
-          description="Respostas rápidas para entender se o Conform Flow faz sentido para sua operação."
-        />
-        <Accordion
-          type="single"
-          collapsible
-          className="mt-10 rounded-2xl border border-slate-200 bg-slate-50/55 px-6 shadow-[0_18px_50px_-42px_rgba(15,23,42,0.28)]"
-        >
-          {faqs.map((faq) => (
-            <AccordionItem key={faq.q} value={faq.q}>
-              <AccordionTrigger className="text-left text-base text-slate-950 hover:no-underline">
-                {faq.q}
-              </AccordionTrigger>
-              <AccordionContent className="text-sm leading-6 text-slate-600">
-                {faq.a}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <Reveal>
+          <SectionTitle
+            align="center"
+            eyebrow="FAQ"
+            title="Perguntas frequentes"
+            description="Respostas rápidas para entender se o Conform Flow faz sentido para sua operação."
+          />
+        </Reveal>
+        <Reveal delay={80}>
+          <Accordion
+            type="single"
+            collapsible
+            className="mt-10 rounded-2xl border border-slate-200 bg-slate-50/55 px-6 shadow-[0_18px_50px_-42px_rgba(15,23,42,0.28)]"
+          >
+            {faqs.map((faq) => (
+              <AccordionItem key={faq.q} value={faq.q}>
+                <AccordionTrigger className="text-left text-base text-slate-950 hover:no-underline">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm leading-6 text-slate-600">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </Reveal>
       </div>
     </section>
   );
@@ -741,9 +815,10 @@ export function FAQSection() {
 export function CtaSection() {
   return (
     <section className="bg-slate-50 px-5 py-20 lg:px-8">
-      <div className="mx-auto max-w-7xl overflow-hidden rounded-[1.25rem] bg-slate-950 p-8 text-white shadow-[0_30px_80px_-45px_rgba(15,23,42,0.75)] md:p-12">
-        <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div>
+      <Reveal>
+        <div className="mx-auto max-w-7xl overflow-hidden rounded-[1.25rem] bg-slate-950 p-8 text-white shadow-[0_30px_80px_-45px_rgba(15,23,42,0.75)] md:p-12">
+          <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div className="cf-cta-sequence">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
               <Sparkles className="h-3.5 w-3.5" />
               Comece agora
@@ -756,32 +831,35 @@ export function CtaSection() {
               quando quiser e não precisa falar com vendas.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-            <Button asChild className="rounded-xl bg-white text-slate-950 hover:bg-slate-100">
+            <div className="cf-cta-actions flex flex-col gap-3 sm:flex-row lg:flex-col">
+              <Button asChild className="cf-public-cta rounded-xl bg-white text-slate-950 hover:bg-slate-100">
               <Link
                 to="/cadastro"
                 search={{ plan: "profissional", interval: "monthly", checkout: undefined }}
               >
-                Testar grátis por 7 dias
+                Testar grátis por 7 dias <ArrowRight className="cf-cta-arrow h-4 w-4" />
               </Link>
             </Button>
             <Button
               asChild
               variant="outline"
-              className="rounded-xl border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              className="cf-public-cta rounded-xl border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
             >
               <Link to="/planos">
-                Conhecer planos <ArrowRight className="h-4 w-4" />
+                Conhecer planos <ArrowRight className="cf-cta-arrow h-4 w-4" />
               </Link>
             </Button>
           </div>
+          </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }
 
 export function ProductMockup() {
+  const { reference, visible } = useInViewOnce<HTMLDivElement>(0.2);
+  const score = useCountUp(92, visible);
   const rows: Array<{ nome: string; tipo: string; prazo: string; status: string; tone: "warn" | "danger" | "ok" }> = [
     { nome: "AVCB — sede administrativa", tipo: "Documento", prazo: "vence em 12 dias", status: "Atenção", tone: "warn" },
     { nome: "Geladeira de vacinas 01", tipo: "Calibração", prazo: "vence em 18 dias", status: "A vencer", tone: "warn" },
@@ -801,7 +879,13 @@ export function ProductMockup() {
   ];
 
   return (
-    <div className="relative isolate rounded-[1.4rem] border border-white/70 bg-white/80 p-3 shadow-[0_40px_100px_-50px_rgba(15,41,71,0.7)] backdrop-blur-xl">
+    <div
+      ref={reference}
+      className={cn(
+        "relative isolate rounded-[1.4rem] border border-white/70 bg-white/80 p-3 shadow-[0_40px_100px_-50px_rgba(15,41,71,0.7)] backdrop-blur-xl",
+        visible && "cf-mockup-active",
+      )}
+    >
       <div className="pointer-events-none absolute -inset-8 -z-10 rounded-[2rem] bg-gradient-to-br from-cyan-400/15 via-white/0 to-blue-500/15 blur-3xl" />
       <div className="rounded-[1rem] border border-slate-200/80 bg-gradient-to-b from-slate-50 to-white p-5 shadow-inner">
         {/* Chrome */}
@@ -834,7 +918,7 @@ export function ProductMockup() {
             </div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-4xl font-semibold tracking-[-0.03em] text-slate-950 tabular-nums">
-                92
+                {score}
               </span>
               <span className="text-lg font-semibold text-slate-500">%</span>
               <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
@@ -859,7 +943,7 @@ export function ProductMockup() {
           ].map((k) => (
             <div
               key={k.label}
-              className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_24px_-22px_rgba(15,41,71,0.5)]"
+              className="cf-mockup-kpi rounded-xl border border-slate-200 bg-white p-3.5 shadow-[0_10px_24px_-22px_rgba(15,41,71,0.5)]"
             >
               <div className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
                 {k.label}
@@ -868,7 +952,7 @@ export function ProductMockup() {
                 {k.value}
               </div>
               <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-100">
-                <div className={cn("h-full rounded-full", k.bar)} />
+                <div className={cn("cf-mockup-progress h-full origin-left rounded-full", k.bar)} />
               </div>
             </div>
           ))}
@@ -931,7 +1015,7 @@ export function ProductMockup() {
             </div>
             <ul className="mt-3 space-y-3">
               {activity.map((a, i) => (
-                <li key={i} className="flex items-start gap-2.5">
+                <li key={i} className="cf-mockup-activity flex items-start gap-2.5">
                   <a.icon className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", a.color)} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[11px] font-medium text-slate-800">{a.text}</div>

@@ -54,7 +54,7 @@ function PlanosPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button
                 asChild
-                className="group h-12 rounded-xl bg-slate-950 px-6 text-white shadow-[0_20px_40px_-24px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:bg-slate-800"
+                className="cf-public-cta group h-12 rounded-xl bg-slate-950 px-6 text-white shadow-[0_20px_40px_-24px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:bg-slate-800"
               >
                 <Link
                   to="/cadastro"
@@ -63,7 +63,7 @@ function PlanosPage() {
                   Testar grátis por 7 dias <ArrowRight className="cf-cta-arrow h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="h-12 rounded-xl border-slate-200 bg-white px-6 transition hover:-translate-y-0.5 hover:bg-slate-50">
+              <Button asChild variant="outline" className="cf-public-cta h-12 rounded-xl border-slate-200 bg-white px-6 transition hover:-translate-y-0.5 hover:bg-slate-50">
                 <Link to="/login" search={{ msg: undefined }}>Entrar na plataforma</Link>
               </Button>
             </div>
@@ -180,7 +180,7 @@ function PlanosPage() {
                       Visão consolidada e relatórios por cliente
                     </div>
                   </div>
-                  <Button asChild className="group mt-7 w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800">
+                  <Button asChild className="cf-public-cta group mt-7 w-full rounded-xl bg-slate-950 text-white hover:bg-slate-800">
                     <Link
                       to="/cadastro"
                       search={{ plan: plan.codigo, interval: "monthly", checkout: undefined }}

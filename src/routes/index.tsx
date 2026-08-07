@@ -12,6 +12,7 @@ import {
   publicModules,
   PublicFooter,
   PublicHeader,
+  Reveal,
   SectionTitle,
 } from "@/components/public/marketing";
 
@@ -50,7 +51,7 @@ function LandingPage() {
         </div>
 
         <div className="relative mx-auto grid max-w-[86rem] gap-12 px-5 pb-16 pt-16 md:pt-20 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-16 lg:px-8 lg:pb-24 lg:pt-24">
-          <div>
+          <Reveal className="cf-hero-sequence">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-200/80 bg-white/90 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-700 shadow-[0_10px_24px_-20px_rgba(6,182,212,0.6)] backdrop-blur">
               <Sparkles className="h-3.5 w-3.5" />
               7 dias grátis · sem compromisso
@@ -68,19 +69,19 @@ function LandingPage() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button
                 asChild
-                className="h-12 rounded-xl bg-slate-950 px-6 text-white shadow-[0_20px_40px_-24px_rgba(15,23,42,0.8)] hover:-translate-y-0.5 hover:bg-slate-800"
+                className="cf-public-cta group h-12 rounded-xl bg-slate-950 px-6 text-white shadow-[0_20px_40px_-24px_rgba(15,23,42,0.8)] hover:-translate-y-0.5 hover:bg-slate-800"
               >
                 <Link
                   to="/cadastro"
                   search={{ plan: "profissional", interval: "monthly", checkout: undefined }}
                 >
-                  Testar grátis por 7 dias <ArrowRight className="h-4 w-4" />
+                  Testar grátis por 7 dias <ArrowRight className="cf-cta-arrow h-4 w-4" />
                 </Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
-                className="h-12 rounded-xl border-slate-200 bg-white px-6 shadow-sm hover:-translate-y-0.5"
+                className="cf-public-cta h-12 rounded-xl border-slate-200 bg-white px-6 shadow-sm hover:-translate-y-0.5"
               >
                 <Link to="/planos">Ver planos e preços</Link>
               </Button>
@@ -98,67 +99,78 @@ function LandingPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </Reveal>
 
           {/* Enlarged mockup */}
-          <div className="relative lg:-mr-6 xl:-mr-16">
-            <ProductMockup />
-          </div>
+          <Reveal delay={120} className="relative lg:-mr-6 xl:-mr-16">
+            <div className="cf-product-stage"><ProductMockup /></div>
+          </Reveal>
         </div>
       </section>
 
       {/* BENEFITS — single focused section */}
       <section id="beneficios" className="bg-white py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <SectionTitle
-            align="center"
-            eyebrow="Por que Conform Flow"
-            title="Menos risco. Menos retrabalho. Mais tempo para o que importa."
-            description="Substitua planilhas, e-mails e lembretes manuais por uma operação de conformidade previsível e auditável."
-          />
-          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {benefitCards.map((item) => (
-              <FeatureCard key={item.title} {...item} />
-            ))}
-          </div>
+          <Reveal>
+            <SectionTitle
+              align="center"
+              eyebrow="Por que Conform Flow"
+              title="Menos risco. Menos retrabalho. Mais tempo para o que importa."
+              description="Substitua planilhas, e-mails e lembretes manuais por uma operação de conformidade previsível e auditável."
+            />
+          </Reveal>
+          <Reveal delay={60} className="mt-12">
+            <div className="cf-stagger-grid grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {benefitCards.map((item) => (
+                <FeatureCard key={item.title} {...item} />
+              ))}
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* MODULES */}
       <section id="modulos" className="bg-slate-50 py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <SectionTitle
-            align="center"
-            eyebrow="Módulos"
-            title="Uma plataforma completa para operações reguladas."
-            description="Do dashboard executivo à rastreabilidade de auditoria — tudo integrado, sem trocar de sistema."
-          />
-          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {publicModules.map((module) => (
-              <ModuleCard key={module.title} {...module} />
-            ))}
-          </div>
+          <Reveal>
+            <SectionTitle
+              align="center"
+              eyebrow="Módulos"
+              title="Uma plataforma completa para operações reguladas."
+              description="Do dashboard executivo à rastreabilidade de auditoria — tudo integrado, sem trocar de sistema."
+            />
+          </Reveal>
+          <Reveal delay={60} className="mt-12">
+            <div className="cf-stagger-grid grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {publicModules.map((module) => (
+                <ModuleCard key={module.title} {...module} />
+              ))}
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* PLANS */}
       <section id="planos" className="bg-white py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <SectionTitle
-            align="center"
-            eyebrow="Planos"
-            title="Comece grátis. Evolua no seu ritmo."
-            description="Experimente todos os recursos por 7 dias, sem compromisso e sem precisar falar com vendas."
-          />
-          <div className="mt-12" />
-          <PricingGrid compact />
-          <div className="mt-8 flex justify-center">
-            <Button asChild variant="outline" className="rounded-xl bg-white">
+          <Reveal>
+            <SectionTitle
+              align="center"
+              eyebrow="Planos"
+              title="Comece grátis. Evolua no seu ritmo."
+              description="Experimente todos os recursos por 7 dias, sem compromisso e sem precisar falar com vendas."
+            />
+          </Reveal>
+          <Reveal delay={60} className="mt-12">
+            <PricingGrid compact />
+          </Reveal>
+          <Reveal delay={120} className="mt-8 flex justify-center">
+            <Button asChild variant="outline" className="cf-public-cta rounded-xl bg-white">
               <Link to="/planos">
-                Comparar todos os recursos <ArrowRight className="h-4 w-4" />
+                Comparar todos os recursos <ArrowRight className="cf-cta-arrow h-4 w-4" />
               </Link>
             </Button>
-          </div>
+          </Reveal>
         </div>
       </section>
 
