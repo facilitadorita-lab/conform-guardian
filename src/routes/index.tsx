@@ -1,20 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
-import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  BenefitsBento,
   CtaSection,
   FAQSection,
   PricingGrid,
-  ProcessSteps,
   ProductMockup,
-  ProductShowcase,
   PublicFooter,
   PublicHeader,
   Reveal,
   SectionTitle,
 } from "@/components/public/marketing";
+import {
+  BenefitsBento,
+  HowItWorks,
+  ModuleShowcase,
+  useHeroVisibilityFlag,
+} from "@/components/public/sections";
 
 function HeroAtmosphere() {
   const atmosphereRef = useRef<HTMLDivElement>(null);
@@ -58,19 +61,6 @@ function HeroAtmosphere() {
     };
   }, []);
 
-  useEffect(() => {
-    const atmosphere = atmosphereRef.current;
-    const hero = atmosphere?.closest<HTMLElement>(".cf-hero-surface");
-    if (!atmosphere || !hero || !("IntersectionObserver" in window)) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => hero.classList.toggle("cf-hero-motion-paused", !entry.isIntersecting),
-      { threshold: 0.08 },
-    );
-    observer.observe(hero);
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <div ref={atmosphereRef} aria-hidden className="cf-hero-atmosphere">
       <span className="cf-hero-mesh" />
@@ -111,12 +101,14 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
+  const heroRef = useHeroVisibilityFlag<HTMLElement>();
+
   return (
     <main className="min-h-screen bg-[#fbfcfe] text-slate-950">
       <PublicHeader />
 
       {/* HERO */}
-      <section className="cf-hero-surface relative isolate overflow-hidden">
+      <section ref={heroRef} className="cf-hero-surface relative isolate overflow-hidden">
         {/* Grid overlay */}
         <div aria-hidden className="cf-hero-grid" />
         <HeroAtmosphere />
@@ -187,41 +179,14 @@ function LandingPage() {
           <Reveal delay={120} className="relative lg:pr-5 xl:pr-8">
             <div className="cf-product-stage cf-hero-product-stage">
               <span aria-hidden className="cf-hero-product-halo" />
-              <div aria-hidden className="cf-hero-context cf-hero-context-a">
-                <div className="cf-hero-context-card">
-                  <ShieldCheck className="h-4 w-4 text-cyan-700" />
-                  <span>
-                    <strong>Pronto para auditoria</strong>
-                    <small>Ambiente monitorado</small>
-                  </span>
-                </div>
-              </div>
-              <div aria-hidden className="cf-hero-context cf-hero-context-b">
-                <div className="cf-hero-context-card">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span>
-                    <strong>92% de conformidade</strong>
-                    <small>Indicador atualizado</small>
-                  </span>
-                </div>
-              </div>
-              <div aria-hidden className="cf-hero-context cf-hero-context-c">
-                <div className="cf-hero-context-card">
-                  <Sparkles className="h-4 w-4 text-amber-600" />
-                  <span>
-                    <strong>{"3 vencimentos pr\u00f3ximos"}</strong>
-                    <small>{"A\u00e7\u00e3o recomendada"}</small>
-                  </span>
-                </div>
-              </div>
               <div className="relative z-10"><ProductMockup /></div>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* BENEFITS — single focused section */}
-      <section id="beneficios" className="bg-white py-24">
+      {/* BENEFITS — bento grid */}
+      <section id="beneficios" className="cf-band-white py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <Reveal>
             <SectionTitle
@@ -231,14 +196,14 @@ function LandingPage() {
               description="Substitua planilhas, e-mails e lembretes manuais por uma operação de conformidade previsível e auditável."
             />
           </Reveal>
-          <Reveal delay={80} className="mt-14">
+          <Reveal delay={60} className="mt-12">
             <BenefitsBento />
           </Reveal>
         </div>
       </section>
 
-      {/* MODULES */}
-      <section id="modulos" className="cf-showcase-section py-28 md:py-32">
+      {/* MODULES — product showcase */}
+      <section id="modulos" className="cf-band-ice py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <Reveal>
             <SectionTitle
@@ -248,29 +213,16 @@ function LandingPage() {
               description="Do dashboard executivo à rastreabilidade de auditoria — tudo integrado, sem trocar de sistema."
             />
           </Reveal>
-          <Reveal delay={80} className="mt-14">
-            <ProductShowcase />
+          <Reveal delay={60} className="mt-12">
+            <ModuleShowcase />
           </Reveal>
         </div>
       </section>
 
-      <section id="como-funciona" className="bg-white py-28 md:py-32">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <Reveal>
-            <SectionTitle
-              eyebrow="Como funciona"
-              title="Da pendência à conformidade, em um fluxo claro."
-              description="Uma rotina que começa na organização e termina com evidências prontas para consultar."
-            />
-          </Reveal>
-          <Reveal delay={80} className="mt-14">
-            <ProcessSteps />
-          </Reveal>
-        </div>
-      </section>
+      <HowItWorks />
 
       {/* PLANS */}
-      <section id="planos" className="cf-pricing-section py-28 md:py-32">
+      <section id="planos" className="cf-band-slate py-24">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <Reveal>
             <SectionTitle

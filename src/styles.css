@@ -1458,3 +1458,272 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================
+   Landing page — bento, product showcase, fluxo, ritmo visual
+   ============================================================ */
+@layer components {
+  .cf-band-white { background-color: #ffffff; }
+  .cf-band-ice { background-color: #f4f8fd; }
+  .cf-band-slate { background-color: #eef3f9; }
+
+  /* Bento grid */
+  .cf-bento-cell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    border-radius: 1.15rem;
+    border: 1px solid rgb(226 232 240 / 0.95);
+    background:
+      linear-gradient(180deg, rgb(255 255 255) 0%, rgb(248 251 254) 100%);
+    padding: 1.4rem;
+    box-shadow: 0 22px 55px -46px rgb(15 41 71 / 0.55);
+    transition: transform 220ms var(--cf-ease), box-shadow 220ms var(--cf-ease),
+      border-color 220ms var(--cf-ease);
+  }
+
+  .cf-bento-cell::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(6 182 212 / 0.45), transparent);
+    opacity: 0;
+    transition: opacity 220ms var(--cf-ease);
+  }
+
+  .cf-bento-cell:hover {
+    transform: translateY(-3px);
+    border-color: rgb(165 217 235 / 0.9);
+    box-shadow: 0 30px 65px -44px rgb(15 41 71 / 0.6);
+  }
+
+  .cf-bento-cell:hover::after { opacity: 1; }
+
+  .cf-bento-icon {
+    display: grid;
+    place-items: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    flex-shrink: 0;
+    border-radius: 0.8rem;
+    border: 1px solid rgb(165 217 235 / 0.7);
+    background: linear-gradient(140deg, rgb(236 254 255), rgb(239 246 255));
+    color: rgb(14 116 144);
+  }
+
+  .cf-mini-timeline {
+    position: relative;
+    display: grid;
+    gap: 0.7rem;
+    padding-left: 0.9rem;
+  }
+
+  .cf-mini-timeline::before {
+    content: "";
+    position: absolute;
+    left: 0.24rem;
+    top: 0.35rem;
+    bottom: 0.35rem;
+    width: 1px;
+    background: linear-gradient(180deg, rgb(6 182 212 / 0.5), rgb(203 213 225 / 0.5));
+  }
+
+  .cf-mini-timeline li {
+    position: relative;
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+  }
+
+  .cf-mini-timeline-dot {
+    position: absolute;
+    left: -0.82rem;
+    top: 0.42rem;
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: rgb(8 145 178);
+    box-shadow: 0 0 0 3px rgb(6 182 212 / 0.14);
+  }
+
+  .cf-bento-spark { display: block; }
+
+  /* Product showcase */
+  .cf-module-tab {
+    display: flex;
+    width: 100%;
+    min-width: 15rem;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border-radius: 1rem;
+    border: 1px solid rgb(226 232 240 / 0.9);
+    background-color: #ffffff;
+    padding: 0.9rem 1rem;
+    color: rgb(51 65 85);
+    text-align: left;
+    transition: border-color 200ms var(--cf-ease), box-shadow 200ms var(--cf-ease),
+      transform 200ms var(--cf-ease), background-color 200ms var(--cf-ease);
+  }
+
+  .cf-module-tab:hover {
+    transform: translateY(-1px);
+    border-color: rgb(165 217 235 / 0.95);
+  }
+
+  .cf-module-tab-icon {
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    flex-shrink: 0;
+    border-radius: 0.7rem;
+    background-color: rgb(241 245 249);
+    color: rgb(71 85 105);
+    transition: background-color 200ms var(--cf-ease), color 200ms var(--cf-ease);
+  }
+
+  .cf-module-tab-summary {
+    display: none;
+    margin-top: 0.2rem;
+    font-size: 12.5px;
+    line-height: 1.4rem;
+    color: rgb(100 116 139);
+  }
+
+  .cf-module-tab.is-active {
+    border-color: rgb(6 182 212 / 0.55);
+    background: linear-gradient(180deg, #ffffff, rgb(240 250 253));
+    box-shadow: 0 20px 48px -40px rgb(8 145 178 / 0.75);
+  }
+
+  .cf-module-tab.is-active .cf-module-tab-icon {
+    background: linear-gradient(140deg, rgb(8 145 178), rgb(37 99 235));
+    color: #ffffff;
+  }
+
+  @media (min-width: 1024px) {
+    .cf-module-tab-summary { display: block; }
+  }
+
+  .cf-screen-stage {
+    position: relative;
+    border-radius: 1.35rem;
+    border: 1px solid rgb(226 232 240 / 0.9);
+    background:
+      radial-gradient(120% 90% at 15% 0%, rgb(236 254 255 / 0.75), transparent 60%),
+      linear-gradient(180deg, #ffffff, rgb(246 250 253));
+    padding: 1rem;
+    box-shadow: 0 34px 80px -58px rgb(15 41 71 / 0.7);
+  }
+
+  .cf-screen {
+    border-radius: 1rem;
+    border: 1px solid rgb(226 232 240);
+    background-color: #ffffff;
+    padding: 1.1rem;
+    box-shadow: 0 18px 40px -38px rgb(15 41 71 / 0.55);
+  }
+
+  .cf-screen-swap { animation: cf-screen-swap 320ms var(--cf-ease) both; }
+
+  @keyframes cf-screen-swap {
+    from { opacity: 0; transform: translateY(8px) scale(0.995); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* Fluxo — como funciona */
+  .cf-flowline { position: relative; }
+
+  .cf-flowline-rail {
+    display: none;
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    top: 1.4rem;
+    height: 1px;
+    background: linear-gradient(90deg, rgb(203 213 225 / 0.2), rgb(148 163 184 / 0.75), rgb(203 213 225 / 0.2));
+  }
+
+  .cf-flowline-pulse {
+    display: none;
+    position: absolute;
+    left: 6%;
+    top: 1.4rem;
+    height: 1px;
+    width: 0;
+    background: linear-gradient(90deg, transparent, rgb(6 182 212), rgb(37 99 235));
+  }
+
+  .cf-flowline-steps {
+    display: grid;
+    gap: 1.75rem;
+  }
+
+  .cf-flowline-marker {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 999px;
+    border: 1px solid rgb(165 217 235 / 0.85);
+    background: linear-gradient(140deg, #ffffff, rgb(240 249 255));
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgb(14 116 144);
+    box-shadow: 0 14px 32px -26px rgb(8 145 178 / 0.8);
+  }
+
+  @media (min-width: 768px) {
+    .cf-flowline-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; }
+    .cf-flowline-rail, .cf-flowline-pulse { display: block; }
+    .cf-flowline.is-visible .cf-flowline-pulse {
+      animation: cf-flowline-pulse 1200ms cubic-bezier(0.16, 1, 0.3, 1) 120ms both;
+    }
+  }
+
+  @keyframes cf-flowline-pulse {
+    from { width: 0; opacity: 0.2; }
+    to { width: 88%; opacity: 1; }
+  }
+
+  /* Planos */
+  .cf-plan-card-featured {
+    box-shadow: 0 30px 70px -40px rgb(8 145 178 / 0.6);
+  }
+
+  @media (min-width: 1024px) {
+    .cf-plan-card-featured { transform: translateY(-0.6rem); }
+    .cf-plan-card-featured:hover { transform: translateY(-0.9rem); }
+  }
+
+  /* FAQ editorial */
+  .cf-faq [data-slot="accordion-item"]:last-child { border-bottom-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-screen-swap,
+  .cf-flowline.is-visible .cf-flowline-pulse {
+    animation: none !important;
+  }
+}
+
+/* Pause continuous hero motion while the hero is outside the viewport */
+html[data-cf-hero="idle"] .cf-hero-glow,
+html[data-cf-hero="idle"] .cf-flow-node,
+html[data-cf-hero="idle"] .cf-hero-product-halo,
+html[data-cf-hero="idle"] .cf-hero-context {
+  animation-play-state: paused !important;
+}
+
+/* The dashboard remains the fixed focal point; only the ambient field moves. */
+@media (prefers-reduced-motion: no-preference) {
+  .cf-hero-product-stage .cf-hero-product-halo {
+    animation: none;
+  }
+}

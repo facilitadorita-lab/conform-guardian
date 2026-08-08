@@ -104,6 +104,7 @@ export type Database = {
           registro_id: string
           status: string
           titulo: string
+          unidade_id: string | null
           updated_at: string
           updated_by: string | null
           usuario_id: string | null
@@ -123,6 +124,7 @@ export type Database = {
           registro_id: string
           status?: string
           titulo: string
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
           usuario_id?: string | null
@@ -142,6 +144,7 @@ export type Database = {
           registro_id?: string
           status?: string
           titulo?: string
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
           usuario_id?: string | null
@@ -167,6 +170,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_consumo_empresa"
             referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "alertas_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "alertas_updated_by_fkey"
@@ -348,6 +358,7 @@ export type Database = {
           storage_path: string
           substitui_anexo_id: string | null
           tamanho_bytes: number
+          unidade_id: string | null
           updated_at: string
           updated_by: string | null
           versao: number
@@ -371,6 +382,7 @@ export type Database = {
           storage_path: string
           substitui_anexo_id?: string | null
           tamanho_bytes: number
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
           versao?: number
@@ -394,6 +406,7 @@ export type Database = {
           storage_path?: string
           substitui_anexo_id?: string | null
           tamanho_bytes?: number
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
           versao?: number
@@ -426,6 +439,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "anexos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anexos_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "anexos_updated_by_fkey"
@@ -805,6 +825,7 @@ export type Database = {
           observacoes: string | null
           responsavel_id: string | null
           resultado: string
+          unidade_id: string
           updated_at: string
           updated_by: string | null
         }
@@ -822,6 +843,7 @@ export type Database = {
           observacoes?: string | null
           responsavel_id?: string | null
           resultado: string
+          unidade_id: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -839,6 +861,7 @@ export type Database = {
           observacoes?: string | null
           responsavel_id?: string | null
           resultado?: string
+          unidade_id?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -884,6 +907,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calibracoes_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "calibracoes_updated_by_fkey"
@@ -1498,6 +1528,7 @@ export type Database = {
           data_vencimento: string | null
           deleted_at: string | null
           empresa_id: string
+          escopo_documento: string
           exige_anexo: boolean
           exige_aprovacao: boolean
           id: string
@@ -1510,6 +1541,7 @@ export type Database = {
           responsavel_id: string | null
           setor_unidade: string | null
           tipo_documento_id: string | null
+          unidade_id: string | null
           updated_at: string
           updated_by: string | null
           versao_atual: number
@@ -1524,6 +1556,7 @@ export type Database = {
           data_vencimento?: string | null
           deleted_at?: string | null
           empresa_id: string
+          escopo_documento?: string
           exige_anexo?: boolean
           exige_aprovacao?: boolean
           id?: string
@@ -1536,6 +1569,7 @@ export type Database = {
           responsavel_id?: string | null
           setor_unidade?: string | null
           tipo_documento_id?: string | null
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
           versao_atual?: number
@@ -1550,6 +1584,7 @@ export type Database = {
           data_vencimento?: string | null
           deleted_at?: string | null
           empresa_id?: string
+          escopo_documento?: string
           exige_anexo?: boolean
           exige_aprovacao?: boolean
           id?: string
@@ -1562,6 +1597,7 @@ export type Database = {
           responsavel_id?: string | null
           setor_unidade?: string | null
           tipo_documento_id?: string | null
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
           versao_atual?: number
@@ -1611,6 +1647,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "documentos_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
             foreignKeyName: "documentos_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
@@ -1623,6 +1666,7 @@ export type Database = {
         Row: {
           access_status: string
           bairro: string | null
+          billing_access_locked_at: string | null
           cep: string | null
           cidade: string | null
           cnae_principal_codigo: string | null
@@ -1671,6 +1715,7 @@ export type Database = {
         Insert: {
           access_status?: string
           bairro?: string | null
+          billing_access_locked_at?: string | null
           cep?: string | null
           cidade?: string | null
           cnae_principal_codigo?: string | null
@@ -1719,6 +1764,7 @@ export type Database = {
         Update: {
           access_status?: string
           bairro?: string | null
+          billing_access_locked_at?: string | null
           cep?: string | null
           cidade?: string | null
           cnae_principal_codigo?: string | null
@@ -1955,6 +2001,7 @@ export type Database = {
           setor: string | null
           status: string
           tipo_equipamento_id: string | null
+          unidade_id: string
           updated_at: string
           updated_by: string | null
         }
@@ -1977,6 +2024,7 @@ export type Database = {
           setor?: string | null
           status?: string
           tipo_equipamento_id?: string | null
+          unidade_id: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -1999,6 +2047,7 @@ export type Database = {
           setor?: string | null
           status?: string
           tipo_equipamento_id?: string | null
+          unidade_id?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -2037,6 +2086,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tipos_equipamentos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipamentos_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "equipamentos_updated_by_fkey"
@@ -2393,6 +2449,7 @@ export type Database = {
           relatorio_agendado_id: string
           snapshot_json: Json | null
           status: string
+          unidade_id: string | null
         }
         Insert: {
           completed_at?: string | null
@@ -2404,6 +2461,7 @@ export type Database = {
           relatorio_agendado_id: string
           snapshot_json?: Json | null
           status: string
+          unidade_id?: string | null
         }
         Update: {
           completed_at?: string | null
@@ -2415,6 +2473,7 @@ export type Database = {
           relatorio_agendado_id?: string
           snapshot_json?: Json | null
           status?: string
+          unidade_id?: string | null
         }
         Relationships: [
           {
@@ -2437,6 +2496,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "relatorios_agendados"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execucoes_relatorios_agendados_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
         ]
       }
@@ -2969,6 +3035,7 @@ export type Database = {
           pergunta: string
           resposta: string | null
           setor: string | null
+          unidade_id: string | null
           usuario_id: string | null
         }
         Insert: {
@@ -2983,6 +3050,7 @@ export type Database = {
           pergunta: string
           resposta?: string | null
           setor?: string | null
+          unidade_id?: string | null
           usuario_id?: string | null
         }
         Update: {
@@ -2997,6 +3065,7 @@ export type Database = {
           pergunta?: string
           resposta?: string | null
           setor?: string | null
+          unidade_id?: string | null
           usuario_id?: string | null
         }
         Relationships: [
@@ -3027,6 +3096,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_equipamentos_conformidade"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interacoes_assistente_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "interacoes_assistente_usuario_id_fkey"
@@ -3250,6 +3326,7 @@ export type Database = {
           novo_valor: Json | null
           previous_hash: string | null
           registro_id: string | null
+          unidade_id: string | null
           user_agent: string | null
           usuario_id: string | null
           valor_anterior: Json | null
@@ -3266,6 +3343,7 @@ export type Database = {
           novo_valor?: Json | null
           previous_hash?: string | null
           registro_id?: string | null
+          unidade_id?: string | null
           user_agent?: string | null
           usuario_id?: string | null
           valor_anterior?: Json | null
@@ -3282,6 +3360,7 @@ export type Database = {
           novo_valor?: Json | null
           previous_hash?: string | null
           registro_id?: string | null
+          unidade_id?: string | null
           user_agent?: string | null
           usuario_id?: string | null
           valor_anterior?: Json | null
@@ -3300,6 +3379,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_consumo_empresa"
             referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "logs_auditoria_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "logs_auditoria_usuario_id_fkey"
@@ -3338,6 +3424,7 @@ export type Database = {
           status_execucao: string
           tecnico_responsavel: string | null
           tipo_servico: string
+          unidade_id: string
           updated_at: string
           updated_by: string | null
         }
@@ -3368,6 +3455,7 @@ export type Database = {
           status_execucao?: string
           tecnico_responsavel?: string | null
           tipo_servico?: string
+          unidade_id: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -3398,6 +3486,7 @@ export type Database = {
           status_execucao?: string
           tecnico_responsavel?: string | null
           tipo_servico?: string
+          unidade_id?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -3457,6 +3546,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencoes_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "manutencoes_updated_by_fkey"
@@ -3600,6 +3696,7 @@ export type Database = {
           status: string
           tipo: string
           titulo: string
+          unidade_id: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -3617,6 +3714,7 @@ export type Database = {
           status?: string
           tipo: string
           titulo: string
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -3634,6 +3732,7 @@ export type Database = {
           status?: string
           tipo?: string
           titulo?: string
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -3665,6 +3764,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pendencias_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "pendencias_updated_by_fkey"
@@ -4032,6 +4138,7 @@ export type Database = {
           responsavel_tecnico_id: string | null
           resultado: string
           tipo: string
+          unidade_id: string
           updated_at: string
           updated_by: string | null
         }
@@ -4049,6 +4156,7 @@ export type Database = {
           responsavel_tecnico_id?: string | null
           resultado: string
           tipo: string
+          unidade_id: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -4066,6 +4174,7 @@ export type Database = {
           responsavel_tecnico_id?: string | null
           resultado?: string
           tipo?: string
+          unidade_id?: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -4125,6 +4234,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qualificacoes_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "qualificacoes_updated_by_fkey"
@@ -4379,6 +4495,7 @@ export type Database = {
           timezone: string
           tipo_relatorio: string
           ultima_execucao_at: string | null
+          unidade_id: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -4399,6 +4516,7 @@ export type Database = {
           timezone?: string
           tipo_relatorio?: string
           ultima_execucao_at?: string | null
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -4419,6 +4537,7 @@ export type Database = {
           timezone?: string
           tipo_relatorio?: string
           ultima_execucao_at?: string | null
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -4443,6 +4562,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vw_consumo_empresa"
             referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "relatorios_agendados_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "relatorios_agendados_updated_by_fkey"
@@ -5265,6 +5391,105 @@ export type Database = {
           },
         ]
       }
+      transferencias_unidades: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data_transferencia: string
+          empresa_id: string
+          equipamento_id: string
+          id: string
+          motivo: string
+          observacoes: string | null
+          responsavel_id: string | null
+          unidade_destino_id: string
+          unidade_origem_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data_transferencia?: string
+          empresa_id: string
+          equipamento_id: string
+          id?: string
+          motivo: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          unidade_destino_id: string
+          unidade_origem_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data_transferencia?: string
+          empresa_id?: string
+          equipamento_id?: string
+          id?: string
+          motivo?: string
+          observacoes?: string | null
+          responsavel_id?: string | null
+          unidade_destino_id?: string
+          unidade_origem_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transferencias_unidades_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_unidades_destino_empresa_fk"
+            columns: ["unidade_destino_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
+            foreignKeyName: "transferencias_unidades_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_unidades_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "transferencias_unidades_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "equipamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_unidades_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "vw_equipamentos_conformidade"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transferencias_unidades_origem_empresa_fk"
+            columns: ["unidade_origem_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
+            foreignKeyName: "transferencias_unidades_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tratativas_pendencias: {
         Row: {
           created_at: string
@@ -5278,6 +5503,7 @@ export type Database = {
           prazo: string | null
           responsavel_id: string | null
           status: string
+          unidade_id: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -5293,6 +5519,7 @@ export type Database = {
           prazo?: string | null
           responsavel_id?: string | null
           status?: string
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -5308,6 +5535,7 @@ export type Database = {
           prazo?: string | null
           responsavel_id?: string | null
           status?: string
+          unidade_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -5348,7 +5576,137 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tratativas_pendencias_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
             foreignKeyName: "tratativas_pendencias_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unidades: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          cnpj: string | null
+          codigo: string
+          complemento: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          descricao: string | null
+          email: string | null
+          empresa_id: string
+          endereco: string | null
+          estado: string | null
+          id: string
+          is_matriz: boolean
+          nome: string
+          numero: string | null
+          observacoes: string | null
+          responsavel_id: string | null
+          status: string
+          telefone: string | null
+          timezone: string
+          tipo: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          codigo: string
+          complemento?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          descricao?: string | null
+          email?: string | null
+          empresa_id: string
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          is_matriz?: boolean
+          nome: string
+          numero?: string | null
+          observacoes?: string | null
+          responsavel_id?: string | null
+          status?: string
+          telefone?: string | null
+          timezone?: string
+          tipo?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          codigo?: string
+          complemento?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          descricao?: string | null
+          email?: string | null
+          empresa_id?: string
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          is_matriz?: boolean
+          nome?: string
+          numero?: string | null
+          observacoes?: string | null
+          responsavel_id?: string | null
+          status?: string
+          telefone?: string | null
+          timezone?: string
+          tipo?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unidades_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unidades_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unidades_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "unidades_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unidades_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "usuarios"
@@ -5400,32 +5758,38 @@ export type Database = {
       }
       usuarios_empresas: {
         Row: {
+          acesso_todas_unidades: boolean
           ativo: boolean
           created_at: string
           deleted_at: string | null
           empresa_id: string
           id: string
           perfil: string
+          unidade_principal_id: string | null
           updated_at: string
           usuario_id: string
         }
         Insert: {
+          acesso_todas_unidades?: boolean
           ativo?: boolean
           created_at?: string
           deleted_at?: string | null
           empresa_id: string
           id?: string
           perfil: string
+          unidade_principal_id?: string | null
           updated_at?: string
           usuario_id: string
         }
         Update: {
+          acesso_todas_unidades?: boolean
           ativo?: boolean
           created_at?: string
           deleted_at?: string | null
           empresa_id?: string
           id?: string
           perfil?: string
+          unidade_principal_id?: string | null
           updated_at?: string
           usuario_id?: string
         }
@@ -5445,7 +5809,109 @@ export type Database = {
             referencedColumns: ["empresa_id"]
           },
           {
+            foreignKeyName: "usuarios_empresas_unidade_principal_empresa_fk"
+            columns: ["unidade_principal_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
+            foreignKeyName: "usuarios_empresas_unidade_principal_id_fkey"
+            columns: ["unidade_principal_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "usuarios_empresas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usuarios_unidades: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          empresa_id: string
+          id: string
+          perfil_unidade: string | null
+          principal: boolean
+          unidade_id: string
+          updated_at: string
+          updated_by: string | null
+          usuario_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          empresa_id: string
+          id?: string
+          perfil_unidade?: string | null
+          principal?: boolean
+          unidade_id: string
+          updated_at?: string
+          updated_by?: string | null
+          usuario_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          empresa_id?: string
+          id?: string
+          perfil_unidade?: string | null
+          principal?: boolean
+          unidade_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_unidades_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuarios_unidades_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuarios_unidades_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "vw_consumo_empresa"
+            referencedColumns: ["empresa_id"]
+          },
+          {
+            foreignKeyName: "usuarios_unidades_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
+            foreignKeyName: "usuarios_unidades_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuarios_unidades_usuario_id_fkey"
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
@@ -5498,6 +5964,7 @@ export type Database = {
           responsavel_id: string | null
           resultado: string | null
           status_calculado: string | null
+          unidade_id: string | null
           updated_at: string | null
           updated_by: string | null
           vigente: boolean | null
@@ -5546,6 +6013,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "calibracoes_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
             foreignKeyName: "calibracoes_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
@@ -5591,19 +6065,25 @@ export type Database = {
           data_vencimento: string | null
           deleted_at: string | null
           empresa_id: string | null
+          escopo_documento: string | null
           exige_anexo: boolean | null
+          exige_aprovacao: boolean | null
           id: string | null
           nome: string | null
           numero_documento: string | null
           observacoes: string | null
           orgao_emissor: string | null
           periodicidade_meses: number | null
+          politica_aprovacao: Json | null
           responsavel_id: string | null
           setor_unidade: string | null
           status_calculado: string | null
           tipo_documento_id: string | null
+          unidade_id: string | null
           updated_at: string | null
           updated_by: string | null
+          versao_atual: number | null
+          workflow_status: string | null
         }
         Insert: {
           alerta_antecedencia_dias?: number[] | null
@@ -5614,19 +6094,25 @@ export type Database = {
           data_vencimento?: string | null
           deleted_at?: string | null
           empresa_id?: string | null
+          escopo_documento?: string | null
           exige_anexo?: boolean | null
+          exige_aprovacao?: boolean | null
           id?: string | null
           nome?: string | null
           numero_documento?: string | null
           observacoes?: string | null
           orgao_emissor?: string | null
           periodicidade_meses?: number | null
+          politica_aprovacao?: Json | null
           responsavel_id?: string | null
           setor_unidade?: string | null
           status_calculado?: never
           tipo_documento_id?: string | null
+          unidade_id?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          versao_atual?: number | null
+          workflow_status?: string | null
         }
         Update: {
           alerta_antecedencia_dias?: number[] | null
@@ -5637,19 +6123,25 @@ export type Database = {
           data_vencimento?: string | null
           deleted_at?: string | null
           empresa_id?: string | null
+          escopo_documento?: string | null
           exige_anexo?: boolean | null
+          exige_aprovacao?: boolean | null
           id?: string | null
           nome?: string | null
           numero_documento?: string | null
           observacoes?: string | null
           orgao_emissor?: string | null
           periodicidade_meses?: number | null
+          politica_aprovacao?: Json | null
           responsavel_id?: string | null
           setor_unidade?: string | null
           status_calculado?: never
           tipo_documento_id?: string | null
+          unidade_id?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          versao_atual?: number | null
+          workflow_status?: string | null
         }
         Relationships: [
           {
@@ -5695,6 +6187,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "documentos_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
             foreignKeyName: "documentos_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
@@ -5720,6 +6219,7 @@ export type Database = {
           nome: string | null
           numero_serie: string | null
           observacoes: string | null
+          qr_token: string | null
           qualificacao_vigente_id: string | null
           responsavel_id: string | null
           setor: string | null
@@ -5729,6 +6229,7 @@ export type Database = {
           status_manutencao: string | null
           status_qualificacao: string | null
           tipo_equipamento_id: string | null
+          unidade_id: string | null
           updated_at: string | null
           updated_by: string | null
         }
@@ -5767,6 +6268,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tipos_equipamentos"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipamentos_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
           },
           {
             foreignKeyName: "equipamentos_updated_by_fkey"
@@ -5817,6 +6325,7 @@ export type Database = {
           status_execucao: string | null
           tecnico_responsavel: string | null
           tipo_servico: string | null
+          unidade_id: string | null
           updated_at: string | null
           updated_by: string | null
         }
@@ -5848,6 +6357,7 @@ export type Database = {
           status_execucao?: string | null
           tecnico_responsavel?: string | null
           tipo_servico?: string | null
+          unidade_id?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
@@ -5879,6 +6389,7 @@ export type Database = {
           status_execucao?: string | null
           tecnico_responsavel?: string | null
           tipo_servico?: string | null
+          unidade_id?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
@@ -5940,6 +6451,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "manutencoes_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
             foreignKeyName: "manutencoes_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
@@ -5964,6 +6482,7 @@ export type Database = {
           resultado: string | null
           status_calculado: string | null
           tipo: string | null
+          unidade_id: string | null
           updated_at: string | null
           updated_by: string | null
           vigente: boolean | null
@@ -6026,6 +6545,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "qualificacoes_unidade_empresa_fk"
+            columns: ["unidade_id", "empresa_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id", "empresa_id"]
+          },
+          {
             foreignKeyName: "qualificacoes_updated_by_fkey"
             columns: ["updated_by"]
             isOneToOne: false
@@ -6036,12 +6562,35 @@ export type Database = {
       }
     }
     Functions: {
+      active_company_unit_count: {
+        Args: { p_empresa_id: string }
+        Returns: number
+      }
+      api_alterar_status_unidade: {
+        Args: {
+          p_empresa_id: string
+          p_motivo?: string
+          p_status: string
+          p_unidade_id: string
+        }
+        Returns: Json
+      }
       api_assistente_contexto: {
         Args: {
           p_empresa_id: string
           p_equipamento_id?: string
           p_escopo?: string
           p_setor?: string
+        }
+        Returns: Json
+      }
+      api_assistente_contexto_unidade: {
+        Args: {
+          p_empresa_id: string
+          p_equipamento_id?: string
+          p_escopo?: string
+          p_setor?: string
+          p_unidade_id?: string
         }
         Returns: Json
       }
@@ -6065,12 +6614,35 @@ export type Database = {
         Args: { p_empresa_id: string; p_id: string; p_payload: Json }
         Returns: Json
       }
+      api_atualizar_unidade: {
+        Args: { p_empresa_id: string; p_payload: Json; p_unidade_id: string }
+        Returns: Json
+      }
       api_atualizar_usuario_empresa: {
         Args: { p_empresa_id: string; p_payload: Json; p_usuario_id: string }
         Returns: Json
       }
+      api_atualizar_usuario_empresa_multiunit: {
+        Args: {
+          p_acesso_todas_unidades: boolean
+          p_empresa_id: string
+          p_payload: Json
+          p_unidade_ids?: string[]
+          p_unidade_principal_id?: string
+          p_usuario_id: string
+        }
+        Returns: Json
+      }
       api_auditoria_avancada: {
         Args: { p_empresa_id: string; p_limite?: number }
+        Returns: Json
+      }
+      api_auditoria_avancada_unidade: {
+        Args: { p_empresa_id: string; p_limite?: number; p_unidade_id?: string }
+        Returns: Json
+      }
+      api_auditoria_integridade: {
+        Args: { p_empresa_id: string; p_unidade_id?: string }
         Returns: Json
       }
       api_avaliar_segmento_ia: { Args: { p_empresa_id: string }; Returns: Json }
@@ -6093,6 +6665,10 @@ export type Database = {
         Returns: Json
       }
       api_contexto_usuario: { Args: never; Returns: Json }
+      api_copiloto_proximas_acoes: {
+        Args: { p_empresa_id: string; p_unidade_id?: string }
+        Returns: Json
+      }
       api_criar_calibracao: {
         Args: {
           p_empresa_id: string
@@ -6121,9 +6697,21 @@ export type Database = {
         }
         Returns: Json
       }
+      api_criar_unidade: {
+        Args: { p_empresa_id: string; p_payload: Json }
+        Returns: Json
+      }
       api_dashboard: { Args: { p_empresa_id: string }; Returns: Json }
+      api_dashboard_unidade: {
+        Args: { p_empresa_id: string; p_unidade_id?: string }
+        Returns: Json
+      }
       api_decidir_acao_critica: {
         Args: { p_approve: boolean; p_notes?: string; p_solicitacao_id: string }
+        Returns: Json
+      }
+      api_definir_unidade_matriz: {
+        Args: { p_empresa_id: string; p_unidade_id: string }
         Returns: Json
       }
       api_diagnostico_isolamento: {
@@ -6186,6 +6774,15 @@ export type Database = {
         }
         Returns: Json
       }
+      api_listar_alertas_unidade: {
+        Args: {
+          p_empresa_id: string
+          p_limite?: number
+          p_somente_nao_lidos?: boolean
+          p_unidade_id?: string
+        }
+        Returns: Json
+      }
       api_listar_documentos: {
         Args: {
           p_busca?: string
@@ -6196,6 +6793,17 @@ export type Database = {
         }
         Returns: Json
       }
+      api_listar_documentos_unidade: {
+        Args: {
+          p_busca?: string
+          p_empresa_id: string
+          p_limite?: number
+          p_offset?: number
+          p_status?: string
+          p_unidade_id?: string
+        }
+        Returns: Json
+      }
       api_listar_equipamentos: {
         Args: {
           p_busca?: string
@@ -6203,6 +6811,17 @@ export type Database = {
           p_limite?: number
           p_offset?: number
           p_status?: string
+        }
+        Returns: Json
+      }
+      api_listar_equipamentos_unidade: {
+        Args: {
+          p_busca?: string
+          p_empresa_id: string
+          p_limite?: number
+          p_offset?: number
+          p_status?: string
+          p_unidade_id?: string
         }
         Returns: Json
       }
@@ -6218,6 +6837,19 @@ export type Database = {
         }
         Returns: Json
       }
+      api_listar_manutencoes_unidade: {
+        Args: {
+          p_busca?: string
+          p_empresa_id: string
+          p_equipamento_id?: string
+          p_limite?: number
+          p_natureza?: string
+          p_offset?: number
+          p_status?: string
+          p_unidade_id?: string
+        }
+        Returns: Json
+      }
       api_listar_pendencias: {
         Args: {
           p_empresa_id: string
@@ -6228,10 +6860,26 @@ export type Database = {
         }
         Returns: Json
       }
+      api_listar_pendencias_unidade: {
+        Args: {
+          p_empresa_id: string
+          p_limite?: number
+          p_offset?: number
+          p_responsavel_id?: string
+          p_status?: string
+          p_unidade_id?: string
+        }
+        Returns: Json
+      }
       api_listar_relatorios_agendados: {
         Args: { p_empresa_id: string }
         Returns: Json
       }
+      api_listar_relatorios_agendados_unidade: {
+        Args: { p_empresa_id: string; p_unidade_id?: string }
+        Returns: Json
+      }
+      api_listar_unidades: { Args: { p_empresa_id: string }; Returns: Json }
       api_marcar_alerta_lido: {
         Args: { p_alerta_id: string; p_lido?: boolean }
         Returns: undefined
@@ -6336,6 +6984,7 @@ export type Database = {
         }
         Returns: Json
       }
+      api_master_resumo_multiunidade: { Args: never; Returns: Json }
       api_master_salvar_configuracoes_plataforma: {
         Args: { p_payload: Json }
         Returns: Json
@@ -6376,13 +7025,29 @@ export type Database = {
         Returns: Json
       }
       api_mfa_policy_status: { Args: never; Returns: Json }
+      api_obter_acessos_usuarios_unidades: {
+        Args: { p_empresa_id: string }
+        Returns: Json
+      }
       api_obter_qr_equipamento: {
         Args: { p_equipamento_id: string }
+        Returns: Json
+      }
+      api_obter_unidade: {
+        Args: { p_empresa_id: string; p_unidade_id: string }
         Returns: Json
       }
       api_onboarding_empresa: { Args: { p_empresa_id: string }; Returns: Json }
       api_onboarding_inteligente: {
         Args: { p_empresa_id: string }
+        Returns: Json
+      }
+      api_painel_fiscalizacao: {
+        Args: { p_empresa_id: string; p_unidade_id?: string }
+        Returns: Json
+      }
+      api_partner_carteira_saude: {
+        Args: { p_parceiro_empresa_id: string }
         Returns: Json
       }
       api_partner_conceder_isencao: { Args: { p_payload: Json }; Returns: Json }
@@ -6409,15 +7074,39 @@ export type Database = {
         Returns: Json
       }
       api_partner_vincular_cliente: { Args: { p_payload: Json }; Returns: Json }
+      api_provisionar_documentos_empresa: {
+        Args: { p_empresa_id: string; p_forcar?: boolean }
+        Returns: Json
+      }
       api_public_catalogo_parceiros: { Args: never; Returns: Json }
       api_public_catalogo_planos: { Args: never; Returns: Json }
       api_qualidade_dados: { Args: { p_empresa_id: string }; Returns: Json }
+      api_registrar_acao_copiloto: {
+        Args: { p_acao_id: string; p_destino: string; p_empresa_id: string }
+        Returns: undefined
+      }
+      api_registrar_acesso_fiscalizacao: {
+        Args: { p_empresa_id: string; p_unidade_id?: string }
+        Returns: undefined
+      }
       api_registrar_tratativa: {
         Args: { p_empresa_id: string; p_payload: Json; p_pendencia_id: string }
         Returns: Json
       }
+      api_registrar_troca_unidade: {
+        Args: {
+          p_empresa_id: string
+          p_unidade_anterior_id?: string
+          p_unidade_atual_id?: string
+        }
+        Returns: undefined
+      }
       api_relatorio_executivo_ia: {
         Args: { p_empresa_id: string }
+        Returns: Json
+      }
+      api_relatorio_executivo_ia_unidade: {
+        Args: { p_empresa_id: string; p_unidade_id?: string }
         Returns: Json
       }
       api_resolver_qr_equipamento: {
@@ -6430,6 +7119,16 @@ export type Database = {
             Returns: Json
           }
         | { Args: { p_equipamento_id: string }; Returns: Json }
+      api_salvar_acesso_usuario_unidades: {
+        Args: {
+          p_acesso_todas_unidades: boolean
+          p_empresa_id: string
+          p_unidade_ids?: string[]
+          p_unidade_principal_id?: string
+          p_usuario_id: string
+        }
+        Returns: Json
+      }
       api_salvar_configuracoes: {
         Args: { p_empresa_id: string; p_payload: Json }
         Returns: Json
@@ -6455,6 +7154,10 @@ export type Database = {
         Args: { p_empresa_id: string; p_payload: Json }
         Returns: Json
       }
+      api_salvar_relatorio_agendado_unidade: {
+        Args: { p_empresa_id: string; p_payload: Json; p_unidade_id: string }
+        Returns: Json
+      }
       api_solicitar_acao_critica: {
         Args: {
           p_action_type: string
@@ -6478,6 +7181,22 @@ export type Database = {
         Args: { p_empresa_id: string }
         Returns: Json
       }
+      api_transferir_equipamento_unidade: {
+        Args: {
+          p_data_transferencia?: string
+          p_empresa_id: string
+          p_equipamento_id: string
+          p_motivo: string
+          p_observacoes?: string
+          p_responsavel_id?: string
+          p_unidade_destino_id: string
+        }
+        Returns: Json
+      }
+      api_unidade_indicadores: {
+        Args: { p_empresa_id: string; p_unidade_id: string }
+        Returns: Json
+      }
       api_verificar_limite_storage: {
         Args: { p_empresa_id: string; p_novos_bytes: number }
         Returns: Json
@@ -6499,6 +7218,14 @@ export type Database = {
         Args: { p_empresa_id: string; p_recurso: string }
         Returns: undefined
       }
+      assert_record_unit_write: {
+        Args: {
+          p_empresa_id: string
+          p_record_id: string
+          p_table_name: string
+        }
+        Returns: string
+      }
       assert_user_in_company: {
         Args: { p_empresa_id: string; p_field: string; p_usuario_id: string }
         Returns: undefined
@@ -6511,12 +7238,36 @@ export type Database = {
         Args: { p_acao: string; p_modulo: string }
         Returns: string
       }
+      can_access_evidence_object: {
+        Args: { p_storage_path: string }
+        Returns: boolean
+      }
       can_admin_company: { Args: { p_empresa_id: string }; Returns: boolean }
+      can_admin_unit: {
+        Args: { p_empresa_id: string; p_unidade_id: string }
+        Returns: boolean
+      }
+      can_create_company_unit: {
+        Args: { p_empresa_id: string }
+        Returns: boolean
+      }
+      can_read_unit: {
+        Args: { p_empresa_id: string; p_unidade_id: string }
+        Returns: boolean
+      }
+      can_use_consolidated_view: {
+        Args: { p_empresa_id: string }
+        Returns: boolean
+      }
       can_view_sandbox_company: {
         Args: { p_empresa_id: string }
         Returns: boolean
       }
       can_write_company: { Args: { p_empresa_id: string }; Returns: boolean }
+      can_write_unit: {
+        Args: { p_empresa_id: string; p_unidade_id: string }
+        Returns: boolean
+      }
       check_company_permission: {
         Args: { p_acao?: string; p_empresa_id: string; p_recurso: string }
         Returns: boolean
@@ -6549,10 +7300,15 @@ export type Database = {
         Returns: undefined
       }
       current_user_requires_mfa: { Args: never; Returns: boolean }
+      current_user_unit_ids: {
+        Args: { p_empresa_id: string }
+        Returns: string[]
+      }
       effective_company_limit: {
         Args: { p_empresa_id: string; p_limit_name: string }
         Returns: number
       }
+      effective_unit_limit: { Args: { p_empresa_id: string }; Returns: number }
       gerar_alertas_vencimento: { Args: never; Returns: number }
       get_company_usage_limits: {
         Args: { p_empresa_id: string }
@@ -6569,6 +7325,14 @@ export type Database = {
       }
       has_company_permission: {
         Args: { p_codigo: string; p_empresa_id: string }
+        Returns: boolean
+      }
+      has_unit_access: {
+        Args: { p_empresa_id: string; p_unidade_id: string }
+        Returns: boolean
+      }
+      has_unit_membership: {
+        Args: { p_empresa_id: string; p_unidade_id: string }
         Returns: boolean
       }
       internal_auth_user_id_por_email: {
@@ -6602,6 +7366,7 @@ export type Database = {
         Args: { p_empresa_id: string; p_recurso: string }
         Returns: boolean
       }
+      raise_forbidden_json: { Args: never; Returns: Json }
       record_exists_in_company: {
         Args: {
           p_empresa_id: string
@@ -6627,6 +7392,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      resolve_record_unit: {
+        Args: { p_empresa_id: string; p_modulo: string; p_registro_id: string }
+        Returns: string
+      }
       segmento_documental_chaves: {
         Args: { p_segmento: string; p_tipo_estabelecimento: string }
         Returns: string[]
@@ -6643,6 +7412,19 @@ export type Database = {
           p_finalidade?: string
           p_modulo: string
           p_registro_id: string
+        }
+        Returns: boolean
+      }
+      unit_belongs_to_company: {
+        Args: { p_empresa_id: string; p_unidade_id: string }
+        Returns: boolean
+      }
+      unit_scope_allows: {
+        Args: {
+          p_empresa_id: string
+          p_include_corporate?: boolean
+          p_record_unidade_id: string
+          p_selected_unidade_id: string
         }
         Returns: boolean
       }
