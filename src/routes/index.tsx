@@ -3,14 +3,13 @@ import { useEffect, useRef } from "react";
 import { ArrowRight, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  benefitCards,
+  BenefitsBento,
   CtaSection,
   FAQSection,
-  FeatureCard,
-  ModuleCard,
   PricingGrid,
+  ProcessSteps,
   ProductMockup,
-  publicModules,
+  ProductShowcase,
   PublicFooter,
   PublicHeader,
   Reveal,
@@ -59,6 +58,19 @@ function HeroAtmosphere() {
     };
   }, []);
 
+  useEffect(() => {
+    const atmosphere = atmosphereRef.current;
+    const hero = atmosphere?.closest<HTMLElement>(".cf-hero-surface");
+    if (!atmosphere || !hero || !("IntersectionObserver" in window)) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => hero.classList.toggle("cf-hero-motion-paused", !entry.isIntersecting),
+      { threshold: 0.08 },
+    );
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div ref={atmosphereRef} aria-hidden className="cf-hero-atmosphere">
       <span className="cf-hero-mesh" />
@@ -71,13 +83,15 @@ function HeroAtmosphere() {
       <span className="cf-hero-arc cf-hero-arc-one" />
       <span className="cf-hero-arc cf-hero-arc-two" />
 
-      <span className="cf-flow-track cf-flow-track-one"><span className="cf-flow-node cf-flow-node-one" /></span>
-      <span className="cf-flow-track cf-flow-track-two"><span className="cf-flow-node cf-flow-node-two" /></span>
-      <span className="cf-flow-track cf-flow-track-three"><span className="cf-flow-node cf-flow-node-three" /></span>
-      <span className="cf-flow-track cf-flow-track-four"><span className="cf-flow-node cf-flow-node-four" /></span>
-      <span className="cf-flow-track cf-flow-track-five"><span className="cf-flow-node cf-flow-node-five" /></span>
-      <span className="cf-flow-track cf-flow-track-six"><span className="cf-flow-node cf-flow-node-six" /></span>
-      <span className="cf-flow-track cf-flow-track-seven"><span className="cf-flow-node cf-flow-node-seven" /></span>
+      <span className="cf-flow-track cf-flow-track-one">
+        <span className="cf-flow-node cf-flow-node-one" />
+        <span className="cf-flow-node cf-flow-node-two" />
+        <span className="cf-flow-node cf-flow-node-three" />
+      </span>
+      <span className="cf-flow-track cf-flow-track-two">
+        <span className="cf-flow-node cf-flow-node-four" />
+        <span className="cf-flow-node cf-flow-node-five" />
+      </span>
     </div>
   );
 }
@@ -217,18 +231,14 @@ function LandingPage() {
               description="Substitua planilhas, e-mails e lembretes manuais por uma operação de conformidade previsível e auditável."
             />
           </Reveal>
-          <Reveal delay={60} className="mt-12">
-            <div className="cf-stagger-grid grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {benefitCards.map((item) => (
-                <FeatureCard key={item.title} {...item} />
-              ))}
-            </div>
+          <Reveal delay={80} className="mt-14">
+            <BenefitsBento />
           </Reveal>
         </div>
       </section>
 
       {/* MODULES */}
-      <section id="modulos" className="bg-slate-50 py-24">
+      <section id="modulos" className="cf-showcase-section py-28 md:py-32">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <Reveal>
             <SectionTitle
@@ -238,18 +248,29 @@ function LandingPage() {
               description="Do dashboard executivo à rastreabilidade de auditoria — tudo integrado, sem trocar de sistema."
             />
           </Reveal>
-          <Reveal delay={60} className="mt-12">
-            <div className="cf-stagger-grid grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {publicModules.map((module) => (
-                <ModuleCard key={module.title} {...module} />
-              ))}
-            </div>
+          <Reveal delay={80} className="mt-14">
+            <ProductShowcase />
+          </Reveal>
+        </div>
+      </section>
+
+      <section id="como-funciona" className="bg-white py-28 md:py-32">
+        <div className="mx-auto max-w-7xl px-5 lg:px-8">
+          <Reveal>
+            <SectionTitle
+              eyebrow="Como funciona"
+              title="Da pendência à conformidade, em um fluxo claro."
+              description="Uma rotina que começa na organização e termina com evidências prontas para consultar."
+            />
+          </Reveal>
+          <Reveal delay={80} className="mt-14">
+            <ProcessSteps />
           </Reveal>
         </div>
       </section>
 
       {/* PLANS */}
-      <section id="planos" className="bg-white py-24">
+      <section id="planos" className="cf-pricing-section py-28 md:py-32">
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <Reveal>
             <SectionTitle

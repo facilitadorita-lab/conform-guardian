@@ -46,6 +46,7 @@ function withPublicBasePath(href: string) {
 const publicNavigationItems = [
   { label: "Benefícios", href: withPublicBasePath("/#beneficios"), section: "beneficios" },
   { label: "Módulos", href: withPublicBasePath("/#modulos"), section: "modulos" },
+  { label: "Como funciona", href: withPublicBasePath("/#como-funciona"), section: "como-funciona" },
   { label: "Planos", href: withPublicBasePath("/#planos"), section: "planos" },
   { label: "FAQ", href: withPublicBasePath("/#faq"), section: "faq" },
 ];
@@ -208,7 +209,7 @@ export function PublicHeader() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/85 backdrop-blur-2xl transition-[background-color,border-color] duration-200 ease-out">
+    <header className={cn("cf-public-header sticky top-0 z-40", isCompact && "is-compact")}>
       <div
         className={cn(
           "mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 transition-[height] duration-200 ease-out lg:px-8",
@@ -499,6 +500,195 @@ export function ModuleCard({
   );
 }
 
+export function BenefitsBento() {
+  return (
+    <div className="cf-benefits-bento" aria-label="Benefícios do Conform Flow">
+      <article className="cf-bento-card cf-bento-card-risk">
+        <div className="cf-bento-icon"><ShieldAlert className="h-5 w-5" /></div>
+        <div className="mt-auto max-w-sm">
+          <p className="cf-bento-kicker">Risco sob controle</p>
+          <h3 className="cf-bento-title">Antecipe o que pode interromper sua operação.</h3>
+          <p className="cf-bento-copy">Veja os prazos críticos com contexto e priorize cada ação antes de uma não conformidade.</p>
+        </div>
+        <div className="cf-bento-compliance" aria-label="Exemplo demonstrativo de risco operacional">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
+            <span>Mapa de risco</span><span className="text-emerald-700">92% em dia</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full w-[92%] rounded-full bg-emerald-500" />
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-[10px]">
+            <span className="rounded-lg bg-rose-50 px-2 py-1.5 text-rose-700">1 crítico</span>
+            <span className="rounded-lg bg-amber-50 px-2 py-1.5 text-amber-700">3 atenção</span>
+            <span className="rounded-lg bg-emerald-50 px-2 py-1.5 text-emerald-700">24 em dia</span>
+          </div>
+        </div>
+      </article>
+
+      <article className="cf-bento-card cf-bento-card-audit">
+        <div className="flex items-start justify-between gap-4">
+          <div className="cf-bento-icon"><ScrollText className="h-5 w-5" /></div>
+          <span className="cf-bento-mini-label">Histórico</span>
+        </div>
+        <div className="mt-auto">
+          <p className="cf-bento-kicker">Auditoria sem caça ao arquivo</p>
+          <h3 className="cf-bento-title">Cada mudança fica registrada.</h3>
+        </div>
+        <div className="cf-bento-timeline" aria-label="Exemplo demonstrativo de rastreabilidade">
+          <span className="cf-bento-timeline-dot" />
+          <div><strong>Documento atualizado</strong><small>Hoje, 14:32</small></div>
+          <span className="cf-bento-timeline-line" />
+          <div><strong>Versão anterior preservada</strong><small>Histórico disponível</small></div>
+        </div>
+      </article>
+
+      <article className="cf-bento-card cf-bento-card-alert">
+        <div className="flex items-start justify-between gap-4">
+          <div className="cf-bento-icon"><BellRing className="h-5 w-5" /></div>
+          <span className="cf-bento-mini-status">Atenção</span>
+        </div>
+        <div className="mt-auto">
+          <p className="cf-bento-kicker">Prazos que não passam despercebidos</p>
+          <h3 className="cf-bento-title">Alertas antes do vencimento.</h3>
+        </div>
+        <div className="cf-bento-alert-preview" aria-label="Exemplo demonstrativo de alerta">
+          <span className="font-semibold">Licença sanitária</span>
+          <span>Vence em 12 dias</span>
+        </div>
+      </article>
+
+      <article className="cf-bento-card cf-bento-card-trace">
+        <div className="cf-bento-icon"><Activity className="h-5 w-5" /></div>
+        <div className="mt-auto">
+          <p className="cf-bento-kicker">Uma fonte de verdade</p>
+          <h3 className="cf-bento-title">Dados e evidências no mesmo fluxo.</h3>
+        </div>
+        <div className="cf-bento-flow" aria-label="Fluxo demonstrativo de registro">
+          <span>Registro</span><i /><span>Responsável</span><i /><span>Evidência</span>
+        </div>
+      </article>
+
+      <article className="cf-bento-card cf-bento-card-executive">
+        <div className="flex items-start justify-between gap-5">
+          <div>
+            <p className="cf-bento-kicker">Visão executiva</p>
+            <h3 className="cf-bento-title">Decida pela prioridade, não pelo ruído.</h3>
+          </div>
+          <div className="cf-bento-score"><strong>92%</strong><span>conformidade</span></div>
+        </div>
+        <div className="cf-bento-bars" aria-label="Exemplo demonstrativo de visão executiva">
+          <span style={{ height: "38%" }} /><span style={{ height: "58%" }} /><span style={{ height: "44%" }} />
+          <span style={{ height: "75%" }} /><span style={{ height: "61%" }} /><span style={{ height: "88%" }} />
+          <span style={{ height: "70%" }} /><span style={{ height: "92%" }} />
+        </div>
+      </article>
+    </div>
+  );
+}
+
+const showcaseModules = [
+  { id: "dashboard", label: "Dashboard", icon: Gauge, description: "Prioridades, indicadores e riscos em uma leitura executiva." },
+  { id: "documentos", label: "Documentos", icon: FileText, description: "Validades, evidências e responsáveis em um só lugar." },
+  { id: "equipamentos", label: "Equipamentos", icon: ClipboardCheck, description: "Histórico técnico com todas as rotinas conectadas." },
+  { id: "manutencoes", label: "Manutenções", icon: Wrench, description: "Preventivas e corretivas com contexto operacional." },
+  { id: "alertas", label: "Alertas", icon: BellRing, description: "O que merece ação antes de virar atraso." },
+  { id: "auditoria", label: "Auditoria", icon: ShieldCheck, description: "Trilha completa de movimentações e evidências." },
+] as const;
+
+type ShowcaseModuleId = (typeof showcaseModules)[number]["id"];
+
+export function ProductShowcase() {
+  const [activeId, setActiveId] = useState<ShowcaseModuleId>("dashboard");
+  const activeModule = showcaseModules.find((item) => item.id === activeId) ?? showcaseModules[0];
+  const ActiveIcon = activeModule.icon;
+
+  return (
+    <div className="cf-showcase-shell">
+      <div className="cf-showcase-navigation" role="tablist" aria-label="Módulos do Conform Flow">
+        <div className="mb-6 max-w-sm">
+          <p className="cf-showcase-eyebrow">Na prática</p>
+          <h3 className="text-2xl font-semibold tracking-tight text-slate-950">Uma rotina inteira, conectada.</h3>
+          <p className="mt-3 text-sm leading-6 text-slate-600">Navegue pela visão que organiza cada parte da operação.</p>
+        </div>
+        <div className="grid gap-1">
+          {showcaseModules.map((module) => {
+            const Icon = module.icon;
+            const isActive = activeId === module.id;
+            return (
+              <button
+                key={module.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`showcase-${module.id}`}
+                id={`tab-${module.id}`}
+                onClick={() => setActiveId(module.id)}
+                className={cn("cf-showcase-tab", isActive && "is-active")}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{module.label}</span>
+                <ArrowRight className="cf-showcase-tab-arrow h-3.5 w-3.5" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="cf-showcase-view" role="tabpanel" id={`showcase-${activeModule.id}`} aria-labelledby={`tab-${activeModule.id}`}>
+        <div key={activeModule.id} className="cf-showcase-visual">
+          <div className="cf-showcase-browser">
+            <div className="cf-showcase-browser-bar"><span /><span /><span /><div>conform flow / {activeModule.label.toLowerCase()}</div></div>
+            <ShowcaseScreen id={activeModule.id} />
+          </div>
+          <div className="cf-showcase-caption">
+            <div className="cf-showcase-caption-icon"><ActiveIcon className="h-4 w-4" /></div>
+            <div><strong>{activeModule.label}</strong><p>{activeModule.description}</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShowcaseScreen({ id }: { id: ShowcaseModuleId }) {
+  if (id === "documentos") return <DocumentsShowcase />;
+  if (id === "equipamentos") return <EquipmentShowcase />;
+  if (id === "manutencoes") return <MaintenanceShowcase />;
+  if (id === "alertas") return <AlertsShowcase />;
+  if (id === "auditoria") return <AuditShowcase />;
+  return <DashboardShowcase />;
+}
+
+function ShowcaseLabel({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "warn" | "ok" | "danger" }) {
+  return <span className={cn("cf-showcase-label", `is-${tone}`)}>{children}</span>;
+}
+
+function DashboardShowcase() {
+  return <div className="cf-showcase-screen"><div className="cf-showcase-screen-heading"><div><span>Visão geral</span><strong>Índice de conformidade</strong></div><ShowcaseLabel tone="ok">Em dia</ShowcaseLabel></div><div className="cf-showcase-metric-row"><div><small>Conformidade</small><strong>92%</strong><em>+4,2 pts</em></div><div><small>Vencem em 30 dias</small><strong className="text-amber-600">11</strong><em>acompanhar</em></div><div><small>Pendências críticas</small><strong className="text-rose-600">2</strong><em>priorizar</em></div></div><div className="cf-showcase-chart"><div className="cf-showcase-chart-title"><span>Risco operacional</span><small>últimos 90 dias</small></div><div className="cf-showcase-chart-bars">{[35, 50, 42, 68, 55, 81, 63, 90, 72, 84].map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div></div></div>;
+}
+
+function DocumentsShowcase() {
+  const rows = [["Alvará sanitário", "18/09/2026", "Atenção", "warn"], ["AVCB", "04/10/2026", "Em dia", "ok"], ["PGRSS", "12/10/2026", "Em dia", "ok"]] as const;
+  return <div className="cf-showcase-screen"><div className="cf-showcase-screen-heading"><div><span>Documentos</span><strong>Validades e evidências</strong></div><button type="button">Novo documento</button></div><div className="cf-showcase-table"><div className="cf-showcase-table-head"><span>Documento</span><span>Vencimento</span><span>Status</span></div>{rows.map(([name, due, status, tone]) => <div key={name} className="cf-showcase-table-row"><strong>{name}</strong><span>{due}</span><ShowcaseLabel tone={tone}>{status}</ShowcaseLabel></div>)}</div><div className="cf-showcase-document-footer"><FileText className="h-4 w-4" /><span>Versões e anexos preservados no histórico</span></div></div>;
+}
+
+function EquipmentShowcase() {
+  return <div className="cf-showcase-screen"><div className="cf-showcase-screen-heading"><div><span>Equipamentos</span><strong>Autoclave Central 01</strong></div><ShowcaseLabel tone="ok">Em dia</ShowcaseLabel></div><div className="cf-showcase-equipment-grid"><div className="cf-showcase-equipment-card"><small>Próxima calibração</small><strong>08/09/2026</strong><span>Laboratório metrológico</span></div><div className="cf-showcase-equipment-card"><small>Qualificação</small><strong>Válida</strong><span>Revisão em 90 dias</span></div></div><div className="cf-showcase-tab-strip"><span className="is-active">Dados gerais</span><span>Calibrações</span><span>Qualificações</span><span>Histórico</span></div><div className="cf-showcase-history-line"><span /><div><strong>Manutenção preventiva registrada</strong><small>Ordem de serviço anexada</small></div></div></div>;
+}
+
+function MaintenanceShowcase() {
+  return <div className="cf-showcase-screen"><div className="cf-showcase-screen-heading"><div><span>Manutenções</span><strong>Planejamento operacional</strong></div><button type="button">Nova manutenção</button></div><div className="cf-showcase-calendar"><div className="cf-showcase-calendar-heading"><span>Agosto</span><small>2026</small></div><div className="cf-showcase-calendar-days">{Array.from({ length: 21 }, (_, index) => <span key={index} className={index === 9 || index === 14 || index === 17 ? "is-event" : ""}>{index + 1}</span>)}</div></div><div className="cf-showcase-maintenance-row"><Wrench className="h-4 w-4" /><div><strong>Preventiva · Autoclave Central 01</strong><span>24/08/2026 · responsável definido</span></div><ShowcaseLabel tone="warn">Agendada</ShowcaseLabel></div></div>;
+}
+
+function AlertsShowcase() {
+  const items = [["Licença sanitária", "vence em 12 dias", "warn"], ["Certificado de calibração", "vence em 18 dias", "warn"], ["Plano de manutenção", "vencido há 2 dias", "danger"]] as const;
+  return <div className="cf-showcase-screen"><div className="cf-showcase-screen-heading"><div><span>Alertas</span><strong>O que pede atenção</strong></div><span className="cf-showcase-counter">3</span></div><div className="cf-showcase-alert-list">{items.map(([title, detail, tone]) => <div key={title}><span className={cn("cf-showcase-alert-dot", `is-${tone}`)} /><div><strong>{title}</strong><small>{detail}</small></div><ShowcaseLabel tone={tone}>Ver</ShowcaseLabel></div>)}</div></div>;
+}
+
+function AuditShowcase() {
+  return <div className="cf-showcase-screen"><div className="cf-showcase-screen-heading"><div><span>Auditoria</span><strong>Rastreabilidade completa</strong></div><ShowcaseLabel tone="ok">Íntegro</ShowcaseLabel></div><div className="cf-showcase-audit-list"><div><span className="is-cyan" /><div><strong>Anexo incluído</strong><small>Documento · hoje, 14:32</small></div></div><div><span className="is-blue" /><div><strong>Responsável atribuído</strong><small>Equipamento · hoje, 11:08</small></div></div><div><span className="is-emerald" /><div><strong>Tratativa concluída</strong><small>Pendência · ontem, 16:42</small></div></div></div><div className="cf-showcase-audit-footer"><ShieldCheck className="h-4 w-4" /><span>Histórico disponível para consulta</span></div></div>;
+}
+
 const publicPlanFallbacks = [
   {
     name: "Essencial",
@@ -547,7 +737,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
         </div>
         <div className="cf-stagger-grid grid gap-5 lg:grid-cols-3">
           {publicPlanFallbacks.map((plan) => (
-            <article key={plan.name} className="flex rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_18px_50px_-42px_rgba(15,41,71,0.4)]">
+            <article key={plan.name} className="cf-plan-card flex rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_18px_50px_-42px_rgba(15,41,71,0.4)]">
               <div className="flex w-full flex-col">
                 <h3 className="text-lg font-semibold text-slate-950">{plan.name}</h3>
                 <p className="mt-1.5 min-h-10 text-[13px] leading-5 text-slate-600">{plan.audience}</p>
@@ -602,7 +792,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
           <article
             key={plan.id}
             className={cn(
-              "relative flex rounded-2xl border bg-white p-6 shadow-[0_18px_50px_-42px_rgba(15,41,71,0.4)] transition-[border-color,box-shadow,transform] duration-[200ms] ease-out hover:-translate-y-1 hover:shadow-[0_24px_58px_-42px_rgba(15,41,71,0.5)]",
+              "cf-plan-card relative flex rounded-2xl border bg-white p-6 shadow-[0_18px_50px_-42px_rgba(15,41,71,0.4)] transition-[border-color,box-shadow,transform] duration-[200ms] ease-out hover:-translate-y-1 hover:shadow-[0_24px_58px_-42px_rgba(15,41,71,0.5)]",
               plan.mais_escolhido
                 ? "border-cyan-500 ring-2 ring-cyan-200/60 shadow-[0_26px_60px_-38px_rgba(6,182,212,0.55)] lg:-translate-y-2 lg:scale-[1.02]"
                 : "border-slate-200",
@@ -762,7 +952,7 @@ export function SecurityBand() {
   );
 }
 
-export function FAQSection() {
+function LegacyFAQSection() {
   const faqs = [
     {
       q: "Para quais empresas o sistema é indicado?",
@@ -820,11 +1010,57 @@ export function FAQSection() {
   );
 }
 
+export function FAQSection() {
+  const faqs = [
+    { q: "Para quais empresas o sistema é indicado?", a: "Para clínicas, laboratórios, casas de repouso, distribuidoras, empresas da saúde e demais operações reguladas que precisam organizar documentos, prazos e evidências." },
+    { q: "Posso controlar documentos e equipamentos?", a: "Sim. O Essencial é focado em documentos, anexos e vencimentos. Os planos superiores adicionam equipamentos, calibrações, qualificações e manutenções." },
+    { q: "Como funcionam os alertas?", a: "A plataforma acompanha as datas cadastradas e deixa em destaque os itens vencidos, próximos do prazo e que merecem atenção." },
+    { q: "É possível gerenciar várias unidades?", a: "Sim. O Plano Rede foi pensado para operações com mais de uma unidade, visão consolidada e acompanhamento por filial." },
+    { q: "Cada usuário tem um acesso próprio?", a: "Sim. Os acessos são organizados por perfil para que cada pessoa trabalhe apenas no escopo necessário para sua rotina." },
+  ];
+
+  return (
+    <section id="faq" className="cf-faq-section py-28 md:py-32">
+      <div className="mx-auto grid max-w-7xl gap-10 px-5 lg:grid-cols-[0.72fr_1.28fr] lg:items-start lg:gap-16 lg:px-8">
+        <Reveal>
+          <div className="lg:sticky lg:top-28">
+            <SectionTitle
+              eyebrow="Perguntas frequentes"
+              title="Clareza antes de começar."
+              description="O essencial para entender como o Conform Flow se encaixa na sua operação."
+            />
+            <div className="cf-faq-aside">
+              <p>Ainda está avaliando o melhor plano?</p>
+              <Link to="/planos" className="group">
+                Comparar planos <ArrowRight className="cf-cta-arrow h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+        </Reveal>
+        <Reveal delay={80}>
+          <Accordion type="single" collapsible className="cf-faq-accordion">
+            {faqs.map((faq) => (
+              <AccordionItem key={faq.q} value={faq.q}>
+                <AccordionTrigger className="text-left text-[1rem] font-semibold text-slate-950 hover:no-underline">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="max-w-2xl text-sm leading-7 text-slate-600">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 export function CtaSection() {
   return (
-    <section className="bg-slate-50 px-5 py-20 lg:px-8">
+    <section className="cf-final-cta-section px-5 py-24 lg:px-8">
       <Reveal>
-        <div className="mx-auto max-w-7xl overflow-hidden rounded-[1.25rem] bg-slate-950 p-8 text-white shadow-[0_30px_80px_-45px_rgba(15,23,42,0.75)] md:p-12">
+        <div className="cf-final-cta mx-auto max-w-7xl overflow-hidden rounded-[1.25rem] p-8 text-white shadow-[0_30px_80px_-45px_rgba(15,23,42,0.75)] md:p-12">
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="cf-cta-sequence">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200">
@@ -1066,7 +1302,7 @@ export function ProductMockup() {
   );
 }
 
-export function ProcessSteps() {
+function LegacyProcessSteps() {
   const steps = [
     ["1", "Cadastre empresa e unidades", "Estruture o ambiente por operação, filial ou cliente."],
     [
@@ -1087,6 +1323,32 @@ export function ProcessSteps() {
           </div>
           <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
           <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+export function ProcessSteps() {
+  const steps = [
+    ["01", "Centralize", "Organize os registros e as evidências que fazem parte da operação."],
+    ["02", "Acompanhe", "Transforme datas, status e responsáveis em uma rotina clara."],
+    ["03", "Antecipe", "Receba contexto para agir antes que um prazo se torne um risco."],
+    ["04", "Comprove", "Mantenha a trilha de decisões e evidências pronta para consultar."],
+  ];
+  const { reference, visible } = useInViewOnce<HTMLDivElement>(0.28);
+
+  return (
+    <div ref={reference} className={cn("cf-process-steps", visible && "is-active")}>
+      <div aria-hidden className="cf-process-rail"><span /></div>
+      {steps.map(([number, title, description], index) => (
+        <article key={number} className="cf-process-step">
+          <div className="cf-process-marker"><span>{number}</span></div>
+          <div>
+            <p className="cf-process-kicker">Etapa {index + 1}</p>
+            <h3>{title}</h3>
+            <p>{description}</p>
+          </div>
         </article>
       ))}
     </div>
