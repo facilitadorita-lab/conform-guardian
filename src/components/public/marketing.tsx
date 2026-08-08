@@ -526,10 +526,13 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
 
   if (catalog.isLoading) {
     return (
-      <div className="grid gap-5 lg:grid-cols-3" aria-label="Carregando planos">
-        {[0, 1, 2].map((item) => (
-          <Skeleton key={item} className="cf-skeleton-shimmer h-[430px] rounded-3xl" />
-        ))}
+      <div>
+        <div className="grid gap-5 lg:grid-cols-3" aria-label="Carregando planos">
+          {[0, 1, 2].map((item) => (
+            <Skeleton key={item} className="cf-skeleton-shimmer h-[430px] rounded-3xl" />
+          ))}
+        </div>
+        <PartnerCta compact={compact} />
       </div>
     );
   }
@@ -570,6 +573,7 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
             </article>
           ))}
         </div>
+        <PartnerCta compact={compact} />
       </div>
     );
   }
@@ -671,7 +675,37 @@ export function PricingGrid({ compact = false }: { compact?: boolean }) {
           </article>
         ))}
       </div>
+      <PartnerCta compact={compact} />
     </div>
+  );
+}
+
+function PartnerCta({ compact }: { compact: boolean }) {
+  return (
+    <aside
+      className={cn(
+        "cf-partner-cta mx-auto grid w-full max-w-3xl items-center gap-5 rounded-2xl border border-cyan-100 bg-white/80 p-5 text-center shadow-[0_18px_48px_-38px_rgba(8,145,178,0.5)] backdrop-blur-sm sm:grid-cols-[1fr_auto] sm:p-6 sm:text-left",
+        compact ? "mt-7" : "mt-10",
+      )}
+      aria-label="Programa de parceiros"
+    >
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+          Programa de parceiros
+        </p>
+        <h3 className="mt-1.5 text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">
+          É consultoria ou atende vários clientes?
+        </h3>
+        <p className="mt-1.5 max-w-xl text-sm leading-6 text-slate-600">
+          Centralize a gestão da sua carteira e acompanhe cada cliente em um ambiente próprio.
+        </p>
+      </div>
+      <Button asChild variant="outline" className="group h-11 shrink-0 rounded-xl border-slate-300 bg-white px-5 text-slate-900 hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-900">
+        <Link to="/cadastro" search={{ plan: "parceiro_start", interval: "monthly", checkout: undefined }}>
+          Quero ser parceiro <ArrowRight className="cf-cta-arrow h-4 w-4" />
+        </Link>
+      </Button>
+    </aside>
   );
 }
 
